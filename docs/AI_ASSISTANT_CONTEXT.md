@@ -36,6 +36,8 @@ Tinh than ban moi:
 - Neu doi API, cap nhat `docs/API_CONTRACT.md`.
 - Neu doi DB/schema, cap nhat `docs/DATABASE_DESIGN.md` hoac schema SQL.
 - Neu doi task/team scope, cap nhat `docs/TEAM_TASK_ASSIGNMENT.md`.
+- V1 moi co them yeu cau: validate file dau vao cua Mangaka va AI summary preview truoc upload.
+- Moi thay doi lon nen co checkpoint giao vien va ghi feedback vao docs.
 - Truoc khi bao xong nen chay test/build lien quan.
 
 ## 4. Tai lieu can doc truoc khi code

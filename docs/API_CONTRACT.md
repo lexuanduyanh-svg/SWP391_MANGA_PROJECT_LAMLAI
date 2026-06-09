@@ -38,6 +38,29 @@ RedoRequested
 Completed
 ```
 
+## 3.5 Manuscript validation and AI summary - Owner: Member 1
+
+```text
+POST /api/mangaka/proposals/preview-upload
+```
+
+### Purpose
+
+- Validate selected manuscript file before final upload.
+- Return a short content summary for Mangaka confirmation.
+- Return warnings if file type, size, or content extraction is not suitable.
+
+### Expected response fields
+
+```text
+valid
+summary
+warningMessages
+fileName
+fileType
+fileSize
+```
+
 ## 3. Auth/Admin/Proposal - Owner: Member 1
 
 ```text

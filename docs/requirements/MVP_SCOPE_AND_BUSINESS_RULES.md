@@ -80,6 +80,24 @@ Do not treat the following as required for SWP391 MVP:
 
 AI remains valid as the RBL/research direction: model comparison for manga region segmentation may be documented or demoed separately, but the MVP only needs manually created regions, with optional future field support for AI suggestions.
 
+## 4.4 V1 revised focus
+
+For the revised V1, keep the scope smaller and make these additions explicit:
+
+1. Mangaka manuscript file validation before upload.
+   - Restrict allowed file types.
+   - Enforce a size limit.
+   - Show clear validation errors before submission.
+2. AI content summary preview before upload/submission.
+   - System extracts a short content summary from the selected file.
+   - Mangaka confirms the summary before the file is finalized.
+3. More teacher interaction checkpoints.
+   - Add review checkpoints in demo/documentation.
+   - Record teacher feedback and update scope before coding the next module.
+4. Keep the AI summary lightweight for V1.
+   - Treat it as a small supported feature, not a heavy standalone AI service.
+   - Demo first, optimize later.
+
 ## 5. Business flows
 
 ### 5.1 Flow 1 - Series Proposal and Approval

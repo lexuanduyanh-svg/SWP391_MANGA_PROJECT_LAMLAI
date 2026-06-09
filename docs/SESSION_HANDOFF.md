@@ -41,6 +41,8 @@ The previous code works as a demo but is too monolithic for a team to learn and 
 - Gradually split by feature module.
 - Let each team member own a clear part.
 - Keep API/database/docs synchronized.
+- Add V1 scope reduction: file validation for Mangaka and AI summary preview before upload.
+- Keep more checkpoints with the teacher so scope can be adjusted early.
 - Avoid one huge AI-generated code block that everyone must learn at once.
 
 ## 4. Required docs added for team workflow

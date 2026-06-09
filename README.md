@@ -16,6 +16,8 @@ Bản hiện tại đã có thể chạy demo các màn hình chính:
 - Admin dashboard: quản lý account demo, skill/category và gán skill/category cho account.
 - Mangaka dashboard:
   - Tạo/sửa/xóa proposal.
+  - Validate file đầu vào trước upload.
+  - Xem AI/content summary preview của file đã chọn trước khi submit.
   - Upload manuscript file thật qua backend.
   - `Save & Submit to Tantou` để lưu và gửi proposal trong một bước.
   - Theo dõi trạng thái review bằng modal chi tiết.
@@ -349,6 +351,7 @@ Lưu ý demo:
 - `docs/GIT_WORKFLOW.md` - cách chia branch và merge.
 - `docs/DEMO_SCRIPT.md` - kịch bản demo cho giáo viên.
 - `docs/TEST_CASES.md` - test case/smoke test chính.
+- `docs/V1_CHANGE_REQUEST_AI_SUMMARY.md` - yêu cầu V1 mới cho file validation + AI summary.
 - `docs/IMPLEMENTATION_GUIDE.md`
 - `docs/SESSION_HANDOFF.md`
 - `docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md`

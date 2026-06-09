@@ -8,8 +8,10 @@
 - Moi module co owner ro rang.
 - Khong doi API/status/database schema neu chua bao nhom va cap nhat tai lieu.
 - Truoc khi merge phai build/test phan lien quan.
+- V1 nay co them scope nho hon: file validation cho Mangaka va AI summary preview truoc upload.
 - Project moi lam tai: `C:\Users\AD\OneDrive\May tinh\Giao trinh FPT\KY5\SWP391_NEW`.
 - GitHub moi: `https://github.com/lexuanduyanh-svg/SWP391_MANGA_PROJECT_LAMLAI`.
+- Nhom can interact voi giao vien thuong xuyen: noi ro V1 scope, lay feedback som, va cap nhat tai lieu sau moi checkpoint.
 
 ## 2. Bang chia viec tong quan
 
@@ -30,8 +32,11 @@
 - Admin quan ly skill/category.
 - Mangaka tao/sua/xoa proposal.
 - Upload/download manuscript.
+- Ràng buộc file đầu vào cua Mangaka truoc upload: type/size/format hop le.
+- Tao AI summary preview cho file duoc chon truoc khi upload/final submit.
 - Submit proposal to Tantou.
 - Update/resubmit revision khi Tantou yeu cau sua.
+- Ghi lai summary metadata cho proposal de giao vien/nhom de demo.
 
 ### API so huu
 
@@ -63,9 +68,12 @@ PUT /api/mangaka/proposals/{id}/submit
 
 - Login duoc bang account demo.
 - Admin tao/sua account va skill duoc.
+- Mangaka upload file dung dinh dang va bi chan neu file sai.
+- Mangaka thay AI summary preview cua file truoc khi submit.
 - Mangaka tao proposal va upload file duoc.
 - Mangaka submit proposal duoc.
 - Mangaka resubmit revision duoc.
+- Demo co checkpoint tra loi giao vien ve cach summary hoat dong.
 
 ### Branch goi y
 

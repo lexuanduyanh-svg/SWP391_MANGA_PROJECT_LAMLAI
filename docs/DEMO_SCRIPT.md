@@ -47,26 +47,31 @@ board3@manga.local / Board3@123
 ## 4. Flow demo chinh
 
 1. Login Mangaka.
-2. Tao proposal moi.
-3. Upload manuscript.
-4. Bam `Save & Submit to Tantou`.
-5. Login Tantou Editor.
-6. Mo proposal vua submit.
-7. Download manuscript neu can.
-8. Chon mot trong hai nhanh:
+2. Chon manuscript file.
+3. He thong validate file type/size va hien AI summary preview.
+4. Mangaka confirm summary truoc khi upload/final submit.
+5. Tao proposal moi.
+6. Upload manuscript.
+7. Bam `Save & Submit to Tantou`.
+8. Neu can, mo checkpoint voi giao vien de giai thich summary va file rules.
+9. Login Tantou Editor.
+10. Mo proposal vua submit.
+11. Download manuscript neu can.
+12. Chon mot trong hai nhanh:
    - `Request Revision`: Mangaka update file va resubmit.
    - `Forward to Board`: dua sang Board vote.
-9. Login lan luot 3 Board accounts.
-10. Moi Board member vote Approve/Reject.
-11. Sau 3 vote, he thong tu chot Approved/Rejected.
-12. Neu Approved, login lai Mangaka.
-13. Tao chapter/page/region/task.
-14. Assign task cho Assistant.
-15. Login Assistant.
-16. Start task.
-17. Submit work.
-18. Login lai Mangaka.
-19. Approve hoac Request redo task.
+13. Login lan luot 3 Board accounts.
+14. Moi Board member vote Approve/Reject.
+15. Sau 3 vote, he thong tu chot Approved/Rejected.
+16. Neu Approved, login lai Mangaka.
+17. Tao chapter/page/region/task.
+18. Assign task cho Assistant.
+19. Login Assistant.
+20. Start task.
+21. Submit work.
+22. Login lai Mangaka.
+23. Approve hoac Request redo task.
+24. Neu giao vien hoi ve V1, giai thich day la ban rut gon va AI summary chi la feature nho ho tro demo.
 
 ## 5. Checklist ket qua
 
