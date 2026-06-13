@@ -276,9 +276,9 @@ Backend work completed for the user's Member 1-related scope and supporting refa
 - Refactored Java Spring package structure away from actor-owned services into a cleaner layered/domain style:
 
 ```text
-com.mangaworkflow.api
+com.mangaworkflow
 |
-+-- web/          -> controllers grouped by API actor/surface
++-- api/          -> controllers grouped by API actor/surface
 |   +-- auth/
 |   +-- admin/
 |   +-- mangaka/
@@ -307,7 +307,9 @@ com.mangaworkflow.api
 
 Important architecture decision:
 
-- Controllers can stay actor/API-facing under `web`.
+- Controllers can stay actor/API-facing under `api`.
+- The package previously named `web` was renamed to `api` because the user found `web` confusing and wanted it closer to `form.txt`.
+- To avoid awkward Java packages like `com.mangaworkflow.api.api`, the root package was changed from `com.mangaworkflow.api` to `com.mangaworkflow`.
 - Business logic should be domain/use-case-facing under `application`.
 - Shared proposal workflow logic stays in one proposal service instead of splitting into Mangaka/Editor/Board services.
 - API URLs were intentionally kept unchanged.
@@ -337,14 +339,131 @@ No imports/packages remain under old actor-owned controller/service/model packag
 
 Files/directories expected to be changed by this work:
 
-- `src/backend/src/main/java/com/mangaworkflow/api/web/`
-- `src/backend/src/main/java/com/mangaworkflow/api/application/`
-- `src/backend/src/main/java/com/mangaworkflow/api/domain/`
-- `src/backend/src/test/java/com/mangaworkflow/api/web/`
-- `src/backend/src/test/java/com/mangaworkflow/api/application/`
+- `src/backend/src/main/java/com/mangaworkflow/api/`
+- `src/backend/src/main/java/com/mangaworkflow/application/`
+- `src/backend/src/main/java/com/mangaworkflow/domain/`
+- `src/backend/src/main/java/com/mangaworkflow/persistence/`
+- `src/backend/src/main/java/com/mangaworkflow/config/`
+- `src/backend/src/test/java/com/mangaworkflow/api/`
+- `src/backend/src/test/java/com/mangaworkflow/application/`
 - removed old backend package paths under root `controller/`, `service/`, `model/`, and actor-owned `auth/`, `admin/`, `mangaka/`, `editor/`, `board/`, `assistant/`
 
-## 11. Current next recommended tasks
+## 11. How to know the code and business flow are correct
+
+The project should be verified at two levels:
+
+### A. Code-level correctness
+
+Use automated checks to prove the code compiles and expected methods/controllers still behave correctly:
+
+```text
+cd src/backend
+.\mvnw.cmd -q test
+```
+
+Current latest result:
+
+```text
+MAVEN_TEST_PASS
+```
+
+This proves:
+
+- Java code compiles.
+- Spring/controller tests pass.
+- Service unit tests pass.
+- Refactors did not break the currently covered API behavior.
+
+But this alone does not prove the whole manga workflow is correct end-to-end.
+
+### B. Flow-level correctness
+
+Verify the actual business journey with API calls/Postman/manual test cases:
+
+```text
+1. Login as Mangaka
+2. Mangaka creates proposal
+3. Mangaka previews/uploads manuscript
+4. Manuscript metadata attaches to the draft proposal
+5. Mangaka submits proposal
+6. Editor requests revision or forwards to Board
+7. Board members vote approve/reject
+8. System decides by majority
+9. If approved, Mangaka creates chapter/page/region/task
+10. Assistant starts/submits task
+11. Mangaka approves or requests redo
+```
+
+A flow is considered correct only when:
+
+- every step returns the expected HTTP status
+- response body contains expected data
+- invalid actions are blocked
+- status transitions happen in the right order
+- ownership/role-related email checks work
+- database or in-memory state changes match the expected result
+
+Recommended next verification artifact:
+
+- Create a Postman collection or API test script for the full manga workflow above.
+- Add integration-style tests for the full proposal lifecycle, not only individual service/controller tests.
+
+## 12. Database schema update from final review
+
+The user provided final schema/layout inputs and asked to compare the new schema against the older `docs/database/schema_postgresql_v2.sql` before changing anything.
+
+Schema comparison notes were created at:
+
+```text
+schema_comparison_recommendations.md
+```
+
+The final MVP schema is now synchronized in both locations:
+
+```text
+schema.sql
+manga_database/manga_database/schema.sql
+```
+
+Important schema decisions applied:
+
+- Use the shorter MVP schema as the implementation base instead of merging the whole older v2 schema.
+- Keep RBAC tables: `roles`, `permissions`, `role_permissions`.
+- Make `users.role_id` required with `NOT NULL`.
+- Keep `REVISION_REQUESTED` for both series review and task review flows.
+- Keep `tasks.feedback_notes` so Mangaka/Editor revision feedback has a storage field.
+- Rename task submission time from `timestamp` to `submitted_at`.
+- Add default seed data for roles, permissions, role-permission mappings, and assistant skills.
+- Add `created_at`/`updated_at` timestamps to core tables.
+- Add PostgreSQL `set_updated_at()` trigger support for tables with `updated_at`.
+- Add workflow statuses for `series`, `chapters`, `pages`, and `tasks` to support MVP screens.
+- Add `annotations.resolved` for comment resolution.
+- Add indexes for common role/status/workflow lookups.
+
+Deliberately not included in the MVP schema yet:
+
+```text
+audit_logs
+notifications
+editorial_boards
+board_memberships
+manuscripts
+page_versions
+task_reviews
+task_submissions
+series_rankings
+earning_rates
+```
+
+Reason: those older v2 tables are useful later but would expand scope and complexity before there are matching MVP screens/use cases.
+
+Verification notes:
+
+- The two active schema files were compared with `git diff --no-index`; no content differences were reported.
+- Grep confirmed the new schema files use `submitted_at` instead of `timestamp TIMESTAMP`.
+- `psql` was not available in PATH in this environment, so the schema was not executed against a live PostgreSQL database here.
+
+## 13. Current next recommended tasks
 
 Suggested next steps if the user asks to continue implementation:
 
@@ -352,9 +471,10 @@ Suggested next steps if the user asks to continue implementation:
    - Backend: Java Spring Boot or Node.js
    - Frontend: React + TypeScript
    - DB: PostgreSQL
-2. Convert `database.txt` into real PostgreSQL migrations.
-3. Create seed data for roles, permissions, skills, demo users.
-4. Create backend modules based on `form.txt` layers.
-5. Create frontend role dashboards based on the business flow.
-6. Add storage-server folders and upload/download rules.
-7. Add AI subsystem placeholder only if needed for scope.
+2. Use `schema.sql` as the current PostgreSQL schema baseline.
+3. Align backend entities/repositories/services with the final MVP schema.
+4. Create demo seed users after deciding password hashing strategy.
+5. Create backend modules based on `form.txt`/`project_layout.txt` layers.
+6. Create frontend role dashboards based on the business flow.
+7. Add storage-server folders and upload/download rules.
+8. Add AI subsystem placeholder only if needed for scope.
