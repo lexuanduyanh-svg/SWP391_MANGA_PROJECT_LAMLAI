@@ -1,0 +1,58 @@
+manga-workflow-system/
+├── database/                        <-- The folder we talked about earlier
+│   ├── schema.sql                   <-- Your Master SQL Blueprint
+│   └── application.properties.template
+│
+├── frontend/                        <-- The React App (For your Frontend team)
+│   ├── package.json
+│   └── src/
+│       ├── components/
+│       │   └── VisualCanvas/        <-- Where Mangaka manually draws task boxes
+│       └── views/
+│           ├── AdminDashboard/      <-- Added this! Admin has 17 Use Cases
+│           ├── MangakaDashboard/
+│           ├── AssistantDashboard/
+│           ├── EditorDashboard/
+│           └── BoardDashboard/
+│
+└── backend/                         <-- The Java App (For your Backend team)
+    ├── pom.xml                      <-- Java's config file (downloads libraries)
+    └── src/
+        └── main/
+            ├── resources/
+            │   └── application.properties <-- Where they paste their DB password
+            │
+            └── java/com/mangastudio/workflow/
+                │
+                ├── config/          <-- Security & File Upload Limits
+                │   └── SecurityConfig.java
+                │
+                ├── controllers/     <-- The API endpoints the React frontend calls
+                │   ├── AuthController.java
+                │   ├── AdminController.java
+                │   ├── MangakaController.java
+                │   ├── AssistantController.java
+                │   ├── EditorController.java
+                │   └── BoardController.java
+                │
+                ├── services/        <-- The Business Logic (Where the rules live)
+                │   ├── UserService.java
+                │   ├── SeriesService.java
+                │   ├── ChapterTaskService.java
+                │   └── RankingService.java
+                │
+                ├── repositories/    <-- The Bridge to PostgreSQL
+                │   ├── UserRepository.java
+                │   ├── SeriesRepository.java
+                │   └── TaskRepository.java
+                │
+                ├── entities/        <-- Java versions of your SQL tables
+                │   ├── User.java
+                │   ├── Series.java
+                │   ├── Chapter.java
+                │   ├── Page.java
+                │   └── Task.java
+                │
+                └── dtos/            <-- Data Transfer Objects (Clean data for React)
+                    ├── TaskDTO.java
+                    └── SeriesProposalDTO.java

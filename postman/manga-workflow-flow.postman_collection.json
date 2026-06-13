@@ -1,0 +1,248 @@
+{
+  "info": {
+    "name": "Manga Workflow Full Flow",
+    "description": "Automated API flow test for SWP391 Manga Workflow. Run with npm run test:api after starting the backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 Login Mangaka",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('login returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('login returns mangaka user', function () { pm.expect(json.user.email).to.eql(pm.environment.get('mangakaEmail')); pm.expect(json.user.role).to.match(/Mangaka|MANGAKA/); });"
+        ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{mangakaEmail}}\",\n  \"password\": \"{{mangakaPassword}}\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "02 Create Proposal",
+      "event": [
+        { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+          "pm.environment.set('flowSuffix', Date.now().toString());",
+          "pm.environment.set('flowTitle', 'Newman Flow Manga ' + pm.environment.get('flowSuffix'));"
+        ] } },
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('create proposal returns 201', function () { pm.response.to.have.status(201); });",
+          "var json = pm.response.json();",
+          "pm.environment.set('proposalId', json.id);",
+          "pm.test('proposal starts as draft', function () { pm.expect(json.id).to.exist; pm.expect(json.status).to.eql('DRAFT'); pm.expect(json.authorEmail).to.eql(pm.environment.get('mangakaEmail')); });"
+        ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/mangaka/proposals",
+        "body": { "mode": "raw", "raw": "{\n  \"authorEmail\": \"{{mangakaEmail}}\",\n  \"title\": \"{{flowTitle}}\",\n  \"genre\": \"Action\",\n  \"targetAudience\": \"Teen readers\",\n  \"synopsis\": \"Automated Newman full-flow proposal.\",\n  \"manuscriptTitle\": \"{{flowTitle}} Manuscript\",\n  \"manuscriptSummary\": \"Initial manuscript summary from Newman.\",\n  \"manuscriptFileName\": \"initial-manuscript.txt\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "03 Upload Manuscript Metadata",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('upload returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('upload attaches metadata to proposal', function () { pm.expect(json.proposal).to.exist; pm.expect(json.proposal.id).to.eql(pm.environment.get('proposalId')); pm.expect(json.proposal.manuscriptFileName).to.exist; pm.expect(json.proposal.manuscriptSummary).to.exist; });"
+        ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/mangaka/proposals/upload",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "proposalId", "value": "{{proposalId}}", "type": "text" },
+            { "key": "authorEmail", "value": "{{mangakaEmail}}", "type": "text" },
+            { "key": "file", "type": "file", "src": "postman/fixtures/sample-manuscript.txt" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "04 Submit Proposal",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('submit returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('proposal is submitted', function () { pm.expect(json.status).to.eql('SUBMITTED'); });"
+        ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/mangaka/proposals/{{proposalId}}/submit",
+        "body": { "mode": "raw", "raw": "{\n  \"authorEmail\": \"{{mangakaEmail}}\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "05 Editor Forward To Board",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('editor forward returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('proposal is board reviewing', function () { pm.expect(json.status).to.eql('BOARD_REVIEWING'); });"
+        ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/tantou-editor/proposals/{{proposalId}}/forward-board",
+        "body": { "mode": "raw", "raw": "{\n  \"editorEmail\": \"{{editorEmail}}\",\n  \"note\": \"Forwarded by Newman flow test.\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "06 Board Member 1 Approves",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('board 1 approve returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('board 1 vote recorded', function () { pm.expect(json.boardApproveVotes).to.be.at.least(1); });"
+        ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/editorial-board/proposals/{{proposalId}}/approve",
+        "body": { "mode": "raw", "raw": "{\n  \"memberEmail\": \"{{boardEmail}}\",\n  \"note\": \"Approved by board 1.\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "07 Board Member 2 Approves Majority",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('board 2 approve returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('proposal is approved by majority', function () { pm.expect(json.status).to.eql('APPROVED'); pm.expect(json.boardApproveVotes).to.be.at.least(2); });"
+        ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/editorial-board/proposals/{{proposalId}}/approve",
+        "body": { "mode": "raw", "raw": "{\n  \"memberEmail\": \"{{board2Email}}\",\n  \"note\": \"Approved by board 2.\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "08 Create Chapter",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('create chapter returns 201', function () { pm.response.to.have.status(201); });",
+          "var json = pm.response.json();",
+          "pm.environment.set('chapterId', json.id);",
+          "pm.test('chapter created', function () { pm.expect(json.id).to.exist; pm.expect(json.proposalId).to.eql(pm.environment.get('proposalId')); });"
+        ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/mangaka/proposals/{{proposalId}}/chapters?authorEmail={{mangakaEmail}}",
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"Chapter 1\",\n  \"chapterNumber\": 1\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "09 Add Page",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('add page returns 201', function () { pm.response.to.have.status(201); });",
+          "var json = pm.response.json();",
+          "pm.environment.set('pageId', json.id);",
+          "pm.test('page created', function () { pm.expect(json.id).to.exist; pm.expect(json.chapterId).to.eql(pm.environment.get('chapterId')); });"
+        ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/mangaka/proposals/{{proposalId}}/chapters/{{chapterId}}/pages?authorEmail={{mangakaEmail}}",
+        "body": { "mode": "raw", "raw": "{\n  \"pageNumber\": 1,\n  \"fileName\": \"page-1.png\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "10 Add Region",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('add region returns 201', function () { pm.response.to.have.status(201); });",
+          "var json = pm.response.json();",
+          "pm.environment.set('regionId', json.id);",
+          "pm.test('region created', function () { pm.expect(json.id).to.exist; pm.expect(json.pageId).to.eql(pm.environment.get('pageId')); });"
+        ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/mangaka/proposals/{{proposalId}}/chapters/{{chapterId}}/pages/{{pageId}}/regions?authorEmail={{mangakaEmail}}",
+        "body": { "mode": "raw", "raw": "{\n  \"regionType\": \"INKING\",\n  \"x\": 10,\n  \"y\": 10,\n  \"widthPct\": 40,\n  \"heightPct\": 30,\n  \"note\": \"Ink this panel.\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "11 Assign Assistant Task",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('assign task returns 201', function () { pm.response.to.have.status(201); });",
+          "var json = pm.response.json();",
+          "pm.environment.set('taskId', json.id);",
+          "pm.test('task assigned', function () { pm.expect(json.id).to.exist; pm.expect(json.assistantEmail).to.eql(pm.environment.get('assistantEmail')); pm.expect(json.status).to.eql('ASSIGNED'); });"
+        ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/mangaka/proposals/{{proposalId}}/chapters/{{chapterId}}/pages/{{pageId}}/regions/{{regionId}}/tasks?authorEmail={{mangakaEmail}}",
+        "body": { "mode": "raw", "raw": "{\n  \"assistantEmail\": \"{{assistantEmail}}\",\n  \"taskType\": \"INKING\",\n  \"instructions\": \"Clean line art for the selected panel.\",\n  \"referenceFileName\": \"page-1.png\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "12 Assistant Starts Task",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('start task returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('task is in progress', function () { pm.expect(json.status).to.eql('IN_PROGRESS'); });"
+        ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/assistant/tasks/{{taskId}}/start",
+        "body": { "mode": "raw", "raw": "{\n  \"assistantEmail\": \"{{assistantEmail}}\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "13 Assistant Submits Task",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('submit task returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('task is submitted', function () { pm.expect(json.status).to.eql('SUBMITTED'); pm.expect(json.submittedFileName).to.eql('inked-page-1.png'); });"
+        ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/assistant/tasks/{{taskId}}/submit",
+        "body": { "mode": "raw", "raw": "{\n  \"assistantEmail\": \"{{assistantEmail}}\",\n  \"submittedFileName\": \"inked-page-1.png\",\n  \"submissionNote\": \"Submitted by Newman flow test.\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "14 Mangaka Approves Task",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('approve task returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('task is approved', function () { pm.expect(json.status).to.eql('APPROVED'); });"
+        ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/mangaka/proposals/{{proposalId}}/chapters/{{chapterId}}/pages/{{pageId}}/regions/{{regionId}}/tasks/{{taskId}}/approve?authorEmail={{mangakaEmail}}"
+      }
+    }
+  ]
+}

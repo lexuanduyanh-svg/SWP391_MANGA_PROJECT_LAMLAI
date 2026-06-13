@@ -1,0 +1,15 @@
+{
+  "name": "swp391-manga-workflow-testing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Testing tools for SWP391 Manga Workflow backend",
+  "scripts": {
+    "test:backend": "cd src/backend && mvnw.cmd test",
+    "test:backend:flow": "cd src/backend && mvnw.cmd -Dtest=FullMangaWorkflowFlowTest test",
+    "test:api": "newman run postman/manga-workflow-flow.postman_collection.json -e postman/local.postman_environment.json --reporters cli,htmlextra,json --reporter-htmlextra-export postman/reports/manga-workflow-report.html --reporter-json-export postman/reports/manga-workflow-report.json"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}

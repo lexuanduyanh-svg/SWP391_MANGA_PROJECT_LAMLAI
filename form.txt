@@ -1,0 +1,64 @@
+manga-workflow-system/
+|
++-- backend/                       # The server-side code (Node.js/Java/Python)
+|   +-- src/
+|   |   +-- api/                   # Controller Layer (Entry points)
+|   |   |   +-- AuthController.js
+|   |   |   +-- MangakaController.js
+|   |   |   +-- EditorController.js
+|   |   |   +-- BoardController.js
+|   |   |   +-- AssistantController.js
+|   |   +-- application/           # Service Layer (Business Rules/State Machine) [3]
+|   |   |   +-- SeriesService.js   # Enforces BR-05: Draft -> Review -> Approved
+|   |   |   +-- TaskService.js     # Manages Spatial Delegation (Panel/Region)
+|   |   |   +-- RankingService.js  # Calculates leaderboards from Reader Metrics
+|   |   |   +-- EarningsService.js # Calculates monthly earnings for Assistants
+|   |   +-- domain/                # Core Logic and Data structures
+|   |   |   +-- entities/          # Database Models (PostgreSQL tables) [4-8]
+|   |   |   |   +-- User.js
+|   |   |   |   +-- Series.js
+|   |   |   |   +-- Task.js
+|   |   |   |   +-- Page.js
+|   |   |   +-- dtos/              # Data Transfer Objects (Secure Data shapes)
+|   |   |       +-- TaskDTO.js
+|   |   |       +-- SeriesProposalDTO.js
+|   |   +-- infrastructure/        # External system integrations
+|   |   |   +-- repositories/      # DAO Layer (Database queries)
+|   |   |   |   +-- UserRepository.js
+|   |   |   |   +-- SeriesRepository.js
+|   |   |   +-- ai_client/         # Deep Learning Subsystem Interface [9, 10]
+|   |   |   |   +-- YOLOv8Connector.js
+|   |   |   +-- storage/           # LAN File Handler (Anti-Leak security) [2, 11]
+|   |   |   |   +-- ManuscriptStore.js
+|   |   |   +-- notifications/     # Event/Alert dispatcher (Deadline warnings)
+|   |   +-- config/                # DB and Server configuration
+|   +-- tests/                     # Unit and Integration tests
+|
++-- ai-subsystem/                  # The Python-based vision engine [12, 13]
+|   +-- models/                    # YOLOv8/U-Net weight files
+|   +-- scripts/                   # Image segmentation logic
+|   +-- api_bridge.py              # Interface for the Backend to call AI
+|
++-- frontend/                      # Web Interface (React/Vue/etc.)
+|   +-- src/
+|   |   +-- components/            # UI pieces (Canvas, Tables, Charts)
+|   |   |   +-- VisualCanvas/      # The region-selection drawing tool
+|   |   +-- views/                 # Role-specific dashboards [14]
+|   |       +-- MangakaDashboard/
+|   |       +-- AssistantDashboard/
+|   |       +-- EditorDashboard/
+|   |       +-- BoardDashboard/
+|
++-- storage-server/                # SECURE LOCAL DIRECTORY (LAN ONLY) [2]
+|   +-- manuscripts/               # Original Mangaka storyboards ("Name")
+|   +-- submissions/               # Completed Assistant regions
+|   +-- annotations/               # Editor markup layers
+|   +-- references/                # Character sheets and style guides
+|
++-- database/
+|   +-- migrations/                # SQL scripts for PostgreSQL tables
+|   +-- seeds/                     # Initial Roles and Skills data
+|
++-- .env                           # Environment variables (DB credentials)
++-- docker-compose.yml             # Orchestration for the On-Premise deploy
++-- README.md

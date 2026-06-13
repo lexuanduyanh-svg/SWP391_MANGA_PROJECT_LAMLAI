@@ -1,0 +1,107 @@
+// --- USER & ACCESS MANAGEMENT ---
+Table roles {
+  role_id integer [primary key]
+  role_name varchar // Admin, Mangaka, Assistant, Editor, Board
+}
+
+Table permissions {
+  permission_id integer [primary key]
+  action_name varchar // e.g., UPLOAD_CHAPTER, ASSIGN_TASK
+}
+
+Table role_permissions {
+  role_id integer [ref: > roles.role_id]
+  permission_id integer [ref: > permissions.permission_id]
+}
+
+Table users {
+  user_id integer [primary key]
+  name varchar
+  email varchar [unique]
+  password_hash varchar
+  role_id integer [ref: > roles.role_id]
+  status varchar // Active/Disabled
+}
+
+Table assistant_profiles {
+  user_id integer [primary key, ref: - users.user_id]
+  monthly_earnings decimal
+}
+
+Table skills {
+  skill_id integer [primary key]
+  skill_name varchar
+}
+
+Table user_skills {
+  user_id integer [ref: > users.user_id]
+  skill_id integer [ref: > skills.skill_id]
+}
+
+// --- CONTENT & SERIALIZATION ---
+Table series {
+  series_id integer [primary key]
+  mangaka_id integer [ref: > users.user_id]
+  tantou_editor_id integer [ref: > users.user_id]
+  title varchar
+  description text
+  genre varchar
+  status varchar // Draft, Serialized, etc.
+  publishing_frequency varchar // Weekly/Monthly
+}
+
+Table chapters {
+  chapter_id integer [primary key]
+  series_id integer [ref: > series.series_id]
+  chapter_number integer
+  title varchar
+  print_deadline timestamp
+}
+
+Table pages {
+  page_id integer [primary key]
+  chapter_id integer [ref: > chapters.chapter_id]
+  page_number integer
+  manuscript_file_path varchar
+}
+
+// --- PRODUCTION WORKFLOW ---
+Table tasks {
+  task_id integer [primary key]
+  page_id integer [ref: > pages.page_id]
+  assistant_id integer [ref: > users.user_id]
+  task_type integer [ref: > skills.skill_id]
+  region_coordinates jsonb // Stores bounding box data
+  payment decimal
+  status varchar // New, In Progress, Submitted, Approved
+}
+
+Table submissions {
+  submission_id integer [primary key]
+  task_id integer [ref: > tasks.task_id]
+  asset_file_path varchar
+  timestamp timestamp
+}
+
+Table annotations {
+  markup_id integer [primary key]
+  page_id integer [ref: > pages.page_id]
+  editor_id integer [ref: > users.user_id]
+  spatial_coordinates jsonb
+  content text
+}
+
+// --- STRATEGY & METRICS ---
+Table reader_metrics {
+  metric_id integer [primary key]
+  series_id integer [ref: > series.series_id]
+  publication_cycle date
+  sales_figures integer
+}
+
+Table board_votes {
+  vote_id integer [primary key]
+  series_id integer [ref: > series.series_id]
+  board_member_id integer [ref: > users.user_id]
+  decision varchar // Approve/Reject
+}

@@ -11,6 +11,29 @@
 *.sln.docstates
 *.env
 
+# Node / frontend / Newman
+node_modules/
+npm-debug.log*
+postman/reports/
+
+# Java / Maven
+target/
+*.class
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Archives / local dumps
+*.zip
+*.7z
+*.rar
+
+# Uploads / generated files
+storage-server/
+uploads/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -446,6 +469,9 @@ FodyWeavers.xsd
 **/dist/
 **/.vite/
 *.tsbuildinfo
+
+# Generated API test reports
+postman/reports/
 
 # Runtime/local configuration
 .env
