@@ -62,7 +62,6 @@ Existing docs kept:
 ```text
 docs/IMPLEMENTATION_GUIDE.md
 docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md
-docs/database/schema_postgresql_v2.sql
 ```
 
 ## 5. Team split

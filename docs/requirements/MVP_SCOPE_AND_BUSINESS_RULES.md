@@ -436,7 +436,7 @@ approved_task_earning = task.unit_count * applicable_rate.rate_per_page
 | FE-05 System Oversight and Audit Logging | `audit_logs` |
 | FE-06 Series Proposal Creation and Editor Submission | `series`, `manuscripts`, `notifications` |
 | FE-07 Draft Iteration and Approved Content Management | `series`, `manuscripts`, `chapters`, `pages` |
-| FE-08 Page Region Segmentation and Task Assignment | `chapters`, `pages`, `page_regions`, `tasks` |
+| FE-08 Page Region Segmentation and Task Assignment | `chapters`, `pages`, `tasks` |
 | FE-09 Assistant Work Review and Validation | `task_submissions`, `task_reviews`, `page_versions` |
 | FE-10 Performance Tracking and Risk Alerts | `reader_poll_data`, `series_rankings`, `notifications` |
 | FE-11 Assigned Task Workspace | `tasks`, `task_submissions` |
@@ -466,7 +466,7 @@ approved_task_earning = task.unit_count * applicable_rate.rate_per_page
 ## 15. Implementation order
 
 1. Align role names in backend/frontend.
-2. Create database using `docs/database/schema_postgresql_v2.sql` or adapt it to the chosen DBMS.
+2. Create database using the canonical schema files: `schema (1).sql` and `schema (1).sql`.
 3. Implement auth/fixed role access.
 4. Implement proposal workflow.
 5. Implement board voting.
@@ -479,7 +479,7 @@ approved_task_earning = task.unit_count * applicable_rate.rate_per_page
 
 These should be decided before full implementation:
 
-1. Final DBMS: PostgreSQL is recommended by `schema_postgresql_v2.sql`; adapt if using SQL Server/MySQL.
+1. Final DBMS: PostgreSQL is currently configured; adapt if using SQL Server/MySQL.
 2. Whether active-series decisions require individual votes or only a recorded meeting outcome.
 3. Whether `page_versions` will be exposed in UI during MVP or kept as backend metadata.
 4. Whether editor assignment is manual by Admin or automatically selected from active editors.

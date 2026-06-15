@@ -1,6 +1,6 @@
 # CURRENT - SWP391 Manga Project Lam Lai
 
-Last updated: 2026-06-12
+Last updated: 2026-06-14
 
 ## 1. Active project
 
@@ -48,7 +48,7 @@ Old implementation to treat as reference only:
 ```text
 src/backend
 src/frontend
-docs/database/schema_postgresql_v2.sql
+canonical schema files (`schema (1).sql`, `schema (1).sql`)
 ```
 
 Important interpretation:
@@ -182,7 +182,7 @@ reader_metrics
 board_votes
 ```
 
-Important: this differs from the old implemented entities such as `accounts`, `manga_proposals`, `mangaka_chapters`, `mangaka_pages`, and `mangaka_production_tasks`.
+Important: this differs from the removed legacy persistence implementation.
 
 ## 6. Previous docs/team split from existing repo
 
@@ -410,7 +410,7 @@ Recommended next verification artifact:
 
 ## 12. Database schema update from final review
 
-The user provided final schema/layout inputs and asked to compare the new schema against the older `docs/database/schema_postgresql_v2.sql` before changing anything.
+The user provided final schema/layout inputs and asked to compare the new schema against the older database draft before changing anything.
 
 Schema comparison notes were created at:
 
@@ -422,7 +422,7 @@ The final MVP schema is now synchronized in both locations:
 
 ```text
 schema.sql
-manga_database/manga_database/schema.sql
+schema (1).sql
 ```
 
 Important schema decisions applied:
@@ -463,18 +463,251 @@ Verification notes:
 - Grep confirmed the new schema files use `submitted_at` instead of `timestamp TIMESTAMP`.
 - `psql` was not available in PATH in this environment, so the schema was not executed against a live PostgreSQL database here.
 
-## 13. Current next recommended tasks
+## 13. Backend schema migration status
+
+Latest backend implementation pass aligned the Spring Boot backend with the final MVP schema while preserving the existing controller/DTO contracts used by tests and frontend demos.
+
+Changed backend areas:
+
+```text
+src/backend/src/main/java/com/mangaworkflow/application/account/InMemoryAccountService.java
+src/backend/src/main/java/com/mangaworkflow/application/skill/InMemorySkillCategoryService.java
+src/backend/src/main/java/com/mangaworkflow/application/proposal/InMemoryMangaProposalService.java
+src/backend/src/main/java/com/mangaworkflow/application/production/InMemoryMangakaProductionService.java
+src/backend/src/main/java/com/mangaworkflow/persistence/entity/*.java
+src/backend/src/main/java/com/mangaworkflow/persistence/repository/*.java
+```
+
+Implemented schema coverage:
+
+- Added JPA entities/repositories for the final schema tables:
+  - `roles`
+  - `permissions`
+  - `role_permissions`
+  - `users`
+  - `assistant_profiles`
+  - `skills`
+  - `user_skills`
+  - `series`
+  - `chapters`
+  - `pages`
+  - `tasks`
+  - `submissions`
+  - `annotations`
+  - `reader_metrics`
+  - `board_votes`
+- Account/admin/auth DB path now uses schema tables:
+  - `users`
+  - `roles`
+  - `skills`
+  - `user_skills`
+- Proposal workflow DB path was migrated toward schema tables:
+  - `series`
+  - `board_votes`
+  - `users`
+  - `roles`
+- Production workflow was rewritten to keep the existing API working while mapping the MVP workflow to schema concepts:
+  - `chapters`
+  - `pages`
+  - `tasks`
+  - `submissions`
+- Existing demo/controller DTO contracts were preserved so old tests and frontend flows do not break immediately.
+- Compatibility behavior remains where the old API has concepts not directly represented in the simplified MVP schema, especially production regions. Region/task compatibility data is stored or reconstructed through task/page compatibility logic rather than reintroducing a separate table.
+
+Important workflow rule now enforced:
+
+```text
+A task that is already APPROVED cannot be sent back for redo.
+```
+
+Verification performed:
+
+```text
+cd src/backend
+.\mvnw.cmd test -q
+```
+
+Latest test result:
+
+```text
+Failures: 0
+Errors: 0
+```
+
+Current local status at the time of this note:
+
+- Backend code changes are present locally.
+- They have not yet been committed/pushed unless the user explicitly asks to do so after this note.
+- `CURRENT.md` was updated after the backend migration pass.
+
+## 14. Session update - 2026-06-14 follow-up
+
+Additional backend/scope-safe implementation and verification completed after the backend schema migration pass:
+
+- Reviewed the current git status and existing backend/database-related changes.
+- Fixed Spring Boot runtime startup issue in `InMemoryMangaProposalService` by ensuring only one constructor is autowired by Spring.
+- Aligned manuscript storage with the target `form.txt` layout:
+  - Added `storage-server/manuscripts/`
+  - Added `storage-server/submissions/`
+  - Added `storage-server/annotations/`
+  - Added `storage-server/references/`
+  - Updated `.gitignore` so generated storage files remain ignored while `.gitkeep` placeholders can be committed.
+- Updated Mangaka manuscript upload/download backend behavior:
+  - default storage path now uses `storage-server/manuscripts`
+  - configurable with `MANUSCRIPT_STORAGE_DIR` / `app.storage.manuscripts-dir`
+  - download still falls back to the older local path `~/swp391-uploads/manuscripts` for previously uploaded local demo files.
+- Added target-layout placeholders:
+  - `ai-subsystem/api_bridge.py`
+  - `ai-subsystem/models/.gitkeep`
+  - `ai-subsystem/scripts/.gitkeep`
+  - `database/migrations/.gitkeep`
+  - `database/seeds/.gitkeep`
+- Updated Postman/Newman full-flow artifact:
+  - upload now expects `201 Created`
+  - statuses now match current DTO values like `Draft`, `SubmittedToEditor`, `UnderBoardReview`, `Approved`, `Pending`, `InProgress`, and `Submitted`
+  - added the 3rd board member vote because the current workflow requires all three board members to vote before final decision.
+- Ran `npm install` at repo root so the existing Newman dev dependencies are available locally.
+  - `node_modules/` remains ignored.
+  - `npm install` reported audit warnings: 19 vulnerabilities (`8 moderate`, `10 high`, `1 critical`). No forced audit fix was run because it may introduce breaking dependency changes.
+- Important correction: unintended frontend edits were reverted. No frontend source files should remain modified from this follow-up.
+
+Verification performed after these changes:
+
+```text
+cd src/backend
+.\mvnw.cmd test -q
+```
+
+Result:
+
+```text
+Failures: 0
+Errors: 0
+```
+
+```text
+cd <repo-root>
+npm run test:api
+```
+
+Result:
+
+```text
+Newman full manga workflow passed:
+15 requests, 30 assertions, 0 failures.
+```
+
+Runtime notes:
+
+- Backend demo server was started detached for Newman using profile `demo` and then stopped after the API flow passed.
+- Postman reports were generated under `postman/reports/`, which is ignored by git.
+- Latest state is ready for backend/API demo testing.
+- Created `VAN_DAP_COMPONENT_API_MAPPING.csv` as an Excel-openable viva checklist mapping components/pages to frontend services, backend APIs, Java controllers/services, status checks, DTOs, DB tables, and suggested answers.
+- No commit or push was performed.
+
+Current local status summary at the time of this note:
+
+- Existing backend schema-alignment changes are still uncommitted.
+- New/updated backend storage layout, AI placeholder, database placeholder, Postman collection/environment, and config changes are also uncommitted.
+- Frontend source changes from this follow-up were reverted because the user is not responsible for frontend scope.
+- Do not commit/push unless the user explicitly asks.
+
+## 15. Current next recommended tasks
 
 Suggested next steps if the user asks to continue implementation:
 
-1. Decide final stack for the new version:
-   - Backend: Java Spring Boot or Node.js
-   - Frontend: React + TypeScript
-   - DB: PostgreSQL
-2. Use `schema.sql` as the current PostgreSQL schema baseline.
-3. Align backend entities/repositories/services with the final MVP schema.
-4. Create demo seed users after deciding password hashing strategy.
-5. Create backend modules based on `form.txt`/`project_layout.txt` layers.
-6. Create frontend role dashboards based on the business flow.
-7. Add storage-server folders and upload/download rules.
-8. Add AI subsystem placeholder only if needed for scope.
+1. Review the full git diff, especially the large backend schema-alignment files, before committing.
+2. If accepted, commit the current stable backend/state artifacts as one or more logical commits.
+3. Optionally address `npm audit` findings in a separate dependency-maintenance task, not mixed with feature/schema work.
+4. If PostgreSQL is available, execute `schema.sql` against a live database to validate the final SQL outside H2/in-memory tests.
+5. If the team wants a cleaner future architecture, design schema-native APIs after the current demo-compatible backend is stable.
+
+## 16. Session update - 2026-06-15 schema/backend alignment
+
+User clarified the canonical database file for the current work:
+
+```text
+schema (1).sql
+```
+
+Important scope rule from the user:
+
+- Only change the user's assignment scope.
+- Do not modify other members' frontend/editor/board/production/assistant areas unless explicitly requested.
+
+Database cleanup/alignment completed:
+
+- `schema (1).sql` was treated as the source of truth and was not modified.
+- `schema (1).sql` was synced to match `schema (1).sql` content.
+- The old conflicting schema draft under `docs/database` was deleted because it was not the current runtime/schema source.
+
+Member 1 backend work started and kept API-compatible:
+
+- Updated `src/backend/src/main/java/com/mangaworkflow/application/account/InMemoryAccountService.java`:
+  - inactive users/accounts no longer authenticate in either memory mode or schema DB mode.
+- Updated `src/backend/src/main/java/com/mangaworkflow/application/proposal/InMemoryMangaProposalService.java`:
+  - Member 1 Mangaka proposal create/list/get/update/submit/delete now use canonical `series` persistence when schema repositories are active.
+  - API response shape remains compatible with existing frontend/tests.
+  - Controller routes were not changed.
+  - No legacy proposal table or schema column was introduced.
+  - Proposal-only metadata that does not exist in `schema (1).sql` is kept in service-local compatibility metadata instead of changing the DB schema.
+
+Files intentionally avoided in this pass:
+
+- Frontend source files.
+- Editor/Board controllers.
+- Production/Assistant service/controller code.
+- `schema (1).sql`.
+
+Verification performed:
+
+```text
+cd src/backend
+.\mvnw.cmd test
+```
+
+Result:
+
+```text
+Tests run: 27, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+Notes for next session:
+
+- Continue backend only in Member 1 scope unless user changes the scope.
+- If persistence for manuscript metadata is required later, ask the database owner/teacher where it belongs because `schema (1).sql` currently has no manuscript/proposal metadata table/columns.
+- Do not revive deleted legacy schema/persistence as the source of truth.
+
+## 17. Session update - 2026-06-15 legacy DB cleanup pass
+
+User explicitly asked to remove everything unused / unrelated to the new canonical database.
+
+Cleanup completed in backend scope:
+
+- Deleted legacy proposal persistence entity/repository files.
+- Deleted legacy account/skill persistence entity/repository files.
+- Deleted legacy mangaka production persistence entity/repository files.
+- Updated services to use canonical schema entities/repositories:
+  - `InMemoryAccountService.java` → `users`, `roles`, `skills`, `user_skills`
+  - `InMemorySkillCategoryService.java` → `skills`
+  - `InMemoryMangaProposalService.java` → `series`, `board_votes`, `users`
+  - `InMemoryMangakaProductionService.java` still uses canonical entities/repositories and no longer relies on the deleted legacy mangaka-* tables in the current backend pass.
+
+Verification after cleanup:
+
+```text
+cd src/backend
+.\mvnw.cmd test
+```
+
+Result:
+
+```text
+Tests run: 27, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+Current rule going forward:
+
+- Do not reintroduce deleted legacy tables/entities/repositories unless the database schema itself changes.

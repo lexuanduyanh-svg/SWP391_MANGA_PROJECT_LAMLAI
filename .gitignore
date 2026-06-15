@@ -31,7 +31,17 @@ target/
 *.rar
 
 # Uploads / generated files
-storage-server/
+storage-server/**
+!storage-server/
+!storage-server/.gitkeep
+!storage-server/manuscripts/
+!storage-server/manuscripts/.gitkeep
+!storage-server/submissions/
+!storage-server/submissions/.gitkeep
+!storage-server/annotations/
+!storage-server/annotations/.gitkeep
+!storage-server/references/
+!storage-server/references/.gitkeep
 uploads/
 
 # User-specific files (MonoDevelop/Xamarin Studio)

@@ -32,7 +32,7 @@
           "pm.test('create proposal returns 201', function () { pm.response.to.have.status(201); });",
           "var json = pm.response.json();",
           "pm.environment.set('proposalId', json.id);",
-          "pm.test('proposal starts as draft', function () { pm.expect(json.id).to.exist; pm.expect(json.status).to.eql('DRAFT'); pm.expect(json.authorEmail).to.eql(pm.environment.get('mangakaEmail')); });"
+          "pm.test('proposal starts as draft', function () { pm.expect(json.id).to.exist; pm.expect(json.status).to.eql('Draft'); pm.expect(json.authorEmail).to.eql(pm.environment.get('mangakaEmail')); });"
         ] } }
       ],
       "request": {
@@ -46,7 +46,7 @@
       "name": "03 Upload Manuscript Metadata",
       "event": [
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
-          "pm.test('upload returns 200', function () { pm.response.to.have.status(200); });",
+          "pm.test('upload returns 201', function () { pm.response.to.have.status(201); });",
           "var json = pm.response.json();",
           "pm.test('upload attaches metadata to proposal', function () { pm.expect(json.proposal).to.exist; pm.expect(json.proposal.id).to.eql(pm.environment.get('proposalId')); pm.expect(json.proposal.manuscriptFileName).to.exist; pm.expect(json.proposal.manuscriptSummary).to.exist; });"
         ] } }
@@ -71,7 +71,7 @@
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('submit returns 200', function () { pm.response.to.have.status(200); });",
           "var json = pm.response.json();",
-          "pm.test('proposal is submitted', function () { pm.expect(json.status).to.eql('SUBMITTED'); });"
+          "pm.test('proposal is submitted', function () { pm.expect(json.status).to.eql('SubmittedToEditor'); });"
         ] } }
       ],
       "request": {
@@ -87,7 +87,7 @@
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('editor forward returns 200', function () { pm.response.to.have.status(200); });",
           "var json = pm.response.json();",
-          "pm.test('proposal is board reviewing', function () { pm.expect(json.status).to.eql('BOARD_REVIEWING'); });"
+          "pm.test('proposal is board reviewing', function () { pm.expect(json.status).to.eql('UnderBoardReview'); });"
         ] } }
       ],
       "request": {
@@ -114,12 +114,12 @@
       }
     },
     {
-      "name": "07 Board Member 2 Approves Majority",
+      "name": "07 Board Member 2 Approves",
       "event": [
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('board 2 approve returns 200', function () { pm.response.to.have.status(200); });",
           "var json = pm.response.json();",
-          "pm.test('proposal is approved by majority', function () { pm.expect(json.status).to.eql('APPROVED'); pm.expect(json.boardApproveVotes).to.be.at.least(2); });"
+          "pm.test('proposal is still waiting for final board vote', function () { pm.expect(json.status).to.eql('UnderBoardReview'); pm.expect(json.boardApproveVotes).to.be.at.least(2); });"
         ] } }
       ],
       "request": {
@@ -130,7 +130,23 @@
       }
     },
     {
-      "name": "08 Create Chapter",
+      "name": "08 Board Member 3 Approves Final",
+      "event": [
+        { "listen": "test", "script": { "type": "text/javascript", "exec": [
+          "pm.test('board 3 approve returns 200', function () { pm.response.to.have.status(200); });",
+          "var json = pm.response.json();",
+          "pm.test('proposal is fully approved', function () { pm.expect(json.status).to.eql('Approved'); pm.expect(json.boardApproveVotes).to.be.at.least(3); });"
+        ] } }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/editorial-board/proposals/{{proposalId}}/approve",
+        "body": { "mode": "raw", "raw": "{\n  \"memberEmail\": \"{{board3Email}}\",\n  \"note\": \"Approved by board 3.\"\n}", "options": { "raw": { "language": "json" } } }
+      }
+    },
+    {
+      "name": "09 Create Chapter",
       "event": [
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('create chapter returns 201', function () { pm.response.to.have.status(201); });",
@@ -147,7 +163,7 @@
       }
     },
     {
-      "name": "09 Add Page",
+      "name": "10 Add Page",
       "event": [
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('add page returns 201', function () { pm.response.to.have.status(201); });",
@@ -164,7 +180,7 @@
       }
     },
     {
-      "name": "10 Add Region",
+      "name": "11 Add Region",
       "event": [
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('add region returns 201', function () { pm.response.to.have.status(201); });",
@@ -181,13 +197,13 @@
       }
     },
     {
-      "name": "11 Assign Assistant Task",
+      "name": "12 Assign Assistant Task",
       "event": [
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('assign task returns 201', function () { pm.response.to.have.status(201); });",
           "var json = pm.response.json();",
           "pm.environment.set('taskId', json.id);",
-          "pm.test('task assigned', function () { pm.expect(json.id).to.exist; pm.expect(json.assistantEmail).to.eql(pm.environment.get('assistantEmail')); pm.expect(json.status).to.eql('ASSIGNED'); });"
+          "pm.test('task assigned', function () { pm.expect(json.id).to.exist; pm.expect(json.assistantEmail).to.eql(pm.environment.get('assistantEmail')); pm.expect(json.status).to.eql('Pending'); });"
         ] } }
       ],
       "request": {
@@ -198,12 +214,12 @@
       }
     },
     {
-      "name": "12 Assistant Starts Task",
+      "name": "13 Assistant Starts Task",
       "event": [
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('start task returns 200', function () { pm.response.to.have.status(200); });",
           "var json = pm.response.json();",
-          "pm.test('task is in progress', function () { pm.expect(json.status).to.eql('IN_PROGRESS'); });"
+          "pm.test('task is in progress', function () { pm.expect(json.status).to.eql('InProgress'); });"
         ] } }
       ],
       "request": {
@@ -214,12 +230,12 @@
       }
     },
     {
-      "name": "13 Assistant Submits Task",
+      "name": "14 Assistant Submits Task",
       "event": [
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('submit task returns 200', function () { pm.response.to.have.status(200); });",
           "var json = pm.response.json();",
-          "pm.test('task is submitted', function () { pm.expect(json.status).to.eql('SUBMITTED'); pm.expect(json.submittedFileName).to.eql('inked-page-1.png'); });"
+          "pm.test('task is submitted', function () { pm.expect(json.status).to.eql('Submitted'); pm.expect(json.submittedFileName).to.eql('inked-page-1.png'); });"
         ] } }
       ],
       "request": {
@@ -230,12 +246,12 @@
       }
     },
     {
-      "name": "14 Mangaka Approves Task",
+      "name": "15 Mangaka Approves Task",
       "event": [
         { "listen": "test", "script": { "type": "text/javascript", "exec": [
           "pm.test('approve task returns 200', function () { pm.response.to.have.status(200); });",
           "var json = pm.response.json();",
-          "pm.test('task is approved', function () { pm.expect(json.status).to.eql('APPROVED'); });"
+          "pm.test('task is approved', function () { pm.expect(json.status).to.eql('Approved'); });"
         ] } }
       ],
       "request": {

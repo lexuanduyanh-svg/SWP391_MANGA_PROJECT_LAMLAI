@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -39,6 +40,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/mangaka/proposals")
 public class MangakaProposalController {
   private static final long MAX_MANUSCRIPT_BYTES = 25L * 1024L * 1024L;
+
+  @Value("${app.storage.manuscripts-dir:storage-server/manuscripts}")
+  private String manuscriptStoragePath;
 
   private final InMemoryMangaProposalService service;
 
@@ -115,7 +119,7 @@ public class MangakaProposalController {
       String summary = createSummary(file);
       String safeName = sanitizeFileName(originalName);
       String storedName = System.currentTimeMillis() + "-" + safeName;
-      Path uploadDir = Paths.get(System.getProperty("user.home"), "swp391-uploads", "manuscripts");
+      Path uploadDir = manuscriptStorageDirectory();
       Files.createDirectories(uploadDir);
       Path target = uploadDir.resolve(storedName);
       Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
@@ -148,9 +152,15 @@ public class MangakaProposalController {
   public ResponseEntity<?> download(@PathVariable String fileName) {
     try {
       String safeName = Paths.get(fileName).getFileName().toString();
-      Path uploadDir = Paths.get(System.getProperty("user.home"), "swp391-uploads", "manuscripts");
+      Path uploadDir = manuscriptStorageDirectory();
       Files.createDirectories(uploadDir);
       Path file = uploadDir.resolve(safeName).normalize();
+      if (!Files.exists(file)) {
+        Path legacyFile = legacyManuscriptStorageDirectory().resolve(safeName).normalize();
+        if (Files.exists(legacyFile) && Files.isRegularFile(legacyFile)) {
+          file = legacyFile;
+        }
+      }
       if (!Files.exists(file) && safeName.matches("seed-manuscript-[0-9]+\\.pdf"))
         Files.write(
             file, ("Demo manuscript placeholder for " + safeName).getBytes(StandardCharsets.UTF_8));
@@ -167,6 +177,29 @@ public class MangakaProposalController {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body(Collections.singletonMap("message", "Could not download manuscript file"));
     }
+  }
+
+  private Path manuscriptStorageDirectory() {
+    Path configured = Paths.get(manuscriptStoragePath == null ? "storage-server/manuscripts" : manuscriptStoragePath);
+    if (configured.isAbsolute()) {
+      return configured.normalize();
+    }
+
+    Path workingDirectory = Paths.get("").toAbsolutePath().normalize();
+    Path projectRoot = workingDirectory;
+    if ("backend".equals(workingDirectory.getFileName().toString())
+        && workingDirectory.getParent() != null
+        && "src".equals(workingDirectory.getParent().getFileName().toString())
+        && workingDirectory.getParent().getParent() != null) {
+      projectRoot = workingDirectory.getParent().getParent();
+    }
+    return projectRoot.resolve(configured).normalize();
+  }
+
+  private Path legacyManuscriptStorageDirectory() {
+    return Paths.get(System.getProperty("user.home"), "swp391-uploads", "manuscripts")
+        .toAbsolutePath()
+        .normalize();
   }
 
   private Map<String, Object> buildPreview(MultipartFile file) {

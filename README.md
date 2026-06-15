@@ -86,7 +86,7 @@ SWP391_NEW/
 │   ├── TEAM_TASK_ASSIGNMENT.md
 │   ├── TEST_CASES.md
 │   ├── database/
-│   │   └── schema_postgresql_v2.sql
+│   │   └── <archived/optional database notes>
 │   └── requirements/
 │       └── MVP_SCOPE_AND_BUSINESS_RULES.md
 └── src/
@@ -355,7 +355,8 @@ Lưu ý demo:
 - `docs/IMPLEMENTATION_GUIDE.md`
 - `docs/SESSION_HANDOFF.md`
 - `docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md`
-- `docs/database/schema_postgresql_v2.sql`
+- `schema (1).sql` - canonical database schema for the current project
+- `schema (1).sql` - synced copy of the canonical schema
 
 ## 12. Ghi chú cho giáo viên
 

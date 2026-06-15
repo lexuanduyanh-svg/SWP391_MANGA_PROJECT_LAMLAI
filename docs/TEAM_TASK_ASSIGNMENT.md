@@ -151,29 +151,32 @@ feature/backend-review-production-assistant
 
 ```text
 users
-skill_categories
+roles
+permissions
+role_permissions
 skills
-manga_proposals
-manuscript_files
-editor_reviews
+user_skills
+assistant_profiles
+series
 board_votes
 chapters
 pages
-regions
-production_tasks
-assistant_submissions
-audit_logs
+tasks
+submissions
+annotations
+reader_metrics
 ```
 
 ### File so huu chinh
 
 ```text
-docs/database/schema_postgresql_v2.sql
+schema (1).sql
+schema (1).sql
 src/backend/src/main/resources/application.properties
 src/backend/src/main/resources/application-local.properties
 src/backend/src/main/resources/application-demo.properties
-src/backend/src/main/java/com/mangaworkflow/api/persistence/entity/
-src/backend/src/main/java/com/mangaworkflow/api/persistence/repository/
+src/backend/src/main/java/com/mangaworkflow/persistence/entity/
+src/backend/src/main/java/com/mangaworkflow/persistence/repository/
 ```
 
 ### Deliverable check

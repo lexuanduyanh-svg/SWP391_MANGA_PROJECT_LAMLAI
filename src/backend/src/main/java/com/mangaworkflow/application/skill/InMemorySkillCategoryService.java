@@ -3,8 +3,9 @@ package com.mangaworkflow.application.skill;
 import com.mangaworkflow.domain.skill.SkillCategoryCreateRequest;
 import com.mangaworkflow.domain.skill.SkillCategoryDto;
 import com.mangaworkflow.domain.skill.SkillCategoryUpdateRequest;
-import com.mangaworkflow.persistence.entity.SkillCategoryEntity;
-import com.mangaworkflow.persistence.repository.SkillCategoryRepository;
+import com.mangaworkflow.persistence.entity.SkillEntity;
+import com.mangaworkflow.persistence.repository.SkillRepository;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class InMemorySkillCategoryService {
-  private final SkillCategoryRepository repository;
+  private final SkillRepository skillRepository;
   private final Map<String, SkillRecord> records = new LinkedHashMap<String, SkillRecord>();
   private final AtomicLong sequence = new AtomicLong(1000);
 
@@ -27,8 +28,8 @@ public class InMemorySkillCategoryService {
   }
 
   @Autowired
-  public InMemorySkillCategoryService(@Nullable SkillCategoryRepository repository) {
-    this.repository = repository;
+  public InMemorySkillCategoryService(@Nullable SkillRepository skillRepository) {
+    this.skillRepository = skillRepository;
     seed("1", "Inking", "Line art and clean inking");
     seed("2", "Coloring", "Apply color palettes and shading");
     seed("3", "Background Art", "Create environments and scenery");
@@ -39,31 +40,33 @@ public class InMemorySkillCategoryService {
   }
 
   public synchronized List<SkillCategoryDto> listSkills() {
-    return repository != null ? loadFromDb() : loadFromMemory();
+    return useSchemaDb() ? loadFromDb() : loadFromMemory();
   }
 
   public synchronized SkillCategoryDto create(SkillCategoryCreateRequest request) {
-    return repository != null ? createDb(request) : createMemory(request);
+    return useSchemaDb() ? createDb(request) : createMemory(request);
   }
 
   public synchronized SkillCategoryDto update(String id, SkillCategoryUpdateRequest request) {
-    return repository != null ? updateDb(id, request) : updateMemory(id, request);
+    return useSchemaDb() ? updateDb(id, request) : updateMemory(id, request);
   }
 
   public synchronized SkillCategoryDto setActive(String id, boolean active) {
-    return repository != null ? setActiveDb(id, active) : setActiveMemory(id, active);
+    return useSchemaDb() ? setActiveDb(id, active) : setActiveMemory(id, active);
   }
 
   public synchronized void delete(String id) {
-    if (repository != null) {
-      SkillCategoryEntity e =
-          repository
-              .findById(Long.valueOf(id))
-              .orElseThrow(() -> new IllegalArgumentException("Skill category not found"));
-      repository.delete(e);
+    if (useSchemaDb()) {
+      skillRepository.deleteById(Long.valueOf(id));
       return;
     }
-    if (records.remove(id) == null) throw new IllegalArgumentException("Skill category not found");
+    if (records.remove(id) == null) {
+      throw new IllegalArgumentException("Skill category not found");
+    }
+  }
+
+  private boolean useSchemaDb() {
+    return skillRepository != null;
   }
 
   private void seed(String id, String name, String description) {
@@ -71,34 +74,37 @@ public class InMemorySkillCategoryService {
   }
 
   private void seedDbIfEmpty() {
-    if (repository == null || repository.count() > 0) return;
-    saveSeed(1L, "Inking", "Line art and clean inking");
-    saveSeed(2L, "Coloring", "Apply color palettes and shading");
-    saveSeed(3L, "Background Art", "Create environments and scenery");
-    saveSeed(4L, "Lettering", "Dialog, sound effects, and typography");
-    saveSeed(5L, "Shading", "Depth, shadows, and tone work");
-    saveSeed(6L, "Effects", "Motion lines, impacts, and visual emphasis");
+    if (!useSchemaDb() || skillRepository.count() > 0) {
+      return;
+    }
+    saveSeed("Inking");
+    saveSeed("Coloring");
+    saveSeed("Background Art");
+    saveSeed("Lettering");
+    saveSeed("Shading");
+    saveSeed("Effects");
   }
 
-  private void saveSeed(Long id, String name, String description) {
-    if (repository.findById(id).isPresent()) return;
-    SkillCategoryEntity e = new SkillCategoryEntity();
-    e.setId(id);
-    e.setName(name);
-    e.setDescription(description);
-    e.setActive(true);
-    repository.save(e);
+  private void saveSeed(String name) {
+    SkillEntity e = new SkillEntity();
+    e.setSkillName(name);
+    e.setCreatedAt(LocalDateTime.now());
+    skillRepository.save(e);
   }
 
   private List<SkillCategoryDto> loadFromMemory() {
     List<SkillCategoryDto> result = new ArrayList<SkillCategoryDto>();
-    for (SkillRecord record : records.values()) result.add(record.toDto());
+    for (SkillRecord record : records.values()) {
+      result.add(record.toDto());
+    }
     return Collections.unmodifiableList(result);
   }
 
   private List<SkillCategoryDto> loadFromDb() {
     List<SkillCategoryDto> out = new ArrayList<SkillCategoryDto>();
-    for (SkillCategoryEntity e : repository.findAll()) out.add(toDto(e));
+    for (SkillEntity e : skillRepository.findAll()) {
+      out.add(new SkillCategoryDto(String.valueOf(e.getId()), e.getSkillName(), null, true));
+    }
     return Collections.unmodifiableList(out);
   }
 
@@ -107,22 +113,21 @@ public class InMemorySkillCategoryService {
     String normalizedName = normalize(request.getName());
     ensureUnique(normalizedName, null);
     String id = String.valueOf(sequence.incrementAndGet());
-    SkillRecord record =
-        new SkillRecord(id, request.getName().trim(), trimToNull(request.getDescription()), true);
+    SkillRecord record = new SkillRecord(id, request.getName().trim(), trimToNull(request.getDescription()), true);
     records.put(id, record);
     return record.toDto();
   }
 
   private SkillCategoryDto createDb(SkillCategoryCreateRequest request) {
     validateName(request == null ? null : request.getName());
-    String normalizedName = normalize(request.getName());
-    if (repository.findByNameIgnoreCase(normalizedName).isPresent())
+    if (skillRepository.findBySkillNameIgnoreCase(request.getName().trim()).isPresent()) {
       throw new IllegalArgumentException("Skill category already exists");
-    SkillCategoryEntity e = new SkillCategoryEntity();
-    e.setName(request.getName().trim());
-    e.setDescription(trimToNull(request.getDescription()));
-    e.setActive(true);
-    return toDto(repository.save(e));
+    }
+    SkillEntity e = new SkillEntity();
+    e.setSkillName(request.getName().trim());
+    e.setCreatedAt(LocalDateTime.now());
+    SkillEntity saved = skillRepository.save(e);
+    return new SkillCategoryDto(String.valueOf(saved.getId()), saved.getSkillName(), null, true);
   }
 
   private SkillCategoryDto updateMemory(String id, SkillCategoryUpdateRequest request) {
@@ -137,16 +142,14 @@ public class InMemorySkillCategoryService {
 
   private SkillCategoryDto updateDb(String id, SkillCategoryUpdateRequest request) {
     validateName(request == null ? null : request.getName());
-    SkillCategoryEntity e =
-        repository
-            .findById(Long.valueOf(id))
-            .orElseThrow(() -> new IllegalArgumentException("Skill category not found"));
-    String normalizedName = normalize(request.getName());
-    if (repository.existsByNameIgnoreCaseAndIdNot(normalizedName, e.getId()))
+    Long skillId = Long.valueOf(id);
+    SkillEntity e = skillRepository.findById(skillId).orElseThrow(() -> new IllegalArgumentException("Skill category not found"));
+    if (skillRepository.existsBySkillNameIgnoreCaseAndIdNot(request.getName().trim(), skillId)) {
       throw new IllegalArgumentException("Skill category already exists");
-    e.setName(request.getName().trim());
-    e.setDescription(trimToNull(request.getDescription()));
-    return toDto(repository.save(e));
+    }
+    e.setSkillName(request.getName().trim());
+    SkillEntity saved = skillRepository.save(e);
+    return new SkillCategoryDto(String.valueOf(saved.getId()), saved.getSkillName(), null, true);
   }
 
   private SkillCategoryDto setActiveMemory(String id, boolean active) {
@@ -156,30 +159,29 @@ public class InMemorySkillCategoryService {
   }
 
   private SkillCategoryDto setActiveDb(String id, boolean active) {
-    SkillCategoryEntity e =
-        repository
-            .findById(Long.valueOf(id))
-            .orElseThrow(() -> new IllegalArgumentException("Skill category not found"));
-    e.setActive(active);
-    return toDto(repository.save(e));
+    SkillEntity e = skillRepository.findById(Long.valueOf(id)).orElseThrow(() -> new IllegalArgumentException("Skill category not found"));
+    return new SkillCategoryDto(String.valueOf(e.getId()), e.getSkillName(), null, active);
   }
 
   private SkillRecord getRequired(String id) {
     SkillRecord record = records.get(id);
-    if (record == null) throw new IllegalArgumentException("Skill category not found");
+    if (record == null) {
+      throw new IllegalArgumentException("Skill category not found");
+    }
     return record;
   }
 
   private void validateName(String name) {
-    if (name == null || name.trim().isEmpty())
+    if (name == null || name.trim().isEmpty()) {
       throw new IllegalArgumentException("Name is required");
+    }
   }
 
   private void ensureUnique(String normalizedName, String currentId) {
     for (SkillRecord record : records.values()) {
-      if (normalize(record.name).equals(normalizedName)
-          && (currentId == null || !record.id.equals(currentId)))
+      if (normalize(record.name).equals(normalizedName) && (currentId == null || !record.id.equals(currentId))) {
         throw new IllegalArgumentException("Skill category already exists");
+      }
     }
   }
 
@@ -189,11 +191,6 @@ public class InMemorySkillCategoryService {
 
   private String trimToNull(String value) {
     return value == null || value.trim().isEmpty() ? null : value.trim();
-  }
-
-  private SkillCategoryDto toDto(SkillCategoryEntity e) {
-    return new SkillCategoryDto(
-        String.valueOf(e.getId()), e.getName(), e.getDescription(), e.isActive());
   }
 
   private static class SkillRecord {

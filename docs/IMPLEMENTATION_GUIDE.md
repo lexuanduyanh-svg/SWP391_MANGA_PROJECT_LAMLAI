@@ -400,13 +400,14 @@ $env:DB_DDL_AUTO='update'
 Các repository/entity nằm dưới:
 
 ```text
-src/backend/src/main/java/com/mangaworkflow/api/persistence
+src/backend/src/main/java/com/mangaworkflow/persistence
 ```
 
-Database schema nghiệp vụ tham khảo vẫn nằm ở:
+Database schema chuẩn hiện tại:
 
 ```text
-docs/database/schema_postgresql_v2.sql
+schema (1).sql
+schema (1).sql
 ```
 
 ## 6. Phân biệt phần đã làm và phần định hướng
@@ -424,7 +425,7 @@ docs/database/schema_postgresql_v2.sql
 - Skill/category CRUD demo.
 - Mangaka proposal create/update/submit demo with manuscript metadata.
 - Mangaka chapter/page/region/task creation demo after approval.
-- PostgreSQL persistence for account, skill/category, proposal/review, production hierarchy, and assistant task submission metadata.
+- PostgreSQL persistence for users, roles, skills, series/proposal workflow, board votes, chapters, pages, tasks, and submissions.
 - Backend tests.
 - Frontend build.
 
@@ -454,4 +455,4 @@ Các phần chưa làm đã được ghi trong tài liệu MVP để triển kha
 
 Khi trình bày với giáo viên, có thể nói:
 
-> Nhóm em chia project thành backend Spring Boot và frontend React. Phiên bản hiện tại demo được một vòng workflow chính: Mangaka tạo và submit proposal, Tantou Editor review và forward, Editorial Board approve, Mangaka mở production để tạo chapter/page/region/task, Assistant nhận task và submit work. Backend hiện đã kết nối PostgreSQL để lưu dữ liệu chính như account, proposal, review note, production task và assistant submission. Unit test vẫn giữ fallback in-memory để kiểm thử nhanh.
+> Nhóm em chia project thành backend Spring Boot và frontend React. Phiên bản hiện tại demo được một vòng workflow chính: Mangaka tạo và submit proposal, Tantou Editor review và forward, Editorial Board approve, Mangaka mở production để tạo chapter/page/region/task, Assistant nhận task và submit work. Backend hiện đã kết nối PostgreSQL để lưu dữ liệu chính theo schema hiện tại như users, roles, skills, series, board votes, chapters, pages, tasks và submissions. Unit test vẫn giữ fallback in-memory để kiểm thử nhanh.
