@@ -1,4 +1,4 @@
-# Implementation Guide - SWP391 Manga Workflow Project
+﻿# Implementation Guide - SWP391 Manga Workflow Project
 
 Tài liệu này giải thích cách chia code hiện tại để giáo viên hoặc thành viên nhóm đọc project dễ hơn.
 
@@ -31,24 +31,24 @@ Nếu user là Assistant thì mở AssistantDashboard
 Frontend nằm trong:
 
 ```text
-src/frontend
+frontend
 ```
 
 ### 2.1. Entry point
 
 | File | Vai trò |
 |---|---|
-| `src/frontend/src/main.tsx` | Render React app vào HTML |
-| `src/frontend/src/App.tsx` | Component app chính |
-| `src/frontend/src/pages/LoginPage.tsx` | Quyết định hiển thị login hay admin board sau khi đăng nhập |
+| `frontend/src/main.tsx` | Render React app vào HTML |
+| `frontend/src/App.tsx` | Component app chính |
+| `frontend/src/pages/LoginPage.tsx` | Quyết định hiển thị login hay admin board sau khi đăng nhập |
 
 ### 2.2. Login UI
 
 | File | Vai trò |
 |---|---|
-| `src/frontend/src/components/LoginForm.tsx` | Form nhập email/password, remember me, forgot password, trạng thái loading/error |
-| `src/frontend/src/services/authService.ts` | Gọi API đăng nhập, lưu/xóa session trong `localStorage` |
-| `src/frontend/src/types/auth.ts` | Kiểu dữ liệu login request/response/user role |
+| `frontend/src/components/LoginForm.tsx` | Form nhập email/password, remember me, forgot password, trạng thái loading/error |
+| `frontend/src/services/authService.ts` | Gọi API đăng nhập, lưu/xóa session trong `localStorage` |
+| `frontend/src/types/auth.ts` | Kiểu dữ liệu login request/response/user role |
 
 Luồng login chính:
 
@@ -67,11 +67,11 @@ Luồng login chính:
 
 | File | Vai trò |
 |---|---|
-| `src/frontend/src/components/AdminAccountDashboard.tsx` | Màn hình board quản trị, gồm account management và skill/category management |
-| `src/frontend/src/services/adminAccountService.ts` | Gọi API CRUD tài khoản |
-| `src/frontend/src/services/skillService.ts` | Gọi API CRUD skill/category |
-| `src/frontend/src/types/admin.ts` | Kiểu dữ liệu account, status, role, skill/category |
-| `src/frontend/src/styles.css` | Toàn bộ CSS cho login và dashboard |
+| `frontend/src/components/AdminAccountDashboard.tsx` | Màn hình board quản trị, gồm account management và skill/category management |
+| `frontend/src/services/adminAccountService.ts` | Gọi API CRUD tài khoản |
+| `frontend/src/services/skillService.ts` | Gọi API CRUD skill/category |
+| `frontend/src/types/admin.ts` | Kiểu dữ liệu account, status, role, skill/category |
+| `frontend/src/styles.css` | Toàn bộ CSS cho login và dashboard |
 
 Dashboard được chia thành:
 
@@ -84,10 +84,10 @@ Dashboard được chia thành:
 
 | File | Vai trò |
 |---|---|
-| `src/frontend/src/components/MangakaDashboard.tsx` | Mangaka workspace: proposal/manuscript + post-approval chapter/page/region/task production |
-| `src/frontend/src/services/mangakaProposalService.ts` | Gọi API proposal/manuscript của Mangaka |
-| `src/frontend/src/services/mangakaProductionService.ts` | Gọi API chapter/page/region/task sau khi proposal approved/serializing |
-| `src/frontend/src/types/mangaka.ts` | Kiểu dữ liệu proposal/status/request và production DTO |
+| `frontend/src/components/MangakaDashboard.tsx` | Mangaka workspace: proposal/manuscript + post-approval chapter/page/region/task production |
+| `frontend/src/services/mangakaProposalService.ts` | Gọi API proposal/manuscript của Mangaka |
+| `frontend/src/services/mangakaProductionService.ts` | Gọi API chapter/page/region/task sau khi proposal approved/serializing |
+| `frontend/src/types/mangaka.ts` | Kiểu dữ liệu proposal/status/request và production DTO |
 
 Mangaka dashboard được chia thành:
 
@@ -121,10 +121,10 @@ Assign production task to Assistant
 
 | File | Vai trò |
 |---|---|
-| `src/frontend/src/components/TantouEditorDashboard.tsx` | Tantou Editor workspace: review proposal, forward Board, request revision, reject |
-| `src/frontend/src/components/EditorialBoardDashboard.tsx` | Editorial Board workspace: approve/reject proposal đã được Editor forward |
-| `src/frontend/src/services/tantouEditorProposalService.ts` | Gọi API Editor proposal review |
-| `src/frontend/src/services/editorialBoardProposalService.ts` | Gọi API Board proposal decision |
+| `frontend/src/components/TantouEditorDashboard.tsx` | Tantou Editor workspace: review proposal, forward Board, request revision, reject |
+| `frontend/src/components/EditorialBoardDashboard.tsx` | Editorial Board workspace: approve/reject proposal đã được Editor forward |
+| `frontend/src/services/tantouEditorProposalService.ts` | Gọi API Editor proposal review |
+| `frontend/src/services/editorialBoardProposalService.ts` | Gọi API Board proposal decision |
 
 Luồng review demo:
 
@@ -144,9 +144,9 @@ Proposal becomes Approved and production opens for Mangaka
 
 | File | Vai trò |
 |---|---|
-| `src/frontend/src/components/AssistantDashboard.tsx` | Assistant workspace: xem task được giao, start task, submit work |
-| `src/frontend/src/services/assistantTaskService.ts` | Gọi API Assistant task list/start/submit |
-| `src/frontend/src/types/assistant.ts` | Kiểu dữ liệu task và request submit/start |
+| `frontend/src/components/AssistantDashboard.tsx` | Assistant workspace: xem task được giao, start task, submit work |
+| `frontend/src/services/assistantTaskService.ts` | Gọi API Assistant task list/start/submit |
+| `frontend/src/types/assistant.ts` | Kiểu dữ liệu task và request submit/start |
 
 Luồng Assistant demo:
 
@@ -169,7 +169,7 @@ Submit work
 Backend nằm trong:
 
 ```text
-src/backend
+backend
 ```
 
 ### 3.1. Entry point và config
@@ -185,12 +185,12 @@ src/backend
 
 | File | Vai trò |
 |---|---|
-| `controller/AuthController.java` | API `POST /api/auth/login` |
-| `service/AuthService.java` | Interface đăng nhập |
-| `service/InMemoryAuthService.java` | Logic đăng nhập demo |
-| `model/LoginRequest.java` | Request gồm email/password |
-| `model/LoginResponse.java` | Response gồm accessToken, user, dashboardPath |
-| `model/AuthenticatedUser.java` | Thông tin user trả về frontend |
+| `controllers/AuthController.java` | API `POST /api/auth/login` |
+| `services/AuthService.java` | Interface đăng nhập |
+| `services/InMemoryAuthService.java` | Logic đăng nhập demo |
+| `dtos/LoginRequest.java` | Request gồm email/password |
+| `dtos/LoginResponse.java` | Response gồm accessToken, user, dashboardPath |
+| `dtos/AuthenticatedUser.java` | Thông tin user trả về frontend |
 
 Luồng xử lý:
 
@@ -204,13 +204,13 @@ Luồng xử lý:
 
 | File | Vai trò |
 |---|---|
-| `controller/AdminAccountController.java` | API CRUD tài khoản admin |
-| `service/InMemoryAccountService.java` | Xử lý tài khoản; runtime dùng PostgreSQL repository, test dùng in-memory fallback |
-| `model/AccountDto.java` | Dữ liệu account trả về frontend |
-| `model/AccountCreateRequest.java` | Dữ liệu tạo account |
-| `model/AccountUpdateRequest.java` | Dữ liệu cập nhật account |
-| `model/AccountStatus.java` | Trạng thái `Active` / `Inactive` |
-| `model/UserRole.java` | Role cố định của hệ thống |
+| `controllers/AdminAccountController.java` | API CRUD tài khoản admin |
+| `services/InMemoryAccountService.java` | Xử lý tài khoản; runtime dùng PostgreSQL repository, test dùng in-memory fallback |
+| `dtos/AccountDto.java` | Dữ liệu account trả về frontend |
+| `dtos/AccountCreateRequest.java` | Dữ liệu tạo account |
+| `dtos/AccountUpdateRequest.java` | Dữ liệu cập nhật account |
+| `dtos/AccountStatus.java` | Trạng thái `Active` / `Inactive` |
+| `dtos/UserRole.java` | Role cố định của hệ thống |
 
 Endpoint:
 
@@ -236,12 +236,12 @@ Dữ liệu seed ban đầu:
 
 | File | Vai trò |
 |---|---|
-| `controller/AdminSkillController.java` | API CRUD skill/category |
-| `service/InMemorySkillCategoryService.java` | Xử lý skill/category; runtime dùng PostgreSQL repository, test dùng in-memory fallback |
-| `model/SkillCategoryDto.java` | Dữ liệu skill/category trả về frontend |
-| `model/SkillCategoryCreateRequest.java` | Request tạo skill/category |
-| `model/SkillCategoryUpdateRequest.java` | Request cập nhật skill/category |
-| `model/SkillStatusRequest.java` | Request bật/tắt trạng thái active |
+| `controllers/AdminSkillController.java` | API CRUD skill/category |
+| `services/InMemorySkillCategoryService.java` | Xử lý skill/category; runtime dùng PostgreSQL repository, test dùng in-memory fallback |
+| `dtos/SkillCategoryDto.java` | Dữ liệu skill/category trả về frontend |
+| `dtos/SkillCategoryCreateRequest.java` | Request tạo skill/category |
+| `dtos/SkillCategoryUpdateRequest.java` | Request cập nhật skill/category |
+| `dtos/SkillStatusRequest.java` | Request bật/tắt trạng thái active |
 
 Endpoint:
 
@@ -257,16 +257,16 @@ Endpoint:
 
 | File | Vai trò |
 |---|---|
-| `controller/MangakaProposalController.java` | API proposal/manuscript dành cho Mangaka |
-| `controller/MangakaProductionController.java` | API chapter/page/region/task production cho proposal đã Approved/Serializing |
-| `service/InMemoryMangaProposalService.java` | Xử lý proposal/manuscript/review; runtime lưu PostgreSQL, test dùng in-memory fallback |
-| `service/InMemoryMangakaProductionService.java` | Xử lý chapter/page/region/task; runtime lưu PostgreSQL, test dùng in-memory fallback |
-| `model/MangaProposalDto.java` | Dữ liệu proposal trả về frontend, gồm manuscript metadata |
-| `model/MangaProposalCreateRequest.java` | Request tạo draft proposal |
-| `model/MangaProposalUpdateRequest.java` | Request cập nhật proposal/resubmit manuscript metadata |
-| `model/MangaProposalSubmitRequest.java` | Request submit proposal |
-| `model/MangaProposalStatus.java` | Trạng thái `Draft`, `SubmittedToEditor`, `NeedsRevision`, `Approved`, `Serializing`, `Rejected` |
-| `model/MangakaChapterDto.java` / `MangakaPageDto.java` / `MangakaPageRegionDto.java` / `MangakaProductionTaskDto.java` | DTO production nested data |
+| `controllers/MangakaProposalController.java` | API proposal/manuscript dành cho Mangaka |
+| `controllers/MangakaProductionController.java` | API chapter/page/region/task production cho proposal đã Approved/Serializing |
+| `services/InMemoryMangaProposalService.java` | Xử lý proposal/manuscript/review; runtime lưu PostgreSQL, test dùng in-memory fallback |
+| `services/InMemoryMangakaProductionService.java` | Xử lý chapter/page/region/task; runtime lưu PostgreSQL, test dùng in-memory fallback |
+| `dtos/MangaProposalDto.java` | Dữ liệu proposal trả về frontend, gồm manuscript metadata |
+| `dtos/MangaProposalCreateRequest.java` | Request tạo draft proposal |
+| `dtos/MangaProposalUpdateRequest.java` | Request cập nhật proposal/resubmit manuscript metadata |
+| `dtos/MangaProposalSubmitRequest.java` | Request submit proposal |
+| `dtos/MangaProposalStatus.java` | Trạng thái `Draft`, `SubmittedToEditor`, `NeedsRevision`, `Approved`, `Serializing`, `Rejected` |
+| `dtos/MangakaChapterDto.java` / `MangakaPageDto.java` / `MangakaPageRegionDto.java` / `MangakaProductionTaskDto.java` | DTO production nested data |
 
 Endpoint:
 
@@ -295,11 +295,11 @@ Business rule demo:
 
 | File | Vai trò |
 |---|---|
-| `controller/TantouEditorProposalController.java` | API Editor xem/forward/request revision/reject proposal |
-| `controller/EditorialBoardProposalController.java` | API Board xem/approve/reject proposal |
-| `model/EditorProposalReviewRequest.java` | Request Editor gồm email và note |
-| `model/BoardProposalDecisionRequest.java` | Request Board gồm email và note |
-| `service/InMemoryMangaProposalService.java` | Lưu trạng thái review và metadata Editor/Board |
+| `controllers/TantouEditorProposalController.java` | API Editor xem/forward/request revision/reject proposal |
+| `controllers/EditorialBoardProposalController.java` | API Board xem/approve/reject proposal |
+| `dtos/EditorProposalReviewRequest.java` | Request Editor gồm email và note |
+| `dtos/BoardProposalDecisionRequest.java` | Request Board gồm email và note |
+| `services/InMemoryMangaProposalService.java` | Lưu trạng thái review và metadata Editor/Board |
 
 Endpoint Editor:
 
@@ -330,11 +330,11 @@ Business rule demo:
 
 | File | Vai trò |
 |---|---|
-| `controller/AssistantTaskController.java` | API Assistant xem/start/submit task production |
-| `service/InMemoryMangakaProductionService.java` | Lưu task production và xử lý transition Assistant |
-| `model/AssistantTaskDto.java` | DTO task kèm proposal/chapter/page/region context và submission metadata |
-| `model/AssistantTaskActionRequest.java` | Request start task gồm `assistantEmail` |
-| `model/AssistantTaskSubmitRequest.java` | Request submit task gồm `assistantEmail`, `submittedFileName`, `submissionNote` |
+| `controllers/AssistantTaskController.java` | API Assistant xem/start/submit task production |
+| `services/InMemoryMangakaProductionService.java` | Lưu task production và xử lý transition Assistant |
+| `dtos/AssistantTaskDto.java` | DTO task kèm proposal/chapter/page/region context và submission metadata |
+| `dtos/AssistantTaskActionRequest.java` | Request start task gồm `assistantEmail` |
+| `dtos/AssistantTaskSubmitRequest.java` | Request submit task gồm `assistantEmail`, `submittedFileName`, `submissionNote` |
 
 Endpoint:
 
@@ -357,7 +357,7 @@ Business rule demo:
 Test nằm trong:
 
 ```text
-src/backend/src/test/java/com/mangaworkflow/api
+backend/src/test/java/com/mangastudio/workflow
 ```
 
 | Test file | Kiểm tra |
@@ -377,7 +377,7 @@ src/backend/src/test/java/com/mangaworkflow/api
 Chạy test:
 
 ```bash
-cd src/backend
+cd backend
 mvnw.cmd test
 ```
 
@@ -388,7 +388,7 @@ Backend hiện hỗ trợ 2 chế độ:
 1. **Runtime Spring Boot**: service được Spring inject repository và lưu dữ liệu vào PostgreSQL.
 2. **Unit/controller test**: service no-arg constructor vẫn chạy in-memory để test nhanh, không cần database.
 
-Cấu hình PostgreSQL nằm trong `src/backend/src/main/resources/application.properties` và đọc qua biến môi trường:
+Cấu hình PostgreSQL nằm trong `backend/src/main/resources/application.properties` và đọc qua biến môi trường:
 
 ```powershell
 $env:DB_URL='jdbc:postgresql://localhost:5432/manga_workflow'
@@ -400,7 +400,8 @@ $env:DB_DDL_AUTO='update'
 Các repository/entity nằm dưới:
 
 ```text
-src/backend/src/main/java/com/mangaworkflow/persistence
+backend/src/main/java/com/mangastudio/workflow/entities
+backend/src/main/java/com/mangastudio/workflow/repositories
 ```
 
 Database schema chuẩn hiện tại:

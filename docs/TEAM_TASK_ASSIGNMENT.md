@@ -1,4 +1,4 @@
-# Team Task Assignment - SWP391 Manga Project Lam Lai
+﻿# Team Task Assignment - SWP391 Manga Project Lam Lai
 
 > Muc tieu: chia viec cho nhom 5 nguoi de moi nguoi hoc/code mot phan ro rang, van merge duoc ve mot project chung.
 
@@ -172,11 +172,11 @@ reader_metrics
 ```text
 schema (1).sql
 schema (1).sql
-src/backend/src/main/resources/application.properties
-src/backend/src/main/resources/application-local.properties
-src/backend/src/main/resources/application-demo.properties
-src/backend/src/main/java/com/mangaworkflow/persistence/entity/
-src/backend/src/main/java/com/mangaworkflow/persistence/repository/
+backend/src/main/resources/application.properties
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-demo.properties
+backend/src/main/java/com/mangastudio/workflow/entities/
+backend/src/main/java/com/mangastudio/workflow/repositories/
 ```
 
 ### Deliverable check
@@ -212,14 +212,14 @@ feature/database-persistence
 ### Folder muc tieu
 
 ```text
-src/frontend/src/features/auth/
-src/frontend/src/features/admin/
-src/frontend/src/features/proposal-authoring/
-src/frontend/src/features/editor-review/
-src/frontend/src/features/board-review/
-src/frontend/src/features/production/
-src/frontend/src/features/assistant-tasks/
-src/frontend/src/shared/
+frontend/src/features/auth/
+frontend/src/features/admin/
+frontend/src/features/proposal-authoring/
+frontend/src/features/editor-review/
+frontend/src/features/board-review/
+frontend/src/features/production/
+frontend/src/features/assistant-tasks/
+frontend/src/shared/
 ```
 
 ### Deliverable check

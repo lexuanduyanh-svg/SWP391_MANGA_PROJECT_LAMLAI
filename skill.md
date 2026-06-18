@@ -1,4 +1,4 @@
-# skill.md — SWP391_NEW Efficient Development Guide
+﻿# skill.md — SWP391_NEW Efficient Development Guide
 
 **Mục tiêu:** Hướng dẫn agent làm việc hiệu quả cho project mới **Manga Creation Workflow and Publishing Management System**, bám đúng kiến trúc mục tiêu trong `form.txt`, đúng database mục tiêu trong `database.txt`, ít tốn context/token, và luôn verify trước khi báo done.
 
@@ -32,7 +32,7 @@ Trước khi sửa code hoặc tài liệu, đọc theo thứ tự:
 2. `rule.md`
 3. `form.txt` nếu task liên quan architecture/layout
 4. `database.txt` nếu task liên quan schema/entity/API data model
-5. File feature liên quan trong `src/backend` hoặc `src/frontend`
+5. File feature liên quan trong `backend` hoặc `frontend`
 6. Docs liên quan trong `docs/`
 
 Không đọc toàn bộ repo nếu task chỉ cần 1–3 file.
@@ -127,7 +127,7 @@ Không tự ý đổi tên thành nhãn cũ nếu không có lý do rõ ràng.
 
 | Task | Nên đọc |
 |---|---|
-| Login/auth | auth controller/service/model + frontend login form/service |
+| Login/auth | backend controllers/services/dtos + frontend login form/service |
 | User/role management | user/role-related backend + admin UI |
 | Proposal workflow | series/manuscript/submission data + editor/mangaka screens |
 | Board voting | vote flow backend + board UI |
@@ -142,7 +142,7 @@ Không tự ý đổi tên thành nhãn cũ nếu không có lý do rõ ràng.
 
 ### Backend
 
-- Tách rõ controller/service/entity/repository.
+- Tách rõ `controllers`, `services`, `entities`, `repositories`, `dtos`.
 - DTO nên chỉ mang dữ liệu cần thiết.
 - Business rules đặt ở application/service layer, không nhét hết vào controller.
 - Validation nên làm sớm ở boundary.

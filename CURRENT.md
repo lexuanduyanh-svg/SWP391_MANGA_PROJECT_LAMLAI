@@ -1,4 +1,4 @@
-# CURRENT - SWP391 Manga Project Lam Lai
+﻿# CURRENT - SWP391 Manga Project Lam Lai
 
 Last updated: 2026-06-14
 
@@ -46,8 +46,8 @@ Use old/current implemented files only as reference to understand the manga work
 Old implementation to treat as reference only:
 
 ```text
-src/backend
-src/frontend
+backend
+frontend
 canonical schema files (`schema (1).sql`, `schema (1).sql`)
 ```
 
@@ -231,7 +231,7 @@ Always do these before major work:
 
 1. Read this `CURRENT.md` first.
 2. Read `form.txt` and `database.txt` if architecture/database decisions are involved.
-3. Treat old `src/backend` and `src/frontend` as business-flow reference unless user asks to modify them directly.
+3. Treat old `backend` and `frontend` as business-flow reference unless user asks to modify them directly.
 4. If API changes, update `docs/API_CONTRACT.md` or a new API doc for the new project.
 5. If DB changes, update database migration/schema docs.
 6. If team scope changes, update `docs/TEAM_TASK_ASSIGNMENT.md`.
@@ -276,41 +276,24 @@ Backend work completed for the user's Member 1-related scope and supporting refa
 - Refactored Java Spring package structure away from actor-owned services into a cleaner layered/domain style:
 
 ```text
-com.mangaworkflow
+com.mangastudio.workflow
 |
-+-- api/          -> controllers grouped by API actor/surface
-|   +-- auth/
-|   +-- admin/
-|   +-- mangaka/
-|   +-- editor/
-|   +-- board/
-|   +-- assistant/
++-- controllers/  -> API controllers grouped in one package
 |
-+-- application/  -> services/use cases grouped by business domain
-|   +-- auth/
-|   +-- account/
-|   +-- skill/
-|   +-- proposal/
-|   +-- production/
++-- services/     -> services/use cases
 |
-+-- domain/       -> DTO/request/response/enums grouped by domain
-|   +-- auth/
-|   +-- account/
-|   +-- skill/
-|   +-- proposal/
-|   +-- production/
-|   +-- task/
++-- dtos/         -> DTO/request/response/enums
 |
-+-- persistence/  -> JPA entities/repositories
++-- entities/     -> JPA entities
++-- repositories/ -> Spring Data repositories
 +-- config/
 ```
 
 Important architecture decision:
 
-- Controllers can stay actor/API-facing under `api`.
-- The package previously named `web` was renamed to `api` because the user found `web` confusing and wanted it closer to `form.txt`.
-- To avoid awkward Java packages like `com.mangaworkflow.api.api`, the root package was changed from `com.mangaworkflow.api` to `com.mangaworkflow`.
-- Business logic should be domain/use-case-facing under `application`.
+- Controllers now live under `controllers`.
+- The root package is `com.mangastudio.workflow` to match the current project layout.
+- Business logic now lives under `services`.
 - Shared proposal workflow logic stays in one proposal service instead of splitting into Mangaka/Editor/Board services.
 - API URLs were intentionally kept unchanged.
 
@@ -339,13 +322,13 @@ No imports/packages remain under old actor-owned controller/service/model packag
 
 Files/directories expected to be changed by this work:
 
-- `src/backend/src/main/java/com/mangaworkflow/api/`
-- `src/backend/src/main/java/com/mangaworkflow/application/`
-- `src/backend/src/main/java/com/mangaworkflow/domain/`
-- `src/backend/src/main/java/com/mangaworkflow/persistence/`
-- `src/backend/src/main/java/com/mangaworkflow/config/`
-- `src/backend/src/test/java/com/mangaworkflow/api/`
-- `src/backend/src/test/java/com/mangaworkflow/application/`
+- `backend/src/main/java/com/mangastudio/workflow/controllers/`
+- `backend/src/main/java/com/mangastudio/workflow/services/`
+- `backend/src/main/java/com/mangastudio/workflow/dtos/`
+- `backend/src/main/java/com/mangastudio/workflow/entities/`
+- `backend/src/main/java/com/mangastudio/workflow/repositories/`
+- `backend/src/main/java/com/mangastudio/workflow/config/`
+- `backend/src/test/java/com/mangastudio/workflow/`
 - removed old backend package paths under root `controller/`, `service/`, `model/`, and actor-owned `auth/`, `admin/`, `mangaka/`, `editor/`, `board/`, `assistant/`
 
 ## 11. How to know the code and business flow are correct
@@ -357,7 +340,7 @@ The project should be verified at two levels:
 Use automated checks to prove the code compiles and expected methods/controllers still behave correctly:
 
 ```text
-cd src/backend
+cd backend
 .\mvnw.cmd -q test
 ```
 
@@ -470,12 +453,12 @@ Latest backend implementation pass aligned the Spring Boot backend with the fina
 Changed backend areas:
 
 ```text
-src/backend/src/main/java/com/mangaworkflow/application/account/InMemoryAccountService.java
-src/backend/src/main/java/com/mangaworkflow/application/skill/InMemorySkillCategoryService.java
-src/backend/src/main/java/com/mangaworkflow/application/proposal/InMemoryMangaProposalService.java
-src/backend/src/main/java/com/mangaworkflow/application/production/InMemoryMangakaProductionService.java
-src/backend/src/main/java/com/mangaworkflow/persistence/entity/*.java
-src/backend/src/main/java/com/mangaworkflow/persistence/repository/*.java
+backend/src/main/java/com/mangastudio/workflow/services/InMemoryAccountService.java
+backend/src/main/java/com/mangastudio/workflow/services/InMemorySkillCategoryService.java
+backend/src/main/java/com/mangastudio/workflow/services/InMemoryMangaProposalService.java
+backend/src/main/java/com/mangastudio/workflow/services/InMemoryMangakaProductionService.java
+backend/src/main/java/com/mangastudio/workflow/entities/*.java
+backend/src/main/java/com/mangastudio/workflow/repositories/*.java
 ```
 
 Implemented schema coverage:
@@ -523,7 +506,7 @@ A task that is already APPROVED cannot be sent back for redo.
 Verification performed:
 
 ```text
-cd src/backend
+cd backend
 .\mvnw.cmd test -q
 ```
 
@@ -574,7 +557,7 @@ Additional backend/scope-safe implementation and verification completed after th
 Verification performed after these changes:
 
 ```text
-cd src/backend
+cd backend
 .\mvnw.cmd test -q
 ```
 
@@ -643,9 +626,9 @@ Database cleanup/alignment completed:
 
 Member 1 backend work started and kept API-compatible:
 
-- Updated `src/backend/src/main/java/com/mangaworkflow/application/account/InMemoryAccountService.java`:
+- Updated `backend/src/main/java/com/mangastudio/workflow/services/InMemoryAccountService.java`:
   - inactive users/accounts no longer authenticate in either memory mode or schema DB mode.
-- Updated `src/backend/src/main/java/com/mangaworkflow/application/proposal/InMemoryMangaProposalService.java`:
+- Updated `backend/src/main/java/com/mangastudio/workflow/services/InMemoryMangaProposalService.java`:
   - Member 1 Mangaka proposal create/list/get/update/submit/delete now use canonical `series` persistence when schema repositories are active.
   - API response shape remains compatible with existing frontend/tests.
   - Controller routes were not changed.
@@ -662,7 +645,7 @@ Files intentionally avoided in this pass:
 Verification performed:
 
 ```text
-cd src/backend
+cd backend
 .\mvnw.cmd test
 ```
 
@@ -697,7 +680,7 @@ Cleanup completed in backend scope:
 Verification after cleanup:
 
 ```text
-cd src/backend
+cd backend
 .\mvnw.cmd test
 ```
 
@@ -711,3 +694,64 @@ BUILD SUCCESS
 Current rule going forward:
 
 - Do not reintroduce deleted legacy tables/entities/repositories unless the database schema itself changes.
+
+## 18. Session update - 2026-06-16 git push completed
+
+The schema/backend cleanup work was committed and pushed to GitHub.
+
+Remote:
+
+```text
+origin https://github.com/lexuanduyanh-svg/SWP391_MANGA_PROJECT_LAMLAI.git
+```
+
+Branch:
+
+```text
+main
+```
+
+Pushed commit:
+
+```text
+bb56bc4 refactor: align backend with canonical schema
+```
+
+Important rebase note:
+
+- Initial push was rejected because remote `main` had newer commits.
+- Local commit was rebased on top of remote `main`.
+- During rebase, remote had already deleted the duplicate schema copy under `manga_database/manga_database/schema.sql`.
+- Conflict was resolved by keeping the remote deletion and updating docs to reference only `schema (1).sql` as the canonical schema file.
+
+Verification before final push:
+
+```text
+cd backend
+.\mvnw.cmd test
+```
+
+Result:
+
+```text
+Tests run: 27, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+Files/folders intentionally left untracked and not pushed:
+
+```text
+ai-subsystem/
+database/
+project_layout (1).txt
+```
+
+Reason:
+
+- They were not part of the schema/backend cleanup commit.
+- Avoid pushing unrelated draft/generated/local files without explicit confirmation.
+
+Current git state after push:
+
+- `main` contains the pushed cleanup commit.
+- Only the untracked files/folders listed above remain local.

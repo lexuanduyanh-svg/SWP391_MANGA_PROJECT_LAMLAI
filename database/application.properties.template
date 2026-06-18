@@ -1,0 +1,8 @@
+# Copy these values into your local environment or backend application.properties.
+# Do not commit real passwords.
+
+DB_URL=jdbc:postgresql://localhost:5432/manga_workflow
+DB_USERNAME=postgres
+DB_PASSWORD=your_password_here
+DB_DDL_AUTO=update
+MANUSCRIPT_STORAGE_DIR=storage-server/manuscripts

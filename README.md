@@ -1,4 +1,4 @@
-# SWP391 Manga Project Lam Lai
+﻿# SWP391 Manga Project Lam Lai
 
 Demo project cho hệ thống **Manga Creation Workflow and Publishing Management System**. Bản này được tạo lại tại `SWP391_NEW` để nhóm 5 người có thể chia module, học code theo phần và merge dễ hơn. Baseline hiện tại vẫn giữ luồng trình diễn end-to-end cho SWP391: đăng nhập theo vai trò cố định, quản trị tài khoản/kỹ năng, Mangaka gửi proposal có manuscript upload, Tantou Editor review, Editorial Board bỏ phiếu 3 thành viên, mở production, giao việc Assistant, Assistant submit work và Mangaka duyệt kết quả.
 
@@ -65,9 +65,9 @@ Luồng khuyến nghị khi demo với giáo viên:
 
 | Phần | Công nghệ | Thư mục |
 |---|---|---|
-| Backend API | Java 8, Spring Boot 2.7.18, Maven Wrapper | `src/backend` |
-| Frontend UI | React, TypeScript, Vite | `src/frontend` |
-| Runtime database | PostgreSQL hoặc local H2 profile | `src/backend/src/main/resources` |
+| Backend API | Java 8, Spring Boot 2.7.18, Maven Wrapper | `backend` |
+| Frontend UI | React, TypeScript, Vite | `frontend` |
+| Runtime database | PostgreSQL hoặc local H2 profile | `backend/src/main/resources` |
 | Tài liệu nghiệp vụ | Markdown + PostgreSQL schema draft | `docs` |
 
 ## 4. Cấu trúc project
@@ -89,27 +89,33 @@ SWP391_NEW/
 │   │   └── <archived/optional database notes>
 │   └── requirements/
 │       └── MVP_SCOPE_AND_BUSINESS_RULES.md
-└── src/
-    ├── backend/
-    │   ├── pom.xml
-    │   ├── mvnw.cmd
-    │   └── src/
-    │       ├── main/java/com/mangaworkflow/api/
-    │       │   ├── config/
-    │       │   ├── controller/
-    │       │   ├── entity/
-    │       │   ├── model/
-    │       │   ├── repository/
-    │       │   └── service/
-    │       └── test/java/com/mangaworkflow/api/
-    └── frontend/
-        ├── package.json
-        └── src/
-            ├── components/
-            ├── pages/
-            ├── services/
-            ├── types/
-            └── styles.css
+├── backend/
+│   ├── pom.xml
+│   ├── mvnw.cmd
+│   └── src/
+│       ├── main/java/com/mangastudio/workflow/
+│       │   ├── config/
+│       │   ├── controllers/
+│       │   ├── dtos/
+│       │   ├── entities/
+│       │   ├── repositories/
+│       │   └── services/
+│       └── test/java/com/mangastudio/workflow/
+├── frontend/
+│   ├── package.json
+│   └── src/
+│       ├── components/
+│       ├── pages/
+│       ├── services/
+│       ├── types/
+│       └── styles.css
+├── database/
+│   ├── application.properties.template
+│   └── schema.sql
+└── ai-subsystem/
+    ├── api_bridge.py
+    ├── models/
+    └── scripts/
 ```
 
 ## 5. Cách chạy project
@@ -119,7 +125,7 @@ SWP391_NEW/
 Cách này dùng profile `local` với H2 file database, không cần cài PostgreSQL:
 
 ```bash
-cd src/backend
+cd backend
 mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
@@ -157,7 +163,7 @@ $env:DB_DDL_AUTO='update'
 Rồi chạy:
 
 ```bash
-cd src/backend
+cd backend
 mvnw.cmd spring-boot:run
 ```
 
@@ -166,7 +172,7 @@ Không commit mật khẩu database vào source code hoặc README.
 ### 5.3. Chạy frontend
 
 ```bash
-cd src/frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -285,34 +291,34 @@ Ghi chú:
 Nên đọc theo thứ tự sau:
 
 1. `docs/IMPLEMENTATION_GUIDE.md` để hiểu luồng xử lý và phân chia module.
-2. `src/backend/src/main/java/com/mangaworkflow/api/controller` để xem API nhận request.
-3. `src/backend/src/main/java/com/mangaworkflow/api/service` để xem logic xử lý workflow.
-4. `src/backend/src/main/java/com/mangaworkflow/api/entity` và `repository` để xem persistence.
-5. `src/backend/src/main/java/com/mangaworkflow/api/model` để xem DTO/request/response.
-6. `src/frontend/src/services` để xem frontend gọi API.
-7. `src/frontend/src/components` và `src/frontend/src/pages` để xem UI.
-8. `src/backend/src/test` để xem test backend.
+2. `backend/src/main/java/com/mangastudio/workflow/controllers` để xem API nhận request.
+3. `backend/src/main/java/com/mangastudio/workflow/services` để xem logic xử lý workflow.
+4. `backend/src/main/java/com/mangastudio/workflow/entities` và `repositories` để xem persistence.
+5. `backend/src/main/java/com/mangastudio/workflow/dtos` để xem DTO/request/response.
+6. `frontend/src/services` để xem frontend gọi API.
+7. `frontend/src/components` và `frontend/src/pages` để xem UI.
+8. `backend/src/test` để xem test backend.
 
 ## 9. Kiểm tra build/test
 
 ### Backend test
 
 ```bash
-cd src/backend
+cd backend
 mvnw.cmd test
 ```
 
 ### Backend package
 
 ```bash
-cd src/backend
+cd backend
 mvnw.cmd package
 ```
 
 ### Frontend build
 
 ```bash
-cd src/frontend
+cd frontend
 npm run build
 ```
 
