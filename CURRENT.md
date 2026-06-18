@@ -1033,3 +1033,68 @@ Rules for that setup:
 - Do not commit API keys or local AI assistant config to the SWP391 repository.
 - Set the core OpenCode default model and all oh-my-opencode-slim agent models to the requested model if the provider/model validates locally.
 - Restart OpenCode after config changes if the running session does not pick them up automatically.
+
+Completion result:
+
+- Project documentation cleanup was committed and pushed first:
+
+```text
+fef6965 docs: align workflow documentation with schema
+```
+
+- Local OpenCode core config was updated at:
+
+```text
+C:\Users\AD\.config\opencode\opencode.jsonc
+```
+
+- Core default model is now:
+
+```text
+codex/gpt5.5-pro
+```
+
+- Local oh-my-opencode-slim config was updated at:
+
+```text
+C:\Users\AD\.config\opencode\oh-my-opencode-slim.json
+```
+
+- Active oh-my-opencode-slim preset is now:
+
+```text
+codex
+```
+
+- The `codex` preset sets these agents to `codex/gpt5.5-pro`:
+
+```text
+orchestrator
+oracle
+librarian
+explorer
+designer
+fixer
+council
+observer
+```
+
+- Config validation performed:
+
+```text
+node -e "JSON.parse(...opencode.jsonc...); JSON.parse(...oh-my-opencode-slim.json...); console.log('json ok')"
+bunx oh-my-opencode-slim@latest doctor
+```
+
+- Validation result:
+
+```text
+json ok
+[user] C:\Users\AD\.config\opencode\oh-my-opencode-slim.json ✓
+[preset] codex ✓
+```
+
+Activation note:
+
+- Restart OpenCode to make sure the new core model and plugin preset are active in new sessions.
+- The local config files contain personal/provider configuration and must stay local-only unless the user explicitly asks to share them.
