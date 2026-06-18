@@ -1,4 +1,4 @@
-# AI Assistant Context
+﻿# AI Assistant Context
 
 > File nay dung de lan sau AI/nhom mo project len biet dang lam o dau, rule nao can theo.
 
@@ -57,14 +57,14 @@ README.md
 Frontend muc tieu:
 
 ```text
-src/frontend/src/features/auth/
-src/frontend/src/features/admin/
-src/frontend/src/features/proposal-authoring/
-src/frontend/src/features/editor-review/
-src/frontend/src/features/board-review/
-src/frontend/src/features/production/
-src/frontend/src/features/assistant-tasks/
-src/frontend/src/shared/
+frontend/src/features/auth/
+frontend/src/features/admin/
+frontend/src/features/proposal-authoring/
+frontend/src/features/editor-review/
+frontend/src/features/board-review/
+frontend/src/features/production/
+frontend/src/features/assistant-tasks/
+frontend/src/shared/
 ```
 
 Backend muc tieu:

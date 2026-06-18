@@ -1,4 +1,4 @@
-# Project Rules - SWP391 Manga Project Lam Lai
+﻿# Project Rules - SWP391 Manga Project Lam Lai
 
 ## 1. Muc tieu rule
 
@@ -79,14 +79,14 @@ logs/
 Backend:
 
 ```bash
-cd src/backend
+cd backend
 mvnw.cmd test
 ```
 
 Frontend:
 
 ```bash
-cd src/frontend
+cd frontend
 npm run build
 ```
 

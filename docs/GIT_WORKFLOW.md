@@ -1,4 +1,4 @@
-# Git Workflow
+﻿# Git Workflow
 
 ## 1. Repository
 
@@ -45,14 +45,14 @@ git push -u origin feature/ten-branch
 Backend neu co sua Java:
 
 ```bash
-cd src/backend
+cd backend
 mvnw.cmd test
 ```
 
 Frontend neu co sua React/CSS/TS:
 
 ```bash
-cd src/frontend
+cd frontend
 npm run build
 ```
 

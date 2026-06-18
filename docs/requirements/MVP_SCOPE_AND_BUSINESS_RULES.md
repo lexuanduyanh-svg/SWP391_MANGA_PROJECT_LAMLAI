@@ -466,7 +466,7 @@ approved_task_earning = task.unit_count * applicable_rate.rate_per_page
 ## 15. Implementation order
 
 1. Align role names in backend/frontend.
-2. Create database using the canonical schema files: `schema (1).sql` and `schema (1).sql`.
+2. Create database using the canonical schema file: `database/schema.sql`.
 3. Implement auth/fixed role access.
 4. Implement proposal workflow.
 5. Implement board voting.

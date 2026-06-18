@@ -407,8 +407,7 @@ backend/src/main/java/com/mangastudio/workflow/repositories
 Database schema chuẩn hiện tại:
 
 ```text
-schema (1).sql
-schema (1).sql
+database/schema.sql
 ```
 
 ## 6. Phân biệt phần đã làm và phần định hướng

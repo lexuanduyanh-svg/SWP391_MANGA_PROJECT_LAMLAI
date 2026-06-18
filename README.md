@@ -1,6 +1,6 @@
 ﻿# SWP391 Manga Project Lam Lai
 
-Demo project cho hệ thống **Manga Creation Workflow and Publishing Management System**. Bản này được tạo lại tại `SWP391_NEW` để nhóm 5 người có thể chia module, học code theo phần và merge dễ hơn. Baseline hiện tại vẫn giữ luồng trình diễn end-to-end cho SWP391: đăng nhập theo vai trò cố định, quản trị tài khoản/kỹ năng, Mangaka gửi proposal có manuscript upload, Tantou Editor review, Editorial Board bỏ phiếu 3 thành viên, mở production, giao việc Assistant, Assistant submit work và Mangaka duyệt kết quả.
+Project cho hệ thống **Manga Creation Workflow and Publishing Management System**. Bản này được tạo lại tại `SWP391_NEW` để nhóm 5 người chia module, học code theo phần và merge dễ hơn. Luồng chính: Mangaka tạo series/proposal và upload manuscript, Tantou Editor review, Editorial Board vote, sau khi approved thì Mangaka quản lý chapter/page/task, Assistant submit work và Mangaka duyệt kết quả.
 
 Repository đang dùng để demo/develop:
 
@@ -8,7 +8,21 @@ Repository đang dùng để demo/develop:
 https://github.com/lexuanduyanh-svg/SWP391_MANGA_PROJECT_LAMLAI
 ```
 
-## 1. Trạng thái hiện tại
+## 1. Source of truth persistence
+
+`database/schema.sql` là canonical source of truth cho persistence: table, DB roles, status enum/value và quan hệ dữ liệu. Tài liệu/API/UI phải map theo schema này.
+
+- DB roles seeded: `Admin`, `Mangaka`, `Assistant`, `Editor`, `Board`.
+- UI/code roles: `Admin`, `Mangaka`, `Assistant`, `TantouEditor`/Tantou Editor -> DB `Editor`, `EditorialBoardMember`/Editorial Board Member -> DB `Board`.
+- Unified proposal/series table: `series` (`series_id`, `mangaka_id`, `tantou_editor_id`, `title`, `synopsis`, `genre`, `status`, `publishing_frequency`, `editor_notes`, timestamps).
+- Series DB statuses: `DRAFT`, `SUBMITTED_TO_EDITOR`, `REVISION_REQUESTED`, `UNDER_BOARD_REVIEW`, `APPROVED`, `REJECTED`.
+- UI/code series wording: Draft, SubmittedToEditor, NeedsRevision, UnderBoardReview, Approved, Rejected.
+- Task DB statuses: `ASSIGNED`, `PENDING_REVIEW`, `APPROVED`, `REVISION_REQUESTED`.
+- UI/code task wording: Pending/Assigned, Submitted/Pending Review, Approved, RedoRequested/Revision Requested.
+- `tasks.region_coordinates` JSONB stores region data; there is no separate regions table in DB.
+- `submissions` store Assistant output assets; `annotations` store editor page markups; `reader_metrics` support ranking/metrics.
+
+## 2. Trạng thái hiện tại
 
 Bản hiện tại đã có thể chạy demo các màn hình chính:
 
@@ -21,7 +35,7 @@ Bản hiện tại đã có thể chạy demo các màn hình chính:
   - Upload manuscript file thật qua backend.
   - `Save & Submit to Tantou` để lưu và gửi proposal trong một bước.
   - Theo dõi trạng thái review bằng modal chi tiết.
-  - Sau khi Board approve, tạo chapter/page/region/task để giao việc sản xuất.
+  - Sau khi Board approve, tạo chapter/page/task region để giao việc sản xuất.
   - Review task Assistant đã submit: approve hoặc request redo.
 - Tantou Editor dashboard:
   - Xem proposal mới nhất trước.
@@ -33,7 +47,7 @@ Bản hiện tại đã có thể chạy demo các màn hình chính:
   - Có 3 tài khoản Board demo.
   - Mỗi Board member được vote một lần: Approve hoặc Reject.
   - Khi đủ 3 phiếu, backend tự quyết định theo đa số.
-  - Approve đa số chuyển proposal sang `Approved`, mở production cho Mangaka.
+  - Approve đa số chuyển series sang `APPROVED` / `Approved`, mở production cho Mangaka.
 - Assistant dashboard:
   - Xem task được giao kèm chapter/page/region context.
   - Start task.
@@ -42,7 +56,7 @@ Bản hiện tại đã có thể chạy demo các màn hình chính:
 - Backend Java Spring Boot, có persistence qua database khi cấu hình profile/database.
 - Frontend React + Vite + TypeScript.
 
-## 2. Demo flow chính để trình bày
+## 3. Demo flow chính để trình bày
 
 Luồng khuyến nghị khi demo với giáo viên:
 
@@ -56,12 +70,14 @@ Luồng khuyến nghị khi demo với giáo viên:
    - `board2@manga.local / Board2@123`
    - `board3@manga.local / Board3@123`
 7. Mỗi Board member vote Approve/Reject. Khi đủ 3 phiếu, hệ thống tự chốt đa số.
-8. Login lại Mangaka, kiểm tra proposal chuyển sang `Approved` nếu đa số approve.
-9. Mangaka vào Production, tạo chapter/page/region/task và assign cho Assistant.
+8. Login lại Mangaka, kiểm tra series/proposal chuyển sang `APPROVED` / `Approved` nếu đa số approve.
+9. Mangaka vào Production, tạo chapter/page/task region và assign cho Assistant.
 10. Login `assistant@manga.local / Assistant@123`, start task và submit file/note.
-11. Login lại Mangaka, mở View Structure/Production để xem submission và approve hoặc request redo.
+11. Login lại Mangaka, mở View Structure/Production để xem submission và approve (`APPROVED`) hoặc request redo (`REVISION_REQUESTED`).
 
-## 3. Công nghệ sử dụng
+Kịch bản chi tiết: xem `docs/DEMO_SCRIPT.md`.
+
+## 4. Công nghệ sử dụng
 
 | Phần | Công nghệ | Thư mục |
 |---|---|---|
@@ -70,7 +86,7 @@ Luồng khuyến nghị khi demo với giáo viên:
 | Runtime database | PostgreSQL hoặc local H2 profile | `backend/src/main/resources` |
 | Tài liệu nghiệp vụ | Markdown + PostgreSQL schema draft | `docs` |
 
-## 4. Cấu trúc project
+## 5. Cấu trúc project
 
 ```text
 SWP391_NEW/
@@ -118,9 +134,9 @@ SWP391_NEW/
     └── scripts/
 ```
 
-## 5. Cách chạy project
+## 6. Cách chạy project
 
-### 5.1. Chạy backend nhanh cho demo local
+### 6.1. Chạy backend nhanh cho local
 
 Cách này dùng profile `local` với H2 file database, không cần cài PostgreSQL:
 
@@ -149,7 +165,7 @@ User: sa
 Password: <empty>
 ```
 
-### 5.2. Chạy backend với PostgreSQL
+### 6.2. Chạy backend với PostgreSQL
 
 Nếu muốn chạy bằng PostgreSQL thật, tạo database `manga_workflow`, sau đó set biến môi trường trước khi start backend:
 
@@ -169,7 +185,7 @@ mvnw.cmd spring-boot:run
 
 Không commit mật khẩu database vào source code hoặc README.
 
-### 5.3. Chạy frontend
+### 6.3. Chạy frontend
 
 ```bash
 cd frontend
@@ -185,7 +201,9 @@ http://localhost:5173
 
 Nếu backend chạy ở URL khác, cấu hình `VITE_API_BASE_URL` cho frontend.
 
-## 6. Tài khoản demo
+## 7. Local seed accounts
+
+Các account này là seed/bootstrap data local aligned to `database/schema.sql`, dùng để test/demo.
 
 | Role | Email | Password | Ghi chú |
 |---|---|---|---|
@@ -197,7 +215,7 @@ Nếu backend chạy ở URL khác, cấu hình `VITE_API_BASE_URL` cho frontend
 | Editorial Board Member 2 | `board2@manga.local` | `Board2@123` | Vote proposal |
 | Editorial Board Member 3 | `board3@manga.local` | `Board3@123` | Vote proposal |
 
-## 7. API chính
+## 8. API chính
 
 ### Auth
 
@@ -247,7 +265,7 @@ File upload hiện lưu ở máy chạy backend:
 
 | Method | Endpoint | Chức năng |
 |---|---|---|
-| GET | `/api/mangaka/proposals/{proposalId}/chapters?authorEmail={email}` | Xem chapter production của proposal đã Approved/Serializing |
+| GET | `/api/mangaka/proposals/{proposalId}/chapters?authorEmail={email}` | Xem chapter production của proposal đã `APPROVED` / Approved |
 | POST | `/api/mangaka/proposals/{proposalId}/chapters?authorEmail={email}` | Tạo chapter |
 | POST | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages?authorEmail={email}` | Thêm page metadata |
 | POST | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions?authorEmail={email}` | Tạo region trên page |
@@ -283,10 +301,10 @@ Ghi chú:
 | Method | Endpoint | Chức năng |
 |---|---|---|
 | GET | `/api/assistant/tasks?assistantEmail={email}` | Assistant xem task được giao kèm chapter/page/region context |
-| PUT | `/api/assistant/tasks/{taskId}/start` | Chuyển task từ `Pending`/`RedoRequested` sang `InProgress` |
-| PUT | `/api/assistant/tasks/{taskId}/submit` | Submit file/note hoàn thành và chuyển task sang `Submitted` |
+| PUT | `/api/assistant/tasks/{taskId}/start` | Assistant nhận/xử lý task đang `ASSIGNED` / Pending hoặc `REVISION_REQUESTED` / RedoRequested |
+| PUT | `/api/assistant/tasks/{taskId}/submit` | Submit file/note và chuyển task sang `PENDING_REVIEW` / Submitted |
 
-## 8. Cách đọc code theo từng phần
+## 9. Cách đọc code theo từng phần
 
 Nên đọc theo thứ tự sau:
 
@@ -299,7 +317,7 @@ Nên đọc theo thứ tự sau:
 7. `frontend/src/components` và `frontend/src/pages` để xem UI.
 8. `backend/src/test` để xem test backend.
 
-## 9. Kiểm tra build/test
+## 10. Kiểm tra build/test
 
 ### Backend test
 
@@ -322,7 +340,7 @@ cd frontend
 npm run build
 ```
 
-## 10. Persistence và dữ liệu demo
+## 11. Persistence và seed/local data
 
 Backend hiện có 2 cách chạy chính:
 
@@ -331,24 +349,24 @@ Backend hiện có 2 cách chạy chính:
 
 Các nhóm dữ liệu chính đã được lưu qua repository/database ở runtime:
 
-- Account/login demo.
+- Account/login seed local.
 - Skill/category và account skill assignment.
 - Mangaka proposal + manuscript metadata.
 - Tantou Editor review metadata.
 - Editorial Board vote/decision metadata.
-- Chapter/page/region/task production workflow.
+- Chapter/page/task region production workflow.
 - Assistant task submission metadata.
 
-Lưu ý demo:
+Lưu ý local/dev:
 
-- Password demo đang lưu dạng plain text để phục vụ bài trình bày, chưa phải production security.
+- Password seed local đang lưu dạng plain text để phục vụ test/demo, chưa phải production security.
 - Chưa có JWT/session backend production đầy đủ.
-- Phân quyền backend hiện dựa trên email/role demo, chưa có token guard production.
+- Phân quyền backend hiện dựa trên email/role local, chưa có token guard production.
 - File upload/download đã có lưu file local, nhưng chưa có storage service/cloud storage.
 - Chưa có annotation trực tiếp trên ảnh/PDF.
 - Chưa có reader poll/ranking UI hoàn chỉnh.
 
-## 11. Tài liệu liên quan
+## 12. Tài liệu liên quan
 
 - `docs/AI_ASSISTANT_CONTEXT.md` - context/rule cho lần làm sau.
 - `docs/TEAM_TASK_ASSIGNMENT.md` - chia nhiệm vụ nhóm 5 người.
@@ -361,10 +379,9 @@ Lưu ý demo:
 - `docs/IMPLEMENTATION_GUIDE.md`
 - `docs/SESSION_HANDOFF.md`
 - `docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md`
-- `schema (1).sql` - canonical database schema for the current project
-- `schema (1).sql` - synced copy of the canonical schema
+- `database/schema.sql` - canonical database schema for the current project
 
-## 12. Ghi chú cho giáo viên
+## 13. Ghi chú cho giáo viên
 
 Project hiện chia rõ thành các lớp:
 

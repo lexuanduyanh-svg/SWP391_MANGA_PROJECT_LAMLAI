@@ -1,4 +1,4 @@
-# Session Handoff - SWP391 Manga Project Lam Lai
+﻿# Session Handoff - SWP391 Manga Project Lam Lai
 
 ## 1. Active project
 
@@ -22,8 +22,8 @@ C:\Users\AD\OneDrive\May tinh\Giao trinh FPT\KY5\SWP391_clone\SWP391_Manga_Proje
 
 The baseline already contains a runnable SWP391 demo:
 
-- Spring Boot backend under `src/backend`.
-- React/Vite frontend under `src/frontend`.
+- Spring Boot backend under `backend`.
+- React/Vite frontend under `frontend`.
 - Login by fixed demo roles.
 - Admin account/skill management.
 - Mangaka proposal create/update/upload/submit/revision.

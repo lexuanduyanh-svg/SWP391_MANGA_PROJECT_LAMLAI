@@ -51,7 +51,7 @@ manga-workflow-system/
 |
 +-- storage-server/                # SECURE LOCAL DIRECTORY (LAN ONLY) [2]
 |   +-- manuscripts/               # Original Mangaka storyboards ("Name")
-|   +-- submissions/               # Completed Assistant regions
+|   +-- submissions/               # APPROVED/approved Assistant task regions
 |   +-- annotations/               # Editor markup layers
 |   +-- references/                # Character sheets and style guides
 |

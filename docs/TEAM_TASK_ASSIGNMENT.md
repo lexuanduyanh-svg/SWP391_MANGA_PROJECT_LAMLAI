@@ -97,13 +97,13 @@ feature/backend-auth-admin-proposal
 ### API so huu
 
 ```text
-GET /api/editor/proposals
-PUT /api/editor/proposals/{id}/request-revision
-PUT /api/editor/proposals/{id}/forward-board
+GET /api/tantou-editor/proposals?editorEmail={email}
+PUT /api/tantou-editor/proposals/{id}/request-revision
+PUT /api/tantou-editor/proposals/{id}/forward-board
 
-GET /api/board/proposals
-PUT /api/board/proposals/{id}/approve
-PUT /api/board/proposals/{id}/reject
+GET /api/editorial-board/proposals?memberEmail={email}
+PUT /api/editorial-board/proposals/{id}/approve
+PUT /api/editorial-board/proposals/{id}/reject
 
 GET /api/mangaka/proposals/{proposalId}/chapters
 POST /api/mangaka/proposals/{proposalId}/chapters
@@ -115,8 +115,8 @@ GET /api/assistant/tasks
 PUT /api/assistant/tasks/{taskId}/start
 PUT /api/assistant/tasks/{taskId}/submit
 
-PUT /api/mangaka/tasks/{taskId}/approve
-PUT /api/mangaka/tasks/{taskId}/redo
+PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/approve?authorEmail={email}
+PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/redo?authorEmail={email}
 ```
 
 ### Deliverable check
@@ -142,7 +142,7 @@ feature/backend-review-production-assistant
 - PostgreSQL schema.
 - Entity JPA.
 - Repository.
-- Seed data demo.
+- Seed/bootstrap data aligned to `database/schema.sql`.
 - Cau hinh H2 local/PostgreSQL.
 - Kiem tra du lieu sau moi flow.
 - Dam bao restart backend khong mat du lieu khi dung DB profile.
@@ -170,8 +170,7 @@ reader_metrics
 ### File so huu chinh
 
 ```text
-schema (1).sql
-schema (1).sql
+database/schema.sql
 backend/src/main/resources/application.properties
 backend/src/main/resources/application-local.properties
 backend/src/main/resources/application-demo.properties

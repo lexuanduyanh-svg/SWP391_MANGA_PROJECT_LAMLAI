@@ -1,4 +1,4 @@
-# Backend Test Guide
+﻿# Backend Test Guide
 
 This project uses two complementary test tools:
 
@@ -16,7 +16,7 @@ npm run test:backend
 Or run directly from backend:
 
 ```powershell
-cd src/backend
+cd backend
 .\mvnw.cmd test
 ```
 
@@ -30,7 +30,7 @@ Tests run: ..., Failures: 0, Errors: 0
 Detailed JUnit/Surefire reports are generated in:
 
 ```text
-src/backend/target/surefire-reports/
+backend/target/surefire-reports/
 ```
 
 ## 2. Run only the full business-flow JUnit test
@@ -67,7 +67,7 @@ Newman tests call the real HTTP API, so the backend must be running first.
 Recommended local profile:
 
 ```powershell
-cd src/backend
+cd backend
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
@@ -128,7 +128,7 @@ You can say:
 If `npm run test:api` shows connection refused, start backend first:
 
 ```powershell
-cd src/backend
+cd backend
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 

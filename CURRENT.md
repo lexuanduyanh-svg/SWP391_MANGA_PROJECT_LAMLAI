@@ -1,6 +1,6 @@
 ﻿# CURRENT - SWP391 Manga Project Lam Lai
 
-Last updated: 2026-06-14
+Last updated: 2026-06-18
 
 ## 1. Active project
 
@@ -755,3 +755,281 @@ Current git state after push:
 
 - `main` contains the pushed cleanup commit.
 - Only the untracked files/folders listed above remain local.
+
+## 19. Session update - 2026-06-18 layout refactor pushed
+
+The project layout refactor was completed, rebased on top of the latest remote `main`, and pushed to GitHub.
+
+Remote:
+
+```text
+origin https://github.com/lexuanduyanh-svg/SWP391_MANGA_PROJECT_LAMLAI.git
+```
+
+Branch:
+
+```text
+main
+```
+
+Pushed commit:
+
+```text
+9e39112 refactor: align project layout
+```
+
+Remote verification:
+
+```text
+origin/main -> 9e39112b438a00c8531994ce57f26fadfb1370c3
+```
+
+Important remote sync note:
+
+- Initial push was rejected because remote `main` had newer commits.
+- Remote had added these commits before the push:
+  - `5b973c8 Delete schema (1).sql`
+  - `c77dc77 Delete VAN_DAP_COMPONENT_API_MAPPING.csv`
+- The local layout commit was rebased on top of `origin/main`.
+- No force push was used.
+
+Layout now pushed:
+
+```text
+backend/
+frontend/
+database/
+ai-subsystem/
+```
+
+Backend package/layout now pushed:
+
+```text
+backend/src/main/java/com/mangastudio/workflow/
+|-- config/
+|-- controllers/
+|-- services/
+|-- repositories/
+|-- entities/
+|-- dtos/
+`-- MangaWorkflowApiApplication.java
+```
+
+Major changes included in the pushed layout commit:
+
+- Moved backend from `src/backend` to `backend`.
+- Moved frontend from `src/frontend` to `frontend`.
+- Moved backend Java package from `com.mangaworkflow` to `com.mangastudio.workflow`.
+- Reorganized backend Java packages from the older `api/application/domain/persistence` style into `controllers/services/dtos/entities/repositories/config`.
+- Added `database/` with schema/template/placeholder folders.
+- Added `ai-subsystem/` with placeholder structure.
+- Updated confirmed documentation/rule files for the new layout:
+  - `README.md`
+  - `CURRENT.md`
+  - `docs/IMPLEMENTATION_GUIDE.md`
+  - `docs/TEAM_TASK_ASSIGNMENT.md`
+  - `rule.md`
+  - `skill.md`
+- Replaced old tracked `project_layout.txt` with `project_layout (1).txt`.
+
+Verification before push:
+
+```text
+cd backend
+.\mvnw.cmd test
+```
+
+Result:
+
+```text
+27 tests, 0 failures, 0 errors, 0 skipped
+BUILD SUCCESS
+```
+
+```text
+cd frontend
+npm run build
+```
+
+Result:
+
+```text
+Vite build succeeded
+```
+
+Files intentionally not pushed in that commit because they were pre-existing or outside the confirmed scope:
+
+```text
+docs/AI_ASSISTANT_CONTEXT.md
+docs/DEMO_SCRIPT.md
+docs/GIT_WORKFLOW.md
+docs/PROJECT_RULES.md
+docs/SESSION_HANDOFF.md
+docs/TESTING_GUIDE.md
+docs/TEST_CASES.md
+package.json
+backend/storage-server/
+```
+
+Current user request after this update:
+
+```text
+Update CURRENT.md first, then install/configure:
+https://github.com/shanraisshan/claude-code-best-practice
+```
+
+Installation caution for the next step:
+
+- This repository currently has no `.claude/`, `CLAUDE.md`, or `.mcp.json` files.
+- Inspect the upstream install/use instructions before copying files.
+- Do not overwrite project-specific rules or current work memory without merging deliberately.
+
+## 20. Session update - 2026-06-18 Claude Code best-practice installed
+
+The upstream Claude Code best-practice repository was installed locally for this project.
+
+Upstream repository:
+
+```text
+https://github.com/shanraisshan/claude-code-best-practice
+```
+
+Installed locally as a git submodule/reference checkout:
+
+```text
+claude-code-best-practice/
+```
+
+Submodule revision at install time:
+
+```text
+994c6612991152d4cc8dcf09d02ade46e4ec6163
+```
+
+Project-local Claude Code files created:
+
+```text
+CLAUDE.md
+.claude/.gitignore
+.claude/settings.json
+.claude/commands/claude-best-practice.md
+.claude/agents/claude-best-practice-researcher.md
+.claude/skills/claude-best-practice/SKILL.md
+```
+
+Installation approach:
+
+- The upstream repository has no package/script installer.
+- The safe install method used here is a project-local reference submodule plus minimal project-specific Claude Code configuration.
+- Upstream `.claude/settings.json` was not copied wholesale because it contains personal spinner/status-line text and hook configuration that is not specific to this SWP391 project.
+- Upstream hooks/sounds were not enabled.
+- Project MCP servers were not auto-enabled.
+
+How to use in Claude Code:
+
+```text
+/claude-best-practice <topic or question>
+```
+
+or ask questions about Claude Code agents, commands, skills, settings, hooks, MCP, memory, or workflows. The local config tells Claude Code to search `claude-code-best-practice/` first.
+
+Verification performed:
+
+```text
+git submodule status
+node -e "JSON.parse(require('fs').readFileSync('.claude/settings.json','utf8')); console.log('settings json ok')"
+```
+
+Result:
+
+```text
+994c6612991152d4cc8dcf09d02ade46e4ec6163 claude-code-best-practice (heads/main)
+settings json ok
+```
+
+Important git note:
+
+- This install is local-only tooling/reference material and is not part of the SWP391 application source.
+- Do not commit or push these local tool/config paths unless the user explicitly asks to share Claude Code tooling config:
+  - `.claude/`
+  - `CLAUDE.md`
+  - `claude-code-best-practice/`
+  - `.gitmodules`
+- These paths were added to local-only `.git/info/exclude`, not project `.gitignore`, so they stay hidden from local `git status` without affecting teammates.
+- Keep the pre-existing unrelated modified files separate from this local tooling install.
+
+User rule added on 2026-06-18:
+
+```text
+Tool installs, AI assistant configs, local helper repos, and other setup files that are not directly part of the project must not be pushed to Git.
+```
+
+## 21. Session update - 2026-06-18 schema-aligned docs cleanup and OpenCode model request
+
+User requested:
+
+```text
+đẩy lên git hub và cập nhật current cho t sau đó cài codex/gpt5.5-pro và set thành default cho tất cả cho t
+```
+
+Project cleanup/documentation work prepared for GitHub push:
+
+- Runtime/generated artifacts were cleaned locally where safe:
+  - `frontend/tsconfig.tsbuildinfo` removed as generated build metadata.
+  - Old runtime upload `.txt` files under `storage-server/manuscripts` removed while keeping `.gitkeep` style placeholders intact where present.
+- Docs were aligned to the current canonical persistence source of truth:
+  - `database/schema.sql` is the canonical schema file.
+  - DB roles are `Admin`, `Mangaka`, `Assistant`, `Editor`, `Board`.
+  - UI/code maps `Editor` to Tantou Editor and `Board` to Editorial Board Member.
+  - Unified proposal/series persistence is `series`.
+  - Proposal/series DB statuses are `DRAFT`, `SUBMITTED_TO_EDITOR`, `REVISION_REQUESTED`, `UNDER_BOARD_REVIEW`, `APPROVED`, `REJECTED`.
+  - Task DB statuses are `ASSIGNED`, `PENDING_REVIEW`, `APPROVED`, `REVISION_REQUESTED`.
+  - `tasks.region_coordinates` JSONB is the persisted region representation; there is no separate DB `regions` table.
+- Stale endpoint/status wording was updated:
+  - Old `/api/editor/*` and `/api/board/*` docs replaced with `/api/tantou-editor/*` and `/api/editorial-board/*`.
+  - Old short Mangaka task endpoints replaced with nested production task approve/redo endpoints.
+  - Old proposal status examples like `PENDING` / `InProduction` are retained only as explicit "do not use" warnings.
+  - Old task status `Completed` is retained only as an explicit "do not use" warning; use DB `APPROVED` / UI `Approved`.
+
+Files included in the project push scope:
+
+```text
+CURRENT.md
+README.md
+docs/AI_ASSISTANT_CONTEXT.md
+docs/API_CONTRACT.md
+docs/DEMO_SCRIPT.md
+docs/GIT_WORKFLOW.md
+docs/IMPLEMENTATION_GUIDE.md
+docs/PROJECT_RULES.md
+docs/SESSION_HANDOFF.md
+docs/TEAM_TASK_ASSIGNMENT.md
+docs/TESTING_GUIDE.md
+docs/TEST_CASES.md
+docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md
+form.txt
+package.json
+```
+
+Files intentionally not included in the project push scope:
+
+```text
+backend/storage-server/
+```
+
+Reason:
+
+- It contains runtime upload files and should not be committed as project source.
+
+Local OpenCode/oh-my-opencode-slim configuration requested after project push:
+
+```text
+codex/gpt5.5-pro
+```
+
+Rules for that setup:
+
+- Configure it in the user's local OpenCode config, not in project Git.
+- Do not commit API keys or local AI assistant config to the SWP391 repository.
+- Set the core OpenCode default model and all oh-my-opencode-slim agent models to the requested model if the provider/model validates locally.
+- Restart OpenCode after config changes if the running session does not pick them up automatically.
