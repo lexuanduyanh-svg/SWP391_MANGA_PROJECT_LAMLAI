@@ -9,34 +9,34 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mangastudio.workflow.controllers.AdminAccountController;
 import com.mangastudio.workflow.dtos.AccountCreateRequest;
 import com.mangastudio.workflow.dtos.AccountStatus;
 import com.mangastudio.workflow.dtos.AccountUpdateRequest;
 import com.mangastudio.workflow.dtos.UserRole;
 import com.mangastudio.workflow.services.InMemoryAccountService;
+import com.mangastudio.workflow.services.InMemorySkillCategoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-public class AdminAccountControllerTest {
+public class AdminControllerTest {
   private final ObjectMapper mapper = new ObjectMapper();
-
   private MockMvc mockMvc;
-  private InMemoryAccountService service;
+  private InMemoryAccountService accountService;
+  private InMemorySkillCategoryService skillService;
 
   @BeforeEach
   public void setup() {
-    service = new InMemoryAccountService();
-    mockMvc = MockMvcBuilders.standaloneSetup(new AdminAccountController(service)).build();
+    accountService = new InMemoryAccountService();
+    skillService = new InMemorySkillCategoryService();
+    mockMvc = MockMvcBuilders.standaloneSetup(new AdminController(accountService, skillService)).build();
   }
 
   @Test
   public void list_returnsSeededAccounts() throws Exception {
-    mockMvc
-        .perform(get("/api/admin/accounts"))
+    mockMvc.perform(get("/admin/accounts"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].email", is("admin@manga.local")));
   }
@@ -49,16 +49,11 @@ public class AdminAccountControllerTest {
     create.setPassword("Temp@123");
     create.setRole(UserRole.Assistant);
 
-    String response =
-        mockMvc
-            .perform(
-                post("/api/admin/accounts")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsString(create)))
-            .andExpect(status().isCreated())
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
+    String response = mockMvc.perform(post("/admin/accounts")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(mapper.writeValueAsString(create)))
+        .andExpect(status().isCreated())
+        .andReturn().getResponse().getContentAsString();
     String id = mapper.readTree(response).get("id").asText();
 
     AccountUpdateRequest update = new AccountUpdateRequest();
@@ -67,22 +62,18 @@ public class AdminAccountControllerTest {
     update.setRole(UserRole.Admin);
     update.setStatus(AccountStatus.Active);
 
-    mockMvc
-        .perform(
-            put("/api/admin/accounts/" + id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(update)))
+    mockMvc.perform(put("/admin/accounts/" + id)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(mapper.writeValueAsString(update)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.fullName", is("Temp User 2")));
 
-    mockMvc
-        .perform(
-            put("/api/admin/accounts/" + id + "/status")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"status\":\"Inactive\"}"))
+    mockMvc.perform(put("/admin/accounts/" + id + "/status")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"status\":\"Inactive\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status", is("Inactive")));
 
-    mockMvc.perform(delete("/api/admin/accounts/" + id)).andExpect(status().isNoContent());
+    mockMvc.perform(delete("/admin/accounts/" + id)).andExpect(status().isNoContent());
   }
 }

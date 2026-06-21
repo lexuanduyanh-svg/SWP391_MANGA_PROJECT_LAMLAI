@@ -1,19 +1,16 @@
 package com.mangastudio.workflow.controllers;
 
 import com.mangastudio.workflow.dtos.BoardProposalDecisionRequest;
-import com.mangastudio.workflow.controllers.TantouEditorProposalController;
 import com.mangastudio.workflow.dtos.EditorProposalReviewRequest;
 import com.mangastudio.workflow.dtos.MangaProposalDto;
 import com.mangastudio.workflow.services.InMemoryMangaProposalService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class EditorialBoardProposalControllerTest {
+public class BoardControllerTest {
   private final InMemoryMangaProposalService service = new InMemoryMangaProposalService();
-  private final TantouEditorProposalController editorController =
-      new TantouEditorProposalController(service);
-  private final EditorialBoardProposalController controller =
-      new EditorialBoardProposalController(service);
+  private final EditorController editorController = new EditorController(service);
+  private final BoardController controller = new BoardController(service);
 
   @Test
   public void approve_happy_path() {

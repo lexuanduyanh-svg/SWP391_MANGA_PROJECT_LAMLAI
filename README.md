@@ -1,6 +1,6 @@
 ﻿# SWP391 Manga Project Lam Lai
 
-Project cho hệ thống **Manga Creation Workflow and Publishing Management System**. Bản này được tạo lại tại `SWP391_NEW` để nhóm 5 người chia module, học code theo phần và merge dễ hơn. Luồng chính: Mangaka tạo series/proposal và upload manuscript, Tantou Editor review, Editorial Board vote, sau khi approved thì Mangaka quản lý chapter/page/task, Assistant submit work và Mangaka duyệt kết quả.
+Project cho hệ thống **Manga Creation Workflow and Publishing Management System**. Bản này được tạo lại tại `SWP391_NEW` để nhóm 5 người chia module, học code theo phần và merge dễ hơn. Luồng chính tách 2 bước: (1) Mangaka tạo series/proposal, upload manuscript, Tantou Editor review, Editorial Board vote; (2) sau khi approved thì Mangaka vào production, tạo chapter/page/task, Assistant submit work và Mangaka duyệt kết quả.
 
 Repository đang dùng để demo/develop:
 
@@ -70,7 +70,7 @@ Luồng khuyến nghị khi demo với giáo viên:
    - `board2@manga.local / Board2@123`
    - `board3@manga.local / Board3@123`
 7. Mỗi Board member vote Approve/Reject. Khi đủ 3 phiếu, hệ thống tự chốt đa số.
-8. Login lại Mangaka, kiểm tra series/proposal chuyển sang `APPROVED` / `Approved` nếu đa số approve.
+8. Login lại Mangaka, kiểm tra proposal chuyển sang `APPROVED` / `Approved`; hệ thống tạo/update `series` từ proposal và dùng title của proposal làm series title.
 9. Mangaka vào Production, tạo chapter/page/task region và assign cho Assistant.
 10. Login `assistant@manga.local / Assistant@123`, start task và submit file/note.
 11. Login lại Mangaka, mở View Structure/Production để xem submission và approve (`APPROVED`) hoặc request redo (`REVISION_REQUESTED`).

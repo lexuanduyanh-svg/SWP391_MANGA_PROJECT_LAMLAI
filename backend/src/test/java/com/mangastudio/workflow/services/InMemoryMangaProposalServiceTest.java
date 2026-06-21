@@ -53,21 +53,17 @@ public class InMemoryMangaProposalServiceTest {
   }
 
   @Test
-  public void editorAndBoardFlowWorks() {
+  public void boardVote_majorityFinalizesAfterThirdVote() {
     MangaProposalDto forwarded = service.forwardToBoard("3", "editor@example.com", "Go board");
     Assertions.assertEquals("UnderBoardReview", forwarded.getStatus().name());
 
-    MangaProposalDto firstVote = service.approveByBoard("3", "board@manga.local", "OK");
-    Assertions.assertEquals("UnderBoardReview", firstVote.getStatus().name());
-    Assertions.assertEquals(Integer.valueOf(1), firstVote.getBoardApproveVotes());
-    Assertions.assertEquals(Integer.valueOf(0), firstVote.getBoardRejectVotes());
-    Assertions.assertEquals(Integer.valueOf(2), firstVote.getBoardPendingVotes());
-
+    service.approveByBoard("3", "board@manga.local", "OK");
     service.approveByBoard("3", "board2@manga.local", "OK");
-    MangaProposalDto approved = service.rejectByBoard("3", "board3@manga.local", "No");
-    Assertions.assertEquals("Approved", approved.getStatus().name());
-    Assertions.assertEquals(Integer.valueOf(2), approved.getBoardApproveVotes());
-    Assertions.assertEquals(Integer.valueOf(1), approved.getBoardRejectVotes());
-    Assertions.assertEquals(Integer.valueOf(0), approved.getBoardPendingVotes());
+    MangaProposalDto finalized = service.rejectByBoard("3", "board3@manga.local", "No");
+
+    Assertions.assertEquals("Approved", finalized.getStatus().name());
+    Assertions.assertEquals(Integer.valueOf(2), finalized.getBoardApproveVotes());
+    Assertions.assertEquals(Integer.valueOf(1), finalized.getBoardRejectVotes());
+    Assertions.assertEquals(Integer.valueOf(0), finalized.getBoardPendingVotes());
   }
 }

@@ -90,7 +90,7 @@ feature/backend-auth-admin-proposal
 - Tantou forward proposal to Board.
 - Editorial Board vote Approve/Reject.
 - Tu dong quyet dinh Approved/Rejected khi du 3 phieu.
-- Mangaka tao chapter/page/region/task.
+- Mangaka tao chapter/page/region/task sau khi proposal da approved.
 - Assistant start/submit task.
 - Mangaka approve/redo task.
 

@@ -4,7 +4,12 @@ import com.mangastudio.workflow.dtos.AccountCreateRequest;
 import com.mangastudio.workflow.dtos.AccountDto;
 import com.mangastudio.workflow.dtos.AccountStatus;
 import com.mangastudio.workflow.dtos.AccountUpdateRequest;
+import com.mangastudio.workflow.dtos.SkillCategoryCreateRequest;
+import com.mangastudio.workflow.dtos.SkillCategoryDto;
+import com.mangastudio.workflow.dtos.SkillCategoryUpdateRequest;
+import com.mangastudio.workflow.dtos.SkillStatusRequest;
 import com.mangastudio.workflow.services.InMemoryAccountService;
+import com.mangastudio.workflow.services.InMemorySkillCategoryService;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
@@ -21,21 +26,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/admin/accounts")
-public class AdminAccountController {
-  private final InMemoryAccountService accountService;
+@RequestMapping("/admin")
+public class AdminController {
 
-  public AdminAccountController(InMemoryAccountService accountService) {
+  private final InMemoryAccountService accountService;
+  private final InMemorySkillCategoryService skillService;
+
+  public AdminController(InMemoryAccountService accountService,
+                         InMemorySkillCategoryService skillService) {
     this.accountService = accountService;
+    this.skillService = skillService;
   }
 
-  @GetMapping
-  public List<AccountDto> list() {
+  // ========== Account endpoints ==========
+
+  @GetMapping("/accounts")
+  public List<AccountDto> listAccounts() {
     return accountService.listAccounts();
   }
 
-  @PostMapping
-  public ResponseEntity<?> create(@Valid @RequestBody AccountCreateRequest request) {
+  @PostMapping("/accounts")
+  public ResponseEntity<?> createAccount(@Valid @RequestBody AccountCreateRequest request) {
     try {
       return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(request));
     } catch (IllegalArgumentException exception) {
@@ -43,8 +54,8 @@ public class AdminAccountController {
     }
   }
 
-  @PutMapping("/{id}")
-  public ResponseEntity<?> update(
+  @PutMapping("/accounts/{id}")
+  public ResponseEntity<?> updateAccount(
       @PathVariable String id, @Valid @RequestBody AccountUpdateRequest request) {
     try {
       return ResponseEntity.ok(accountService.updateAccount(id, request));
@@ -53,8 +64,8 @@ public class AdminAccountController {
     }
   }
 
-  @PutMapping("/{id}/status")
-  public ResponseEntity<?> status(
+  @PutMapping("/accounts/{id}/status")
+  public ResponseEntity<?> setAccountStatus(
       @PathVariable String id, @Valid @RequestBody StatusRequest request) {
     try {
       return ResponseEntity.ok(accountService.setStatus(id, request.getStatus()));
@@ -63,8 +74,8 @@ public class AdminAccountController {
     }
   }
 
-  @PutMapping("/{id}/skills")
-  public ResponseEntity<?> skills(
+  @PutMapping("/accounts/{id}/skills")
+  public ResponseEntity<?> updateAccountSkills(
       @PathVariable String id, @Valid @RequestBody SkillsRequest request) {
     try {
       return ResponseEntity.ok(accountService.updateSkills(id, request.getSkillIds()));
@@ -73,11 +84,59 @@ public class AdminAccountController {
     }
   }
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<?> delete(@PathVariable String id) {
+  @DeleteMapping("/accounts/{id}")
+  public ResponseEntity<?> deleteAccount(@PathVariable String id) {
     accountService.deleteAccount(id);
     return ResponseEntity.noContent().build();
   }
+
+  // ========== Skill endpoints ==========
+
+  @GetMapping("/skills")
+  public List<SkillCategoryDto> listSkills() {
+    return skillService.listSkills();
+  }
+
+  @PostMapping("/skills")
+  public ResponseEntity<?> createSkill(@Valid @RequestBody SkillCategoryCreateRequest request) {
+    try {
+      return ResponseEntity.status(HttpStatus.CREATED).body(skillService.create(request));
+    } catch (IllegalArgumentException exception) {
+      return conflict(exception);
+    }
+  }
+
+  @PutMapping("/skills/{id}")
+  public ResponseEntity<?> updateSkill(
+      @PathVariable String id, @Valid @RequestBody SkillCategoryUpdateRequest request) {
+    try {
+      return ResponseEntity.ok(skillService.update(id, request));
+    } catch (IllegalArgumentException exception) {
+      return notFound(exception);
+    }
+  }
+
+  @PutMapping("/skills/{id}/status")
+  public ResponseEntity<?> setSkillStatus(
+      @PathVariable String id, @Valid @RequestBody SkillStatusRequest request) {
+    try {
+      return ResponseEntity.ok(skillService.setActive(id, Boolean.TRUE.equals(request.getActive())));
+    } catch (IllegalArgumentException exception) {
+      return notFound(exception);
+    }
+  }
+
+  @DeleteMapping("/skills/{id}")
+  public ResponseEntity<?> deleteSkill(@PathVariable String id) {
+    try {
+      skillService.delete(id);
+      return ResponseEntity.noContent().build();
+    } catch (IllegalArgumentException exception) {
+      return notFound(exception);
+    }
+  }
+
+  // ========== Helpers ==========
 
   private ResponseEntity<?> conflict(IllegalArgumentException exception) {
     return ResponseEntity.status(HttpStatus.CONFLICT)

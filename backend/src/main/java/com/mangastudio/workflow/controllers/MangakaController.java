@@ -38,7 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/mangaka/proposals")
-public class MangakaProposalController {
+public class MangakaController {
   private static final long MAX_MANUSCRIPT_BYTES = 25L * 1024L * 1024L;
 
   @Value("${app.storage.manuscripts-dir:storage-server/manuscripts}")
@@ -46,7 +46,7 @@ public class MangakaProposalController {
 
   private final InMemoryMangaProposalService service;
 
-  public MangakaProposalController(InMemoryMangaProposalService service) {
+  public MangakaController(InMemoryMangaProposalService service) {
     this.service = service;
   }
 

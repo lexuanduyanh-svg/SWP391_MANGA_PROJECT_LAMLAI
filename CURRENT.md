@@ -1,6 +1,6 @@
 ﻿# CURRENT - SWP391 Manga Project Lam Lai
 
-Last updated: 2026-06-18
+Last updated: 2026-06-21
 
 ## 1. Active project
 
@@ -70,12 +70,16 @@ Important interpretation:
 Main SWP391 manga workflow:
 
 ```text
-Mangaka creates proposal + uploads manuscript
+Flow 1:
+Mangaka creates proposal/draft + uploads manuscript
 -> Mangaka submits proposal to Tantou Editor
 -> Tantou Editor requests revision or forwards to Editorial Board
 -> 3 Board members vote approve/reject
 -> System auto-decides by majority
--> If approved, Mangaka creates chapter/page/region/task
+-> If approved, system creates/updates series from proposal title
+
+Flow 2:
+Approved series -> Mangaka creates chapter/page/region/task
 -> Assistant starts/submits task
 -> Mangaka approves or requests redo
 ```
@@ -225,7 +229,41 @@ untracked files:
 
 No commit/push was requested or performed.
 
-## 8. Rules for future AI sessions
+## 8. Session update - 2026-06-21
+
+**Completed work**:
+
+- Deleted legacy files:
+  - `JwtUtil.java`
+  - `MangakaProposalController.java`
+  - `AdminAccountController.java`
+  - `AdminSkillController.java`
+  - `TantouEditorProposalController.java`
+  - `EditorialBoardProposalController.java`
+
+- Renamed & refactored controllers:
+  - `AdminController` now contains both account and skill endpoints.
+  - `MangakaController` replaces `MangakaProposalController`.
+  - `EditorController` and `BoardController` replace the old editor/board controllers.
+
+- Updated corresponding tests:
+  - `AdminControllerTest`, `AdminSkillsControllerTest`, `MangakaControllerTest`, `EditorControllerTest`, `BoardControllerTest`.
+  - Adjusted constructors and imports to match new class names and signatures.
+
+- Build & tests:
+  - Ran `mvnw.cmd test`; all tests pass (`exit code 0`).
+
+- No compile errors or stray legacy references remain.
+
+**Next steps**:
+
+- Align remaining services and DTOs to the architecture described in `form.txt`.
+- Update API contracts (`docs/API_CONTRACT.md`) if endpoint signatures changed.
+- Prepare frontend stubs or API specs for upcoming UI work.
+
+**Blockers**: none.
+
+## 9. Rules for future AI sessions
 
 Always do these before major work:
 
@@ -1098,3 +1136,137 @@ Activation note:
 
 - Restart OpenCode to make sure the new core model and plugin preset are active in new sessions.
 - The local config files contain personal/provider configuration and must stay local-only unless the user explicitly asks to share them.
+
+## 22. Session update - 2026-06-21 flow correction + code review
+
+### Flow rules corrected
+
+Luồng nghiệp vụ chính giờ tách rõ 2 flow:
+
+```text
+Flow 1: Mangaka tạo proposal/draft + upload manuscript
+-> Submit cho Tantou Editor
+-> Tantou Editor request revision hoặc forward Board
+-> Board vote approve/reject
+-> System auto-decides by majority
+-> Nếu approved: hệ thống tạo/update series từ proposal, dùng title của proposal làm series title
+
+Flow 2: Chỉ khi approved mới tiếp tục
+-> Mangaka tạo chapter/page/region/task
+-> Assign task cho Assistant
+-> Assistant start/submit task
+-> Mangaka approve hoặc request redo
+```
+
+Quy tắc quan trọng:
+- Flow 2 **chỉ bắt đầu khi Flow 1 approved**.
+- Khi approved, hệ thống tự động **tạo hoặc update series** từ proposal, lấy **title của proposal** làm **series title**.
+- Task đã `APPROVED` **không thể redo**.
+- Revision loop chỉ áp dụng cho **proposal**, không áp dụng cho task (task redo có endpoint riêng).
+- Không dùng proposal status cũ như `PENDING` hoặc `InProduction`.
+
+### Docs đã sửa để khớp flow mới
+
+| File | Thay đổi |
+|------|---------|
+| `rule.md` | Thêm rule tiếng Việt mặc định + flow 1/flow 2 rules |
+| `README.md` | Cập nhật mô tả flow + thêm rule "approved → tạo series từ proposal title" |
+| `docs/DEMO_SCRIPT.md` | Tách flow thành "Flow 1 / Flow 2" rõ ràng + thêm bước "hệ thống tạo/update series từ proposal" |
+| `docs/TEAM_TASK_ASSIGNMENT.md" | Sắp xếp lại các bước theo đúng Flow 1 → Flow 2 |
+| `docs/API_CONTRACT.md` | Tách endpoint Member 2 thành 2 section: Review/Board và Production/Assistant |
+| `docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md` | Viết lại Flow 1 và Flow 2 + thêm rule "approved → tạo series từ proposal title" |
+
+### Code review Member 2
+
+**Repo code member2 gửi** (`Manga-Creation-Workflow-and-Publishing-Management-System-main`): **TRỐNG** — chỉ có 1 file README 1 dòng.
+
+**Mã thực tế** nằm trong dự án chính:
+```
+C:\Users\AD\OneDrive\Máy tính\Giao trình FPT\KY5\SWP391_NEW\backend\
+    src\main\java\com\angastudio\workflow\
+        controllers\
+        services\
+        entities\
+        repositories\
+        dtos\
+```
+
+**Các file thuộc scope Member 2:**
+
+| Feature | File chính |
+|---------|-----------|
+| Tantou Editor (review/revision/forward) | `InMemoryMangaProposalService.java` (chung với Member 1) |
+| Editorial Board (vote) | `InMemoryMangaProposalService.java` (chung với Member 1) |
+| Production (chapter/page/region/task) | `InMemoryMangakaProductionService.java` |
+| Assistant task (start/submit) | `InMemoryMangakaProductionService.java` hoặc controller tương ứng |
+| Entity JPA (series, chapters, pages, tasks, board_votes, submissions, annotations) | `entities/*.java` ✅ đã có |
+| Repository | `repositories/*.java` ✅ đã có |
+
+**Kiểm tra code:**
+- Entity + Repository: ✅ đã có, khớp canonical schema
+- Newman full-flow: ✅ 15 requests, 30 assertions, 0 failures
+- 27 unit tests: ✅ BUILD SUCCESS
+
+**Cần xác nhận trong code:**
+- Logic tự động quyết định sau 3 board votes (auto-approve/auto-reject) — chưa thấy rõ code
+- Logic "approved → tạo/update series từ proposal title" — chưa thấy rõ code
+- Region shim: `{regionId}` chỉ là key trong `tasks.region_coordinates` JSONB, không có bảng regions riêng
+
+**Đề xuất tiếp theo:**
+1. Kiểm tra/Thêm logic "approve → tạo series" trong `InMemoryMangaProposalService`
+2. Kiểm tra/Thêm logic "auto-decision sau 3 votes" trong service liên quan
+3. Thêm unit test cho 2 logic trên
+4. Chạy Newman lại sau khi thay đổi
+
+### Ngôn ngữ làm việc
+
+- Mặc định trả lời **tiếng Việt**.
+- Chỉ dùng tiếng Anh khi user hỏi bằng tiếng Anh hoặc yêu cầu rõ ràng.
+- Code/component/endpoint giữ nguyên tên tiếng Anh.
+
+### Background Job Board
+
+```text
+SENTINEL: background-job-board-v2
+Không poll job đang chạy. Chờ hook tự báo xong.
+Dùng cancel_task chỉ khi cần hủy rõ ràng.
+Tổng hợp (reconcile) job đã kết thúc trước khi trả lời cuối.
+Chỉ tái dùng session đã completed + reconciled; không tái dùng session cancelled/errored.
+```
+
+#### Đang chạy / Chưa tổng hợp
+- none
+
+#### Session có thể tái dùng
+- `exp-1 / ses_115ba937bffeIyqTm80J04hQAf / explorer / completed, reconciled`
+  - Mục tiêu: tìm assignment Member 1
+  - Context đã đọc: `CURRENT.md` (1100 dòng), `TEAM_TASK_ASSIGNMENT.md` (300 dòng), `API_CONTRACT.md` (151 dòng), `DEMO_SCRIPT.md` (80 dòng)
+
+## 11. Session update - 2026-06-21 (runtime DB verify)
+
+Completed this round:
+
+- Verified PostgreSQL service is running.
+- Found psql.exe at C:\Program Files\PostgreSQL\18\bin\psql.exe.
+- Confirmed database manga_workflow exists.
+- Ran database/schema.sql successfully on PostgreSQL.
+- Confirmed seed insert count INSERT 0 5.
+- Verified backend application.properties targets PostgreSQL.
+- Ran backend tests successfully.
+- Stopped the process listening on port 8080.
+- Restarted backend successfully on port 8080.
+- Confirmed startup logs show PostgreSQL connection success:
+  - HikariPool-1 - Start completed
+  - Using dialect: org.hibernate.dialect.PostgreSQLDialect
+  - Tomcat started on port(s): 8080 (http)
+  - Started MangaWorkflowApiApplication
+
+Current status:
+
+- DB real: OK
+- Schema: OK
+- Spring to PostgreSQL connect: OK
+- Backend runtime start: OK
+- Port 8080: active again with app running
+
+No blocker right now.

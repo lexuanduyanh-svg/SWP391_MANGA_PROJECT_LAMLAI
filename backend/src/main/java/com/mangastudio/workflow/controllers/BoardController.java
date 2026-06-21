@@ -1,6 +1,6 @@
 package com.mangastudio.workflow.controllers;
 
-import com.mangastudio.workflow.dtos.EditorProposalReviewRequest;
+import com.mangastudio.workflow.dtos.BoardProposalDecisionRequest;
 import com.mangastudio.workflow.dtos.MangaProposalDto;
 import com.mangastudio.workflow.services.InMemoryMangaProposalService;
 import java.util.Collections;
@@ -17,38 +17,30 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/tantou-editor/proposals")
-public class TantouEditorProposalController {
+@RequestMapping("/api/board/proposals")
+public class BoardController {
   private final InMemoryMangaProposalService service;
 
-  public TantouEditorProposalController(InMemoryMangaProposalService service) {
+  public BoardController(InMemoryMangaProposalService service) {
     this.service = service;
   }
 
   @GetMapping
-  public List<MangaProposalDto> list(@RequestParam("editorEmail") String editorEmail) {
-    return service.listForEditor(editorEmail);
+  public List<MangaProposalDto> list(@RequestParam("memberEmail") String memberEmail) {
+    return service.listForBoard(memberEmail);
   }
 
-  @PutMapping("/{id}/forward-board")
-  public ResponseEntity<?> forward(
-      @PathVariable String id, @Valid @RequestBody EditorProposalReviewRequest request) {
+  @PutMapping("/{id}/approve")
+  public ResponseEntity<?> approve(
+      @PathVariable String id, @Valid @RequestBody BoardProposalDecisionRequest request) {
     return okOrStatus(
-        () -> service.forwardToBoard(id, request.getEditorEmail(), request.getNote()));
-  }
-
-  @PutMapping("/{id}/request-revision")
-  public ResponseEntity<?> revise(
-      @PathVariable String id, @Valid @RequestBody EditorProposalReviewRequest request) {
-    return okOrStatus(
-        () -> service.requestRevisionByEditor(id, request.getEditorEmail(), request.getNote()));
+        () -> service.approveByBoard(id, request.getMemberEmail(), request.getNote()));
   }
 
   @PutMapping("/{id}/reject")
   public ResponseEntity<?> reject(
-      @PathVariable String id, @Valid @RequestBody EditorProposalReviewRequest request) {
-    return okOrStatus(
-        () -> service.rejectByEditor(id, request.getEditorEmail(), request.getNote()));
+      @PathVariable String id, @Valid @RequestBody BoardProposalDecisionRequest request) {
+    return okOrStatus(() -> service.rejectByBoard(id, request.getMemberEmail(), request.getNote()));
   }
 
   private ResponseEntity<?> okOrStatus(Action action) {

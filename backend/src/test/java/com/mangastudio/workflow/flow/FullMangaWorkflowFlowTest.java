@@ -102,4 +102,22 @@ public class FullMangaWorkflowFlowTest {
             draft.getId(), chapter.getId(), page.getId(), region.getId(), task.getId(), "mangaka@manga.local");
     Assertions.assertEquals("Approved", approvedTask.getStatus().name());
   }
+
+  @Test
+  public void productionCreation_rejectsBeforeApprovedProposal() {
+    InMemoryMangaProposalService proposalService = new InMemoryMangaProposalService();
+    InMemoryMangakaProductionService productionService =
+        new InMemoryMangakaProductionService(proposalService);
+
+    MangakaChapterCreateRequest chapterRequest = new MangakaChapterCreateRequest();
+    chapterRequest.setTitle("Chapter 1");
+    chapterRequest.setChapterNumber(1);
+
+    IllegalArgumentException ex =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> productionService.createChapter("3", "mangaka@manga.local", chapterRequest));
+    Assertions.assertTrue(ex.getMessage().contains("Proposal not allowed"));
+  }
 }
+

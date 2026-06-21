@@ -2,7 +2,6 @@ package com.mangastudio.workflow.services;
 
 import com.mangastudio.workflow.dtos.AccountDto;
 import com.mangastudio.workflow.dtos.UserRole;
-import com.mangastudio.workflow.services.InMemoryAccountService;
 import com.mangastudio.workflow.dtos.AuthenticatedUser;
 import com.mangastudio.workflow.dtos.LoginRequest;
 import com.mangastudio.workflow.dtos.LoginResponse;

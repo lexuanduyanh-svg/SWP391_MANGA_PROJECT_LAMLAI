@@ -5,7 +5,8 @@
 Chung minh workflow manga end-to-end theo `database/schema.sql`:
 
 ```text
-Mangaka -> Tantou Editor -> Editorial Board -> Production -> Assistant -> Mangaka review
+Flow 1: Mangaka -> Tantou Editor -> Editorial Board -> Approved/Rejected
+Flow 2: Mangaka -> Production (chapter/page/region/task) -> Assistant -> Mangaka review
 ```
 
 `series` la table unified cho proposal/series; status DB hien thi kem mapping UI/code trong demo.
@@ -61,7 +62,7 @@ DB roles seeded: `Admin`, `Mangaka`, `Assistant`, `Editor`, `Board`. UI gọi `E
    - `Forward to Board`: status sang `UNDER_BOARD_REVIEW` / `UnderBoardReview`.
 8. Login lan luot Board accounts (`/api/editorial-board/...`).
 9. Moi Board member vote `APPROVE` hoặc `REJECT`; DB chỉ cho một vote/member/series.
-10. Sau khi đủ vote, hệ thống quyết định status `APPROVED` / `Approved` hoặc `REJECTED` / `Rejected`.
+10. Sau khi Board approve, hệ thống tạo/update `series` từ proposal, dùng title của proposal làm series title.
 11. Neu approved, login lai Mangaka.
 12. Mangaka quản lý production: tạo `chapters`, `pages`, task region bằng `tasks.region_coordinates` JSONB; DB không có table regions riêng.
 13. Assign task cho Assistant: DB status `ASSIGNED`, UI có thể hiển thị `Pending`/Assigned.

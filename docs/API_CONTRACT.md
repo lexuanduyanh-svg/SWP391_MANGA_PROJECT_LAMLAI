@@ -110,7 +110,7 @@ GET /api/mangaka/proposals/files/{fileName}
 PUT /api/mangaka/proposals/{id}/submit
 ```
 
-## 5. Review/Board/Production/Assistant - Owner: Member 2
+## 5. Review/Board - Owner: Member 2
 
 ```text
 GET /api/tantou-editor/proposals?editorEmail={email}
@@ -120,7 +120,11 @@ PUT /api/tantou-editor/proposals/{id}/forward-board
 GET /api/editorial-board/proposals?memberEmail={email}
 PUT /api/editorial-board/proposals/{id}/approve
 PUT /api/editorial-board/proposals/{id}/reject
+```
 
+## 6. Production/Assistant - Owner: Member 2
+
+```text
 GET /api/mangaka/proposals/{proposalId}/chapters?authorEmail={email}
 POST /api/mangaka/proposals/{proposalId}/chapters?authorEmail={email}
 POST /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages?authorEmail={email}
@@ -135,7 +139,13 @@ PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regi
 PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/redo?authorEmail={email}
 ```
 
-## 6. Rule cap nhat API
+## 7. Backend runtime profiles
+
+- `application.properties`: PostgreSQL config mặc định, lấy từ env `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DDL_AUTO`.
+- `application-local.properties`: H2 local demo, mode PostgreSQL.
+- `application-demo.properties`: tắt datasource/JPA auto-config để chạy demo in-memory service.
+
+## 8. Rule cap nhat API
 
 Khi them/sua API, ghi vao day:
 

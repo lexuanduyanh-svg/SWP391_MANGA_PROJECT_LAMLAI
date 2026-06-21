@@ -72,4 +72,20 @@ public class AssistantTaskControllerTest {
                 .param("authorEmail", "mangaka@manga.local"))
         .andExpect(status().isConflict());
   }
+
+  @Test
+  public void submitBeforeStart_isRejected() throws Exception {
+    AssistantTaskSubmitRequest submit = new AssistantTaskSubmitRequest();
+    submit.setAssistantEmail("assistant@manga.local");
+    submit.setSubmittedFileName("translated-page-1.png");
+    submit.setSubmissionNote("Done");
+
+    mockMvc
+        .perform(
+            put("/api/assistant/tasks/603/submit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(submit)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.message", is("Task cannot be submitted in current status")));
+  }
 }

@@ -38,16 +38,19 @@ public class InMemoryAccountService {
   private final Map<String, String> passwordByEmail = new LinkedHashMap<String, String>();
   private final AtomicLong sequence = new AtomicLong(100);
 
+  private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
   public InMemoryAccountService() {
-    this(null, null, null, null);
+    this(null, null, null, null, null);
   }
 
   @Autowired
-  public InMemoryAccountService(@Nullable UserRepository userRepository, @Nullable RoleRepository roleRepository, @Nullable SkillRepository skillRepository, @Nullable UserSkillRepository userSkillRepository) {
+  public InMemoryAccountService(@Nullable UserRepository userRepository, @Nullable RoleRepository roleRepository, @Nullable SkillRepository skillRepository, @Nullable UserSkillRepository userSkillRepository, @Nullable org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
     this.userRepository = userRepository;
     this.roleRepository = roleRepository;
     this.skillRepository = skillRepository;
     this.userSkillRepository = userSkillRepository;
+    this.passwordEncoder = passwordEncoder != null ? passwordEncoder : new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
     seedMemory("1", "System Admin", "admin@manga.local", "Admin@123", UserRole.Admin);
     seedMemory("2", "Demo Mangaka", "mangaka@manga.local", "Mangaka@123", UserRole.Mangaka);
     seedMemory("3", "Demo Assistant", "assistant@manga.local", "Assistant@123", UserRole.Assistant);
@@ -112,7 +115,7 @@ public class InMemoryAccountService {
   private void seedMemory(String id, String fullName, String email, String password, UserRole role) {
     AccountRecord record = new AccountRecord(id, fullName, normalizeEmail(email), role, AccountStatus.Active);
     accountsById.put(id, record);
-    passwordByEmail.put(record.email, password);
+    passwordByEmail.put(record.email, passwordEncoder.encode(password));
   }
 
   private void seedRolesIfMissing() {
@@ -200,7 +203,7 @@ public class InMemoryAccountService {
       return Optional.empty();
     }
     String stored = passwordByEmail.get(r.email);
-    return stored != null && stored.equals(password) ? Optional.of(r.toDto()) : Optional.empty();
+    return stored != null && passwordEncoder.matches(password, stored) ? Optional.of(r.toDto()) : Optional.empty();
   }
 
   private Optional<AccountDto> authenticateDb(String email, String password) {
@@ -237,7 +240,7 @@ public class InMemoryAccountService {
     UserEntity e = new UserEntity();
     e.setName(request.getFullName().trim());
     e.setEmail(normalizedEmail);
-    e.setPasswordHash(request.getPassword());
+    e.setPasswordHash(passwordEncoder.encode(request.getPassword()));
     e.setRole(resolveRole(request.getRole()));
     e.setStatus("ACTIVE");
     e.setCreatedAt(LocalDateTime.now());

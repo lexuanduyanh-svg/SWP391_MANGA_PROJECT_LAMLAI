@@ -6,10 +6,9 @@ import com.mangastudio.workflow.services.InMemoryMangaProposalService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TantouEditorProposalControllerTest {
+public class EditorControllerTest {
   private final InMemoryMangaProposalService service = new InMemoryMangaProposalService();
-  private final TantouEditorProposalController controller =
-      new TantouEditorProposalController(service);
+  private final EditorController controller = new EditorController(service);
 
   @Test
   public void forward_board_happy_path() {

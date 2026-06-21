@@ -10,8 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mangastudio.workflow.controllers.MangakaProductionController;
-import com.mangastudio.workflow.controllers.MangakaProposalController;
+import com.mangastudio.workflow.controllers.MangakaController;
 import com.mangastudio.workflow.dtos.MangaProposalCreateRequest;
 import com.mangastudio.workflow.dtos.MangaProposalSubmitRequest;
 import com.mangastudio.workflow.services.InMemoryMangaProposalService;
@@ -23,7 +22,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-public class MangakaProposalControllerTest {
+public class MangakaControllerTest {
   private final ObjectMapper mapper = new ObjectMapper();
   private MockMvc mockMvc;
 
@@ -34,7 +33,7 @@ public class MangakaProposalControllerTest {
         new InMemoryMangakaProductionService(proposalService);
     mockMvc =
         MockMvcBuilders.standaloneSetup(
-                new MangakaProposalController(proposalService),
+                new MangakaController(proposalService),
                 new MangakaProductionController(productionService))
             .build();
   }
@@ -74,8 +73,7 @@ public class MangakaProposalControllerTest {
   @Test
   public void production_happyPath_onApprovedSeed() throws Exception {
     mockMvc
-        .perform(
-            get("/api/mangaka/proposals/4/chapters").param("authorEmail", "mangaka@manga.local"))
+        .perform(get("/api/mangaka/proposals/4/chapters").param("authorEmail", "mangaka@manga.local"))
         .andExpect(status().isOk());
   }
 

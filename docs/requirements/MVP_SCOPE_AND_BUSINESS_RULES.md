@@ -107,27 +107,28 @@ For the revised V1, keep the scope smaller and make these additions explicit:
 3. Mangaka submits the proposal to Tantou Editor.
 4. Tantou Editor reviews the manuscript.
 5. Tantou Editor may:
-   - add annotations and request revision; or
-   - mark it ready and escalate to Editorial Board.
-6. Editorial Board members vote: `approve`, `reject`, or `abstain`.
+   - request revision for Mangaka; or
+   - escalate/forward to Editorial Board.
+6. Editorial Board votes: `approve`, `reject`, or `abstain`.
 7. Once voting closes:
-   - approved proposal becomes `approved`, then can enter `serializing`;
+   - approved proposal becomes `approved`, then the system creates/updates the series using the proposal title as the series title, and the series can enter `serializing`;
    - rejected proposal becomes `needs_revision` by default, unless explicitly archived.
 8. Notifications and audit logs are created for major transitions.
 
 ### 5.2 Flow 2 - Chapter Production and Task Delegation
 
-1. Mangaka creates chapters for approved/serializing series.
-2. Mangaka uploads pages for a chapter.
-3. Mangaka creates page regions manually.
-4. Mangaka assigns region-based tasks to assistants.
-5. Assistant views assigned tasks and downloads needed files/references.
-6. Assistant submits work as a versioned task submission.
-7. Mangaka reviews the submission:
+1. Only approved/serializing series continue to production.
+2. Mangaka creates chapters for approved/serializing series.
+3. Mangaka uploads pages for a chapter.
+4. Mangaka creates page regions manually.
+5. Mangaka assigns region-based tasks to assistants.
+6. Assistant views assigned tasks and downloads needed files/references.
+7. Assistant submits work as a versioned task submission.
+8. Mangaka reviews the submission:
    - approve; or
    - request redo/reject with feedback.
-8. Approved tasks contribute to estimated assistant earnings.
-9. Page/chapter status progresses based on task completion.
+9. Approved tasks contribute to estimated assistant earnings.
+10. Page/chapter status progresses based on task completion.
 
 ### 5.3 Flow 3 - Ranking and Serialization Decision
 

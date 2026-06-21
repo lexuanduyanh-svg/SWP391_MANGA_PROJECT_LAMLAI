@@ -9,9 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mangastudio.workflow.controllers.AdminSkillController;
 import com.mangastudio.workflow.dtos.SkillCategoryCreateRequest;
 import com.mangastudio.workflow.dtos.SkillCategoryUpdateRequest;
+import com.mangastudio.workflow.services.InMemoryAccountService;
 import com.mangastudio.workflow.services.InMemorySkillCategoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,22 +19,19 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-public class AdminSkillControllerTest {
+public class AdminSkillsControllerTest {
   private final ObjectMapper mapper = new ObjectMapper();
-
   private MockMvc mockMvc;
-  private InMemorySkillCategoryService service;
 
   @BeforeEach
   public void setup() {
-    service = new InMemorySkillCategoryService();
-    mockMvc = MockMvcBuilders.standaloneSetup(new AdminSkillController(service)).build();
+    mockMvc = MockMvcBuilders.standaloneSetup(
+        new AdminController(new InMemoryAccountService(), new InMemorySkillCategoryService())).build();
   }
 
   @Test
   public void list_returnsSeededSkills() throws Exception {
-    mockMvc
-        .perform(get("/api/admin/skills"))
+    mockMvc.perform(get("/admin/skills"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].name", is("Inking")));
   }
@@ -45,38 +42,29 @@ public class AdminSkillControllerTest {
     create.setName("Tone");
     create.setDescription("Tone sheets");
 
-    String response =
-        mockMvc
-            .perform(
-                post("/api/admin/skills")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(mapper.writeValueAsString(create)))
-            .andExpect(status().isCreated())
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
+    String response = mockMvc.perform(post("/admin/skills")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(mapper.writeValueAsString(create)))
+        .andExpect(status().isCreated())
+        .andReturn().getResponse().getContentAsString();
     String id = mapper.readTree(response).get("id").asText();
 
     SkillCategoryUpdateRequest update = new SkillCategoryUpdateRequest();
     update.setName("Tone Art");
     update.setDescription("Updated");
 
-    mockMvc
-        .perform(
-            put("/api/admin/skills/" + id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(update)))
+    mockMvc.perform(put("/admin/skills/" + id)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(mapper.writeValueAsString(update)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.name", is("Tone Art")));
 
-    mockMvc
-        .perform(
-            put("/api/admin/skills/" + id + "/status")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"active\":false}"))
+    mockMvc.perform(put("/admin/skills/" + id + "/status")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"active\":false}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.active", is(false)));
 
-    mockMvc.perform(delete("/api/admin/skills/" + id)).andExpect(status().isNoContent());
+    mockMvc.perform(delete("/admin/skills/" + id)).andExpect(status().isNoContent());
   }
 }
