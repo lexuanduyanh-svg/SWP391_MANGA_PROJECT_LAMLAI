@@ -1,6 +1,6 @@
 ﻿# CURRENT - SWP391 Manga Project Lam Lai
 
-Last updated: 2026-06-21
+Last updated: 2026-06-23
 
 ## 1. Active project
 
@@ -142,7 +142,7 @@ If implementing with Java Spring Boot, adapt the same layers conceptually:
 ```text
 api            -> controllers
 application    -> services/use cases
- domain         -> entities/dtos/core logic
+domain         -> entities/dtos/core logic
 infrastructure -> repositories/storage/external integrations
 config         -> DB/server/security config
 ```
@@ -216,7 +216,57 @@ Member 5: PM/BA/QA/Docs/Integration/Demo
 
 Keep this split as team context unless the user changes it.
 
-## 7. Existing local git status at creation time
+## 7. Current session status
+
+### Done
+- FE/BE demo has been started multiple times; ports used were:
+  - FE `http://localhost:5173`
+  - BE `http://localhost:8080`
+- Mangaka proposal flow UI was refactored into pages/components.
+- Added `Create Draft` entry from Proposal List into `DraftForm`.
+- Restored a more complete Mangaka dashboard UI in `Build as requested/src/app/pages/mangaka/MangakaDashboard.tsx`.
+- `npm run build` in `Build as requested` passed successfully.
+- `CURRENT.md` was updated to capture current state.
+- Cleanup this session completed:
+  - removed `logs/*.log`
+  - removed `postman/reports/`
+  - removed `manga_database.zip`
+  - removed `project_layout (1).txt`
+  - removed `FLOW_1_MANGAKA_EDITOR_DETAILED.md`
+  - removed generated manuscript files under `backend/storage-server/manuscripts/`
+- `Build as requested/` reviewed and confirmed as current frontend, not legacy demo.
+- `Series 1/` kept as screenshot/reference assets.
+- `backend/storage-server/` kept as runtime storage folder.
+
+### In progress / known issues
+- `DraftForm` submit flow still needs clearer backend error display.
+- File picker / Chrome "not responding" appears to be environment/browser-side, not app logic.
+- Some pages still contain placeholder content and may need end-to-end polish.
+
+### Notes
+- Main frontend being worked on now is `Build as requested/`.
+- Old `frontend/` folder is reference-only unless explicitly needed for migration.
+- `Build as requested/` UI pages are complete for demo; no legacy remnants found.
+- `Series 1/` contains only screenshot references; safe to keep local.
+- `backend/storage-server/` is runtime folder for manuscript uploads; kept but cleaned of generated `.txt` files.
+- Next session should skip re-checking demo remnants as cleanup is complete.
+
+## 12. Background Job Board
+
+```text
+SENTINEL: background-job-board-v2
+Do not poll running jobs. Wait for hook-driven completion, or use cancel_task only for explicit cancellation. Reconcile terminal jobs before final response. Reuse only completed sessions for the same specialist/context; never reuse cancelled or errored sessions.
+```
+
+### Active / Unreconciled
+- none
+
+### Reusable Sessions
+- `exp-1` / `ses_10e1ab955ffeSF5Xs4PFlVpNGk` / explorer / completed, reconciled
+  - Objective: Check GitHub repo current code
+  - Context: `InMemoryMangaProposalService.java`, `InMemoryAccountService.java`, `MangakaController.java`, `InMemorySkillCategoryService.java`, `AdminController.java`, `InMemoryMangakaProductionService.java`, `MangakaProductionController.java`, `FullMangaWorkflowFlowTest.java`
+- `exp-2` / `ses_10e1ab986ffe1dD7pkahwgN4mH` / explorer / completed, reconciled
+  - Objective: Check Member 2 code at Downloads path
 
 At the time this file was created:
 
@@ -560,6 +610,14 @@ Current local status at the time of this note:
 - Backend code changes are present locally.
 - They have not yet been committed/pushed unless the user explicitly asks to do so after this note.
 - `CURRENT.md` was updated after the backend migration pass.
+- Runtime artifacts cleaned this session:
+  - `logs/backend-postgres.out.log`
+  - `logs/backend-postgres.err.log`
+  - `logs/backend-local.out.log`
+  - `logs/backend-local.err.log`
+  - `postman/reports/`
+  - `project_layout (1).txt`
+- `manga_database.zip` still exists locally and has not been removed.
 
 ## 14. Session update - 2026-06-14 follow-up
 
@@ -1270,3 +1328,39 @@ Current status:
 - Port 8080: active again with app running
 
 No blocker right now.
+
+## 12. Session update - 2026-06-21 (git push)
+
+## 13. Session update - 2026-06-22 (frontend split)
+
+Completed frontend refactor for **Build as requested**:
+- Created layout components `Sidebar.tsx` & `TopNav.tsx`.
+- Implemented thin router in `App.tsx`.
+- Extracted shared types, constants, data, `Badge` & `StatCard` to `shared.tsx`.
+- Added page shells: `LoginPage`, `Notifications`, `Profile`.
+- Added role page routers and minimal UI for Mangaka, Assistant, Editor, Board.
+- Updated imports to use shared helpers.
+- Build succeeded (`npm run build`).
+
+**Blocker**: UI pages are placeholders; full UI still to be populated from original monolith if needed.
+
+**Next steps**:
+- Populate detailed UI for each role page from original `App.tsx`.
+- Align frontend routes with API contracts if changes.
+- Optionally add tests for UI components.
+
+
+Completed this round:
+
+- Verified working tree state and reviewed diff before push.
+- Staged code/docs changes but kept local reference/content folders out of the push.
+- Committed changes on main with commit:
+  - e3dc836 refactor: cleanup legacy controllers, rename/simplify Member 1+2 endpoints, update docs and tests, verify PostgreSQL DB connection
+- Pushed commit to remote:
+  - origin/main
+
+Important note:
+
+- Series 1/ is still kept local as UI reference and was not pushed.
+- ackend/storage-server/ contains local/generated runtime files and was not pushed.
+- No blocker right now.

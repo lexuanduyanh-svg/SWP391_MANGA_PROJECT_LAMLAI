@@ -55,12 +55,12 @@ DB roles seeded: `Admin`, `Mangaka`, `Assistant`, `Editor`, `Board`. UI gọi `E
 2. Tao series/proposal moi ở trạng thái `DRAFT` / `Draft` với title, genre, synopsis.
 3. Chon manuscript file, preview validate/summary, confirm rồi upload.
 4. Bấm `Save & Submit to Tantou`: status sang `SUBMITTED_TO_EDITOR` / `SubmittedToEditor`.
-5. Login Tantou Editor (`/api/tantou-editor/...`).
+5. Login Tantou Editor (`/api/editor/...`).
 6. Mo proposal vua submit, download manuscript neu can.
 7. Chon mot trong hai nhanh:
    - `Request Revision`: status sang `REVISION_REQUESTED` / `NeedsRevision`; Mangaka update và submit lại.
    - `Forward to Board`: status sang `UNDER_BOARD_REVIEW` / `UnderBoardReview`.
-8. Login lan luot Board accounts (`/api/editorial-board/...`).
+8. Login lan luot Board accounts (`/api/board/...`).
 9. Moi Board member vote `APPROVE` hoặc `REJECT`; DB chỉ cho một vote/member/series.
 10. Sau khi Board approve, hệ thống tạo/update `series` từ proposal, dùng title của proposal làm series title.
 11. Neu approved, login lai Mangaka.

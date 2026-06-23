@@ -305,18 +305,18 @@ Endpoint Editor:
 
 | Method | Endpoint | Controller method |
 |---|---|---|
-| GET | `/api/tantou-editor/proposals?editorEmail={email}` | `list()` |
-| PUT | `/api/tantou-editor/proposals/{id}/forward-board` | `forwardToBoard()` |
-| PUT | `/api/tantou-editor/proposals/{id}/request-revision` | `requestRevision()` |
-| PUT | `/api/tantou-editor/proposals/{id}/reject` | `reject()` |
+| GET | `/api/editor/proposals?editorEmail={email}` | `list()` |
+| PUT | `/api/editor/proposals/{id}/forward-board` | `forwardToBoard()` |
+| PUT | `/api/editor/proposals/{id}/request-revision` | `requestRevision()` |
+| PUT | `/api/editor/proposals/{id}/reject` | `reject()` |
 
 Endpoint Board:
 
 | Method | Endpoint | Controller method |
 |---|---|---|
-| GET | `/api/editorial-board/proposals?memberEmail={email}` | `list()` |
-| PUT | `/api/editorial-board/proposals/{id}/approve` | `approve()` |
-| PUT | `/api/editorial-board/proposals/{id}/reject` | `reject()` |
+| GET | `/api/board/proposals?memberEmail={email}` | `list()` |
+| PUT | `/api/board/proposals/{id}/approve` | `approve()` |
+| PUT | `/api/board/proposals/{id}/reject` | `reject()` |
 
 Business rule demo:
 

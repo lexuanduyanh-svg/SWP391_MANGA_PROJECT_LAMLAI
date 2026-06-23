@@ -97,13 +97,13 @@ feature/backend-auth-admin-proposal
 ### API so huu
 
 ```text
-GET /api/tantou-editor/proposals?editorEmail={email}
-PUT /api/tantou-editor/proposals/{id}/request-revision
-PUT /api/tantou-editor/proposals/{id}/forward-board
+GET /api/editor/proposals?editorEmail={email}
+PUT /api/editor/proposals/{id}/request-revision
+PUT /api/editor/proposals/{id}/forward-board
 
-GET /api/editorial-board/proposals?memberEmail={email}
-PUT /api/editorial-board/proposals/{id}/approve
-PUT /api/editorial-board/proposals/{id}/reject
+GET /api/board/proposals?memberEmail={email}
+PUT /api/board/proposals/{id}/approve
+PUT /api/board/proposals/{id}/reject
 
 GET /api/mangaka/proposals/{proposalId}/chapters
 POST /api/mangaka/proposals/{proposalId}/chapters

@@ -277,18 +277,18 @@ File upload hiện lưu ở máy chạy backend:
 
 | Method | Endpoint | Chức năng |
 |---|---|---|
-| GET | `/api/tantou-editor/proposals?editorEmail={email}` | Xem proposal cần Tantou review và lịch sử review |
-| PUT | `/api/tantou-editor/proposals/{id}/forward-board` | Forward proposal sang Editorial Board |
-| PUT | `/api/tantou-editor/proposals/{id}/request-revision` | Yêu cầu Mangaka sửa proposal |
-| PUT | `/api/tantou-editor/proposals/{id}/reject` | Backend vẫn còn endpoint reject, nhưng UI demo hiện không dùng nút này |
+| GET | `/api/editor/proposals?editorEmail={email}` | Xem proposal cần Tantou review và lịch sử review |
+| PUT | `/api/editor/proposals/{id}/forward-board` | Forward proposal sang Editorial Board |
+| PUT | `/api/editor/proposals/{id}/request-revision` | Yêu cầu Mangaka sửa proposal |
+| PUT | `/api/editor/proposals/{id}/reject` | Backend vẫn còn endpoint reject, nhưng UI demo hiện không dùng nút này |
 
 ### Editorial Board voting
 
 | Method | Endpoint | Chức năng |
 |---|---|---|
-| GET | `/api/editorial-board/proposals?memberEmail={email}` | Xem proposal đang chờ Board vote/quyết định |
-| PUT | `/api/editorial-board/proposals/{id}/approve` | Gửi phiếu Approve của Board member hiện tại |
-| PUT | `/api/editorial-board/proposals/{id}/reject` | Gửi phiếu Reject của Board member hiện tại |
+| GET | `/api/board/proposals?memberEmail={email}` | Xem proposal đang chờ Board vote/quyết định |
+| PUT | `/api/board/proposals/{id}/approve` | Gửi phiếu Approve của Board member hiện tại |
+| PUT | `/api/board/proposals/{id}/reject` | Gửi phiếu Reject của Board member hiện tại |
 
 Ghi chú:
 
