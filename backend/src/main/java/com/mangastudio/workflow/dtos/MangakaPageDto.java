@@ -1,7 +1,10 @@
 package com.mangastudio.workflow.dtos;
 
-import java.util.List;
-
+/**
+ * Page DTO (V2 scope — no regions).
+ * 
+ * <p>Tasks are assigned at the page level. The {@code regions} list has been removed.
+ */
 public class MangakaPageDto {
   private String id;
   private String chapterId;
@@ -9,7 +12,6 @@ public class MangakaPageDto {
   private String fileName;
   private MangakaPageStatus status;
   private String uploadedAt;
-  private List<MangakaPageRegionDto> regions;
 
   public MangakaPageDto() {}
 
@@ -19,15 +21,13 @@ public class MangakaPageDto {
       int pageNumber,
       String fileName,
       MangakaPageStatus status,
-      String uploadedAt,
-      List<MangakaPageRegionDto> regions) {
+      String uploadedAt) {
     this.id = id;
     this.chapterId = chapterId;
     this.pageNumber = pageNumber;
     this.fileName = fileName;
     this.status = status;
     this.uploadedAt = uploadedAt;
-    this.regions = regions;
   }
 
   public String getId() {
@@ -52,9 +52,5 @@ public class MangakaPageDto {
 
   public String getUploadedAt() {
     return uploadedAt;
-  }
-
-  public List<MangakaPageRegionDto> getRegions() {
-    return regions;
   }
 }

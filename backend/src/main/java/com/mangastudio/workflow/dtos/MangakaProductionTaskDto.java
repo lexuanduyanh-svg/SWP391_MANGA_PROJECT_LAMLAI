@@ -1,8 +1,13 @@
 package com.mangastudio.workflow.dtos;
 
+/**
+ * Task DTO (V2 scope — page-level assignment).
+ *
+ * <p>Tasks are now assigned at the page level. The {@code pageId} field replaces {@code regionId}.
+ */
 public class MangakaProductionTaskDto {
   private String id;
-  private String regionId;
+  private String pageId;
   private String assistantEmail;
   private String taskType;
   private String instructions;
@@ -18,7 +23,7 @@ public class MangakaProductionTaskDto {
 
   public MangakaProductionTaskDto(
       String id,
-      String regionId,
+      String pageId,
       String assistantEmail,
       String taskType,
       String instructions,
@@ -30,7 +35,7 @@ public class MangakaProductionTaskDto {
       String submissionNote,
       String submittedAt) {
     this.id = id;
-    this.regionId = regionId;
+    this.pageId = pageId;
     this.assistantEmail = assistantEmail;
     this.taskType = taskType;
     this.instructions = instructions;
@@ -47,8 +52,8 @@ public class MangakaProductionTaskDto {
     return id;
   }
 
-  public String getRegionId() {
-    return regionId;
+  public String getPageId() {
+    return pageId;
   }
 
   public String getAssistantEmail() {

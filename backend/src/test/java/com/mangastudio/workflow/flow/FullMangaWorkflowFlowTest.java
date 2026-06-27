@@ -4,11 +4,9 @@ import com.mangastudio.workflow.services.InMemoryMangakaProductionService;
 import com.mangastudio.workflow.services.InMemoryMangaProposalService;
 import com.mangastudio.workflow.dtos.MangakaChapterCreateRequest;
 import com.mangastudio.workflow.dtos.MangakaPageCreateRequest;
-import com.mangastudio.workflow.dtos.MangakaPageRegionCreateRequest;
 import com.mangastudio.workflow.dtos.MangakaProductionTaskCreateRequest;
 import com.mangastudio.workflow.dtos.MangakaChapterDto;
 import com.mangastudio.workflow.dtos.MangakaPageDto;
-import com.mangastudio.workflow.dtos.MangakaPageRegionDto;
 import com.mangastudio.workflow.dtos.MangakaProductionTaskDto;
 import com.mangastudio.workflow.dtos.AssistantTaskDto;
 import com.mangastudio.workflow.dtos.MangaProposalCreateRequest;
@@ -56,6 +54,8 @@ public class FullMangaWorkflowFlowTest {
     MangaProposalDto approved = proposalService.approveByBoard(draft.getId(), "board3@manga.local", "OK");
     Assertions.assertEquals(MangaProposalStatus.Approved, approved.getStatus());
 
+    // --- Flow 2: Production workflow (V2 — no region drawing) ---
+
     MangakaChapterCreateRequest chapterRequest = new MangakaChapterCreateRequest();
     chapterRequest.setTitle("Chapter 1");
     chapterRequest.setChapterNumber(1);
@@ -68,17 +68,7 @@ public class FullMangaWorkflowFlowTest {
     MangakaPageDto page = productionService.addPage(draft.getId(), chapter.getId(), "mangaka@manga.local", pageRequest);
     Assertions.assertEquals("Uploaded", page.getStatus().name());
 
-    MangakaPageRegionCreateRequest regionRequest = new MangakaPageRegionCreateRequest();
-    regionRequest.setRegionType("SpeechBubble");
-    regionRequest.setX(5);
-    regionRequest.setY(5);
-    regionRequest.setWidthPct(20);
-    regionRequest.setHeightPct(15);
-    regionRequest.setNote("Main dialogue bubble");
-    MangakaPageRegionDto region =
-        productionService.addRegion(draft.getId(), chapter.getId(), page.getId(), "mangaka@manga.local", regionRequest);
-    Assertions.assertEquals("SpeechBubble", region.getRegionType());
-
+    // V2: task assigned directly to page (no region drawing)
     MangakaProductionTaskCreateRequest taskRequest = new MangakaProductionTaskCreateRequest();
     taskRequest.setAssistantEmail("assistant@manga.local");
     taskRequest.setTaskType("Lettering");
@@ -86,7 +76,7 @@ public class FullMangaWorkflowFlowTest {
     taskRequest.setReferenceFileName("dialogue-reference.txt");
     MangakaProductionTaskDto task =
         productionService.assignTask(
-            draft.getId(), chapter.getId(), page.getId(), region.getId(), "mangaka@manga.local", taskRequest);
+            draft.getId(), chapter.getId(), page.getId(), "mangaka@manga.local", taskRequest);
     Assertions.assertEquals("Pending", task.getStatus().name());
 
     AssistantTaskDto started = productionService.startAssistantTask(task.getId(), "assistant@manga.local");
@@ -97,9 +87,10 @@ public class FullMangaWorkflowFlowTest {
             task.getId(), "assistant@manga.local", "lettered-page-1.psd", "Ready for review");
     Assertions.assertEquals("Submitted", submittedTask.getStatus().name());
 
+    // V2: approve at page level (no regionId)
     MangakaProductionTaskDto approvedTask =
         productionService.approveTask(
-            draft.getId(), chapter.getId(), page.getId(), region.getId(), task.getId(), "mangaka@manga.local");
+            draft.getId(), chapter.getId(), page.getId(), task.getId(), "mangaka@manga.local");
     Assertions.assertEquals("Approved", approvedTask.getStatus().name());
   }
 

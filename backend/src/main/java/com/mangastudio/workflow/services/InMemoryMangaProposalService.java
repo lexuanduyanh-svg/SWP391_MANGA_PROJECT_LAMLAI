@@ -324,6 +324,9 @@ public class InMemoryMangaProposalService {
     SeriesEntity e = getRequiredSeriesForAuthor(id, authorEmail);
     if (!("DRAFT".equals(e.getStatus()) || "REVISION_REQUESTED".equals(e.getStatus())))
       throw new IllegalArgumentException("Proposal cannot be submitted in current status");
+    ProposalMetadata metadata = metadataFor(e.getId());
+    if (metadata.manuscriptFileName == null || metadata.manuscriptFileName.trim().isEmpty())
+      throw new IllegalArgumentException("Manuscript file is required before submission");
     e.setStatus("SUBMITTED_TO_EDITOR");
     e.setUpdatedAt(LocalDateTime.now());
     return toDto(seriesRepository.save(e));
@@ -332,11 +335,15 @@ public class InMemoryMangaProposalService {
   private void deleteMemory(String id, String authorEmail) {
     ProposalRecord record = getRequired(id);
     ensureOwner(record, authorEmail);
+    if (record.status != MangaProposalStatus.Draft)
+      throw new IllegalArgumentException("Only Draft proposals can be deleted");
     proposals.remove(id);
   }
 
   private void deleteDb(String id, String authorEmail) {
     SeriesEntity e = getRequiredSeriesForAuthor(id, authorEmail);
+    if (!("DRAFT".equals(e.getStatus())))
+      throw new IllegalArgumentException("Only Draft proposals can be deleted");
     seriesRepository.delete(e);
     seriesMetadata.remove(e.getId());
   }

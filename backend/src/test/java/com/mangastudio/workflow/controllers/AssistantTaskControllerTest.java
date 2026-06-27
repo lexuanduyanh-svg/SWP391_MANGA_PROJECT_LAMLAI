@@ -62,13 +62,13 @@ public class AssistantTaskControllerTest {
         .andExpect(jsonPath("$.submittedFileName", is("translated-page-1.png")));
     mockMvc
         .perform(
-            put("/api/mangaka/proposals/4/chapters/600/pages/601/regions/602/tasks/603/approve")
+            put("/api/mangaka/proposals/4/chapters/600/pages/601/tasks/603/approve")
                 .param("authorEmail", "mangaka@manga.local"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status", is("Approved")));
     mockMvc
         .perform(
-            put("/api/mangaka/proposals/4/chapters/600/pages/601/regions/602/tasks/603/redo")
+            put("/api/mangaka/proposals/4/chapters/600/pages/601/tasks/603/redo")
                 .param("authorEmail", "mangaka@manga.local"))
         .andExpect(status().isConflict());
   }

@@ -27,7 +27,6 @@ public class InMemoryMangakaProductionService {
   private final UserRepository userRepository;
   private final SkillRepository skillRepository;
   private final Map<String, ChapterRecord> chapters = new LinkedHashMap<String, ChapterRecord>();
-  private final Map<String, RegionRecord> regions = new LinkedHashMap<String, RegionRecord>();
   private final AtomicLong seq = new AtomicLong(500);
   private final DateTimeFormatter f = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
@@ -58,13 +57,12 @@ public class InMemoryMangakaProductionService {
   public synchronized List<MangakaChapterDto> listChapters(String proposalId, String authorEmail) { return dbMode() ? listChaptersDb(proposalId, authorEmail) : listChaptersMemory(proposalId, authorEmail); }
   public synchronized MangakaChapterDto createChapter(String proposalId, String authorEmail, MangakaChapterCreateRequest r) { return dbMode() ? createChapterDb(proposalId, authorEmail, r) : createChapterMemory(proposalId, authorEmail, r); }
   public synchronized MangakaPageDto addPage(String proposalId, String chapterId, String authorEmail, MangakaPageCreateRequest r) { return dbMode() ? addPageDb(proposalId, chapterId, authorEmail, r) : addPageMemory(proposalId, chapterId, authorEmail, r); }
-  public synchronized MangakaPageRegionDto addRegion(String proposalId, String chapterId, String pageId, String authorEmail, MangakaPageRegionCreateRequest r) { return dbMode() ? addRegionDb(proposalId, chapterId, pageId, authorEmail, r) : addRegionMemory(proposalId, chapterId, pageId, authorEmail, r); }
-  public synchronized MangakaProductionTaskDto assignTask(String proposalId, String chapterId, String pageId, String regionId, String authorEmail, MangakaProductionTaskCreateRequest request) { return dbMode() ? assignTaskDb(proposalId, chapterId, pageId, regionId, authorEmail, request) : assignTaskMemory(proposalId, chapterId, pageId, regionId, authorEmail, request); }
+  public synchronized MangakaProductionTaskDto assignTask(String proposalId, String chapterId, String pageId, String authorEmail, MangakaProductionTaskCreateRequest request) { return dbMode() ? assignTaskDb(proposalId, chapterId, pageId, authorEmail, request) : assignTaskMemory(proposalId, chapterId, pageId, authorEmail, request); }
   public synchronized List<AssistantTaskDto> listAssistantTasks(String assistantEmail) { return dbMode() ? listAssistantTasksDb(assistantEmail) : listAssistantTasksMemory(assistantEmail); }
   public synchronized AssistantTaskDto startAssistantTask(String taskId, String assistantEmail) { return dbMode() ? startAssistantTaskDb(taskId, assistantEmail) : startAssistantTaskMemory(taskId, assistantEmail); }
   public synchronized AssistantTaskDto submitAssistantTask(String taskId, String assistantEmail, String submittedFileName, String submissionNote) { return dbMode() ? submitAssistantTaskDb(taskId, assistantEmail, submittedFileName, submissionNote) : submitAssistantTaskMemory(taskId, assistantEmail, submittedFileName, submissionNote); }
-  public synchronized MangakaProductionTaskDto approveTask(String proposalId, String chapterId, String pageId, String regionId, String taskId, String authorEmail) { return dbMode() ? approveTaskDb(proposalId, chapterId, pageId, regionId, taskId, authorEmail) : approveTaskMemory(proposalId, chapterId, pageId, regionId, taskId, authorEmail); }
-  public synchronized MangakaProductionTaskDto requestRedoTask(String proposalId, String chapterId, String pageId, String regionId, String taskId, String authorEmail) { return dbMode() ? requestRedoTaskDb(proposalId, chapterId, pageId, regionId, taskId, authorEmail) : requestRedoTaskMemory(proposalId, chapterId, pageId, regionId, taskId, authorEmail); }
+  public synchronized MangakaProductionTaskDto approveTask(String proposalId, String chapterId, String pageId, String taskId, String authorEmail) { return dbMode() ? approveTaskDb(proposalId, chapterId, pageId, taskId, authorEmail) : approveTaskMemory(proposalId, chapterId, pageId, taskId, authorEmail); }
+  public synchronized MangakaProductionTaskDto requestRedoTask(String proposalId, String chapterId, String pageId, String taskId, String authorEmail) { return dbMode() ? requestRedoTaskDb(proposalId, chapterId, pageId, taskId, authorEmail) : requestRedoTaskMemory(proposalId, chapterId, pageId, taskId, authorEmail); }
 
   private boolean dbMode() { return seriesRepository != null && chapterRepository != null && pageRepository != null && taskRepository != null && submissionRepository != null && userRepository != null && skillRepository != null; }
   private String now() { return LocalDateTime.now().format(f); }
@@ -78,33 +76,25 @@ public class InMemoryMangakaProductionService {
         new ChapterRecord("600", "4", "Seed Production Chapter", 1, MangakaChapterStatus.TasksInProgress);
     PageRecord legacyPage =
         new PageRecord("601", "600", 1, "seed-page.png", MangakaPageStatus.TasksAssigned);
-    RegionRecord legacyRegion =
-        new RegionRecord("602", "601", "Dialogue", 10, 10, 20, 20, "Seed region");
-    legacyRegion.task =
+    legacyPage.task =
         new TaskRecord(
             "603",
-            "602",
+            "601",
             "assistant@manga.local",
             "Lettering",
             "Clean and letter this panel",
             "reference.png",
             MangakaTaskStatus.Pending);
-    legacyPage.regions.put(legacyRegion.id, legacyRegion);
     legacyChapter.pages.put(legacyPage.id, legacyPage);
     chapters.put(legacyChapter.id, legacyChapter);
-    regions.put(legacyRegion.id, legacyRegion);
 
     String pid = "201";
     String cid = id();
     String pageId = id();
-    String regionId = id();
     ChapterRecord c = new ChapterRecord(cid, pid, "Seed Chapter", 1, MangakaChapterStatus.PagesUploaded);
     PageRecord p = new PageRecord(pageId, cid, 1, "seed-page.png", MangakaPageStatus.TasksAssigned);
-    RegionRecord r = new RegionRecord(regionId, pageId, "Dialogue", 10, 10, 20, 20, "Seed region");
     c.pages.put(pageId, p);
-    p.regions.put(regionId, r);
     chapters.put(cid, c);
-    regions.put(regionId, r);
   }
   private void seedDbIfPossible() {}
 
@@ -112,14 +102,13 @@ public class InMemoryMangakaProductionService {
 
   private List<MangakaChapterDto> listChaptersMemory(String proposalId, String authorEmail) { ensureAllowed(proposalId, authorEmail); List<MangakaChapterDto> out = new ArrayList<MangakaChapterDto>(); for (ChapterRecord c : chapters.values()) if (proposalId.equals(c.proposalId)) out.add(c.toDto(loadPagesMemory(c.id))); return out; }
   private MangakaChapterDto createChapterMemory(String proposalId, String authorEmail, MangakaChapterCreateRequest r) { ensureAllowed(proposalId, authorEmail); if (r == null || blank(r.getTitle()) || r.getChapterNumber() <= 0) throw new IllegalArgumentException("Chapter data is required"); ChapterRecord c = new ChapterRecord(id(), proposalId, r.getTitle().trim(), r.getChapterNumber(), MangakaChapterStatus.Draft); chapters.put(c.id, c); return c.toDto(new ArrayList<MangakaPageDto>()); }
-  private MangakaPageDto addPageMemory(String proposalId, String chapterId, String authorEmail, MangakaPageCreateRequest r) { ChapterRecord c = chapterRequiredMemory(proposalId, chapterId, authorEmail); if (r == null || r.getPageNumber() <= 0 || blank(r.getFileName())) throw new IllegalArgumentException("Page data is required"); PageRecord p = new PageRecord(id(), c.id, r.getPageNumber(), r.getFileName().trim(), MangakaPageStatus.Uploaded); c.pages.put(p.id, p); c.status = MangakaChapterStatus.PagesUploaded; c.updatedAt = now(); return p.toDto(new ArrayList<MangakaPageRegionDto>()); }
-  private MangakaPageRegionDto addRegionMemory(String proposalId, String chapterId, String pageId, String authorEmail, MangakaPageRegionCreateRequest r) { PageRecord p = pageRequiredMemory(proposalId, chapterId, pageId, authorEmail); RegionRecord g = new RegionRecord(id(), p.id, r.getRegionType().trim(), r.getX(), r.getY(), r.getWidthPct(), r.getHeightPct(), r.getNote()); p.regions.put(g.id, g); regions.put(g.id, g); return g.toDto(); }
-  private MangakaProductionTaskDto assignTaskMemory(String proposalId, String chapterId, String pageId, String regionId, String authorEmail, MangakaProductionTaskCreateRequest request) { RegionRecord g = regionRequiredMemory(proposalId, chapterId, pageId, regionId, authorEmail); g.task = new TaskRecord(id(), regionId, request.getAssistantEmail(), request.getTaskType(), request.getInstructions(), request.getReferenceFileName(), MangakaTaskStatus.Pending); return g.task.toDto(); }
-  private List<AssistantTaskDto> listAssistantTasksMemory(String assistantEmail) { List<AssistantTaskDto> out = new ArrayList<AssistantTaskDto>(); for (RegionRecord r : regions.values()) if (r.task != null && r.task.assistantEmail.equalsIgnoreCase(assistantEmail)) out.add(r.task.toAssistantDto(findRegionPath(r.id))); return out; }
-  private AssistantTaskDto startAssistantTaskMemory(String taskId, String assistantEmail) { TaskRecord t = taskRequiredMemory(taskId, assistantEmail); if (!(t.status == MangakaTaskStatus.Pending || t.status == MangakaTaskStatus.RedoRequested)) throw new IllegalArgumentException("Task cannot be started in current status"); t.status = MangakaTaskStatus.InProgress; t.updatedAt = now(); return t.toAssistantDto(findRegionPath(t.regionId)); }
-  private AssistantTaskDto submitAssistantTaskMemory(String taskId, String assistantEmail, String submittedFileName, String submissionNote) { TaskRecord t = taskRequiredMemory(taskId, assistantEmail); if (t.status != MangakaTaskStatus.InProgress) throw new IllegalArgumentException("Task cannot be submitted in current status"); t.status = MangakaTaskStatus.Submitted; t.submittedFileName = submittedFileName; t.submissionNote = submissionNote; t.submittedAt = now(); t.updatedAt = t.submittedAt; return t.toAssistantDto(findRegionPath(t.regionId)); }
-  private MangakaProductionTaskDto approveTaskMemory(String proposalId, String chapterId, String pageId, String regionId, String taskId, String authorEmail) { ensureAllowed(proposalId, authorEmail); TaskRecord t = taskRequiredMemory(taskId, null); if (t.status != MangakaTaskStatus.Submitted) throw new IllegalArgumentException("Task cannot be approved in current status"); t.status = MangakaTaskStatus.Approved; t.updatedAt = now(); return t.toDto(); }
-  private MangakaProductionTaskDto requestRedoTaskMemory(String proposalId, String chapterId, String pageId, String regionId, String taskId, String authorEmail) {
+  private MangakaPageDto addPageMemory(String proposalId, String chapterId, String authorEmail, MangakaPageCreateRequest r) { ChapterRecord c = chapterRequiredMemory(proposalId, chapterId, authorEmail); if (r == null || r.getPageNumber() <= 0 || blank(r.getFileName())) throw new IllegalArgumentException("Page data is required"); PageRecord p = new PageRecord(id(), c.id, r.getPageNumber(), r.getFileName().trim(), MangakaPageStatus.Uploaded); c.pages.put(p.id, p); c.status = MangakaChapterStatus.PagesUploaded; c.updatedAt = now(); return p.toDto(); }
+  private MangakaProductionTaskDto assignTaskMemory(String proposalId, String chapterId, String pageId, String authorEmail, MangakaProductionTaskCreateRequest request) { PageRecord p = pageRequiredMemory(proposalId, chapterId, pageId, authorEmail); p.task = new TaskRecord(id(), pageId, request.getAssistantEmail(), request.getTaskType(), request.getInstructions(), request.getReferenceFileName(), MangakaTaskStatus.Pending); return p.task.toDto(); }
+  private List<AssistantTaskDto> listAssistantTasksMemory(String assistantEmail) { List<AssistantTaskDto> out = new ArrayList<AssistantTaskDto>(); for (ChapterRecord ch : chapters.values()) for (PageRecord p : ch.pages.values()) if (p.task != null && p.task.assistantEmail.equalsIgnoreCase(assistantEmail)) out.add(p.task.toAssistantDto(p.id)); return out; }
+  private AssistantTaskDto startAssistantTaskMemory(String taskId, String assistantEmail) { TaskRecord t = taskRequiredMemory(taskId, assistantEmail); if (!(t.status == MangakaTaskStatus.Pending || t.status == MangakaTaskStatus.RedoRequested)) throw new IllegalArgumentException("Task cannot be started in current status"); t.status = MangakaTaskStatus.InProgress; t.updatedAt = now(); return t.toAssistantDto(t.pageId); }
+  private AssistantTaskDto submitAssistantTaskMemory(String taskId, String assistantEmail, String submittedFileName, String submissionNote) { TaskRecord t = taskRequiredMemory(taskId, assistantEmail); if (t.status != MangakaTaskStatus.InProgress) throw new IllegalArgumentException("Task cannot be submitted in current status"); t.status = MangakaTaskStatus.Submitted; t.submittedFileName = submittedFileName; t.submissionNote = submissionNote; t.submittedAt = now(); t.updatedAt = t.submittedAt; return t.toAssistantDto(t.pageId); }
+  private MangakaProductionTaskDto approveTaskMemory(String proposalId, String chapterId, String pageId, String taskId, String authorEmail) { ensureAllowed(proposalId, authorEmail); TaskRecord t = taskRequiredMemory(taskId, null); if (t.status != MangakaTaskStatus.Submitted) throw new IllegalArgumentException("Task cannot be approved in current status"); t.status = MangakaTaskStatus.Approved; t.updatedAt = now(); return t.toDto(); }
+  private MangakaProductionTaskDto requestRedoTaskMemory(String proposalId, String chapterId, String pageId, String taskId, String authorEmail) {
     ensureAllowed(proposalId, authorEmail);
     TaskRecord t = taskRequiredMemory(taskId, null);
     if (t.status == MangakaTaskStatus.Approved) {
@@ -132,25 +121,177 @@ public class InMemoryMangakaProductionService {
 
   private ChapterRecord chapterRequiredMemory(String proposalId, String chapterId, String authorEmail) { ensureAllowed(proposalId, authorEmail); ChapterRecord c = chapters.get(chapterId); if (c == null || !proposalId.equals(c.proposalId)) throw new IllegalArgumentException("Chapter not found"); return c; }
   private PageRecord pageRequiredMemory(String proposalId, String chapterId, String pageId, String authorEmail) { ChapterRecord c = chapterRequiredMemory(proposalId, chapterId, authorEmail); PageRecord p = c.pages.get(pageId); if (p == null) throw new IllegalArgumentException("Page not found"); return p; }
-  private RegionRecord regionRequiredMemory(String proposalId, String chapterId, String pageId, String regionId, String authorEmail) { PageRecord p = pageRequiredMemory(proposalId, chapterId, pageId, authorEmail); RegionRecord r = p.regions.get(regionId); if (r == null) throw new IllegalArgumentException("Region not found"); return r; }
-  private TaskRecord taskRequiredMemory(String taskId, String assistantEmail) { for (RegionRecord r : regions.values()) if (r.task != null && r.task.id.equals(taskId) && (assistantEmail == null || r.task.assistantEmail.equalsIgnoreCase(assistantEmail))) return r.task; throw new IllegalArgumentException("Task not found"); }
-  private List<MangakaPageDto> loadPagesMemory(String chapterId) { ChapterRecord c = chapters.get(chapterId); List<MangakaPageDto> out = new ArrayList<MangakaPageDto>(); if (c != null) for (PageRecord p : c.pages.values()) out.add(p.toDto(loadRegionsMemory(p.id))); return out; }
-  private List<MangakaPageRegionDto> loadRegionsMemory(String pageId) { List<MangakaPageRegionDto> out = new ArrayList<MangakaPageRegionDto>(); for (RegionRecord r : regions.values()) if (pageId.equals(r.pageId)) out.add(r.toDto()); return out; }
-  private RegionRecord findRegionPath(String regionId) { RegionRecord r = regions.get(regionId); if (r != null) return r; for (ChapterRecord c : chapters.values()) for (PageRecord p : c.pages.values()) if (p.regions.containsKey(regionId)) return p.regions.get(regionId); throw new IllegalArgumentException("Region not found"); }
+  private TaskRecord taskRequiredMemory(String taskId, String assistantEmail) { for (ChapterRecord ch : chapters.values()) for (PageRecord p : ch.pages.values()) if (p.task != null && p.task.id.equals(taskId) && (assistantEmail == null || p.task.assistantEmail.equalsIgnoreCase(assistantEmail))) return p.task; throw new IllegalArgumentException("Task not found"); }
+  private List<MangakaPageDto> loadPagesMemory(String chapterId) { ChapterRecord c = chapters.get(chapterId); List<MangakaPageDto> out = new ArrayList<MangakaPageDto>(); if (c != null) for (PageRecord p : c.pages.values()) out.add(p.toDto()); return out; }
 
   private List<MangakaChapterDto> listChaptersDb(String proposalId, String authorEmail) { return listChaptersMemory(proposalId, authorEmail); }
-  private MangakaChapterDto createChapterDb(String proposalId, String authorEmail, MangakaChapterCreateRequest r) { return createChapterMemory(proposalId, authorEmail, r); }
-  private MangakaPageDto addPageDb(String proposalId, String chapterId, String authorEmail, MangakaPageCreateRequest r) { return addPageMemory(proposalId, chapterId, authorEmail, r); }
-  private MangakaPageRegionDto addRegionDb(String proposalId, String chapterId, String pageId, String authorEmail, MangakaPageRegionCreateRequest r) { return addRegionMemory(proposalId, chapterId, pageId, authorEmail, r); }
-  private MangakaProductionTaskDto assignTaskDb(String proposalId, String chapterId, String pageId, String regionId, String authorEmail, MangakaProductionTaskCreateRequest request) { return assignTaskMemory(proposalId, chapterId, pageId, regionId, authorEmail, request); }
+  private MangakaChapterDto createChapterDb(String proposalId, String authorEmail, MangakaChapterCreateRequest r) {
+    ensureAllowed(proposalId, authorEmail);
+    if (r == null || blank(r.getTitle()) || r.getChapterNumber() <= 0) throw new IllegalArgumentException("Chapter data is required");
+    
+    SeriesEntity series = seriesRepository.findById(Long.parseLong(proposalId))
+        .orElseThrow(() -> new IllegalArgumentException("Series not found"));
+    
+    ChapterEntity chapter = new ChapterEntity();
+    chapter.setSeries(series);
+    chapter.setTitle(r.getTitle().trim());
+    chapter.setChapterNumber(r.getChapterNumber());
+    chapter.setStatus(MangakaChapterStatus.Draft.name());
+    chapter.setCreatedAt(LocalDateTime.now());
+    chapter.setUpdatedAt(LocalDateTime.now());
+    
+    ChapterEntity saved = chapterRepository.save(chapter);
+    
+    return new MangakaChapterDto(
+        String.valueOf(saved.getId()),
+        proposalId,
+        saved.getTitle(),
+        saved.getChapterNumber(),
+        MangakaChapterStatus.valueOf(saved.getStatus()),
+        saved.getCreatedAt().format(f),
+        saved.getUpdatedAt().format(f),
+        new ArrayList<MangakaPageDto>()
+    );
+  }
+  
+  private MangakaPageDto addPageDb(String proposalId, String chapterId, String authorEmail, MangakaPageCreateRequest r) {
+    ensureAllowed(proposalId, authorEmail);
+    if (r == null || r.getPageNumber() <= 0 || blank(r.getFileName())) throw new IllegalArgumentException("Page data is required");
+    
+    ChapterEntity chapter = chapterRepository.findById(Long.parseLong(chapterId))
+        .orElseThrow(() -> new IllegalArgumentException("Chapter not found"));
+    
+    PageEntity page = new PageEntity();
+    page.setChapter(chapter);
+    page.setPageNumber(r.getPageNumber());
+    page.setManuscriptFilePath(r.getFileName().trim());
+    page.setStatus(MangakaPageStatus.Uploaded.name());
+    page.setCreatedAt(LocalDateTime.now());
+    page.setUpdatedAt(LocalDateTime.now());
+    
+    PageEntity saved = pageRepository.save(page);
+    
+    chapter.setStatus(MangakaChapterStatus.PagesUploaded.name());
+    chapter.setUpdatedAt(LocalDateTime.now());
+    chapterRepository.save(chapter);
+    
+    return new MangakaPageDto(
+        String.valueOf(saved.getId()),
+        chapterId,
+        saved.getPageNumber(),
+        saved.getManuscriptFilePath(),
+        MangakaPageStatus.valueOf(saved.getStatus()),
+        saved.getCreatedAt().format(f)
+    );
+  }
+  
+  private MangakaProductionTaskDto assignTaskDb(String proposalId, String chapterId, String pageId, String authorEmail, MangakaProductionTaskCreateRequest request) {
+    ensureAllowed(proposalId, authorEmail);
+    
+    PageEntity page = pageRepository.findById(Long.parseLong(pageId))
+        .orElseThrow(() -> new IllegalArgumentException("Page not found"));
+    
+    UserEntity assistant = userRepository.findByEmailIgnoreCase(request.getAssistantEmail())
+        .orElseThrow(() -> new IllegalArgumentException("Assistant not found"));
+    
+    SkillEntity skill = skillRepository.findBySkillNameIgnoreCase(request.getTaskType())
+        .orElseThrow(() -> new IllegalArgumentException("Task type not found"));
+    
+    TaskEntity task = new TaskEntity();
+    task.setPage(page);
+    task.setAssistant(assistant);
+    task.setTaskType(skill);
+    task.setRegionCoordinates(null);
+    task.setStatus(MangakaTaskStatus.Pending.name());
+    task.setFeedbackNotes(request.getInstructions());
+    task.setCreatedAt(LocalDateTime.now());
+    task.setUpdatedAt(LocalDateTime.now());
+    
+    TaskEntity saved = taskRepository.save(task);
+    
+    return new MangakaProductionTaskDto(
+        String.valueOf(saved.getId()),
+        pageId,
+        assistant.getEmail(),
+        skill.getSkillName(),
+        saved.getFeedbackNotes(),
+        request.getReferenceFileName(),
+        MangakaTaskStatus.valueOf(saved.getStatus()),
+        saved.getCreatedAt().format(f),
+        saved.getUpdatedAt().format(f),
+        null,
+        null,
+        null
+    );
+  }
+  
   private List<AssistantTaskDto> listAssistantTasksDb(String assistantEmail) { return listAssistantTasksMemory(assistantEmail); }
   private AssistantTaskDto startAssistantTaskDb(String taskId, String assistantEmail) { return startAssistantTaskMemory(taskId, assistantEmail); }
   private AssistantTaskDto submitAssistantTaskDb(String taskId, String assistantEmail, String submittedFileName, String submissionNote) { return submitAssistantTaskMemory(taskId, assistantEmail, submittedFileName, submissionNote); }
-  private MangakaProductionTaskDto approveTaskDb(String proposalId, String chapterId, String pageId, String regionId, String taskId, String authorEmail) { return approveTaskMemory(proposalId, chapterId, pageId, regionId, taskId, authorEmail); }
-  private MangakaProductionTaskDto requestRedoTaskDb(String proposalId, String chapterId, String pageId, String regionId, String taskId, String authorEmail) { return requestRedoTaskMemory(proposalId, chapterId, pageId, regionId, taskId, authorEmail); }
+  
+  private MangakaProductionTaskDto approveTaskDb(String proposalId, String chapterId, String pageId, String taskId, String authorEmail) {
+    ensureAllowed(proposalId, authorEmail);
+    
+    TaskEntity task = taskRepository.findById(Long.parseLong(taskId))
+        .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+    
+    if (!MangakaTaskStatus.Submitted.name().equals(task.getStatus())) {
+      throw new IllegalArgumentException("Task cannot be approved in current status");
+    }
+    
+    task.setStatus(MangakaTaskStatus.Approved.name());
+    task.setUpdatedAt(LocalDateTime.now());
+    
+    TaskEntity saved = taskRepository.save(task);
+    
+    return new MangakaProductionTaskDto(
+        String.valueOf(saved.getId()),
+        pageId,
+        saved.getAssistant().getEmail(),
+        saved.getTaskType().getSkillName(),
+        saved.getFeedbackNotes(),
+        null,
+        MangakaTaskStatus.valueOf(saved.getStatus()),
+        saved.getCreatedAt().format(f),
+        saved.getUpdatedAt().format(f),
+        null,
+        null,
+        null
+    );
+  }
+  
+  private MangakaProductionTaskDto requestRedoTaskDb(String proposalId, String chapterId, String pageId, String taskId, String authorEmail) {
+    ensureAllowed(proposalId, authorEmail);
+    
+    TaskEntity task = taskRepository.findById(Long.parseLong(taskId))
+        .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+    
+    if (MangakaTaskStatus.Approved.name().equals(task.getStatus())) {
+      throw new IllegalArgumentException("Approved task cannot be sent back for redo");
+    }
+    
+    task.setStatus(MangakaTaskStatus.RedoRequested.name());
+    task.setUpdatedAt(LocalDateTime.now());
+    
+    TaskEntity saved = taskRepository.save(task);
+    
+    return new MangakaProductionTaskDto(
+        String.valueOf(saved.getId()),
+        pageId,
+        saved.getAssistant().getEmail(),
+        saved.getTaskType().getSkillName(),
+        saved.getFeedbackNotes(),
+        null,
+        MangakaTaskStatus.valueOf(saved.getStatus()),
+        saved.getCreatedAt().format(f),
+        saved.getUpdatedAt().format(f),
+        null,
+        null,
+        null
+    );
+  }
 
   private static class ChapterRecord { String id, proposalId, title, createdAt, updatedAt; int chapterNumber; MangakaChapterStatus status; Map<String, PageRecord> pages = new LinkedHashMap<String, PageRecord>(); ChapterRecord(String id, String proposalId, String title, int chapterNumber, MangakaChapterStatus status) { this.id=id; this.proposalId=proposalId; this.title=title; this.chapterNumber=chapterNumber; this.status=status; this.createdAt=this.updatedAt=LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")); } MangakaChapterDto toDto(List<MangakaPageDto> pages) { return new MangakaChapterDto(id, proposalId, title, chapterNumber, status, createdAt, updatedAt, pages); } }
-  private static class PageRecord { String id, chapterId, fileName, uploadedAt; int pageNumber; MangakaPageStatus status; Map<String, RegionRecord> regions = new LinkedHashMap<String, RegionRecord>(); PageRecord(String id, String chapterId, int pageNumber, String fileName, MangakaPageStatus status) { this.id=id; this.chapterId=chapterId; this.pageNumber=pageNumber; this.fileName=fileName; this.status=status; this.uploadedAt=LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")); } MangakaPageDto toDto(List<MangakaPageRegionDto> regions) { return new MangakaPageDto(id, chapterId, pageNumber, fileName, status, uploadedAt, regions); } }
-  private static class RegionRecord { String id, pageId, regionType, note; double x, y, widthPct, heightPct; TaskRecord task; RegionRecord(String id, String pageId, String regionType, double x, double y, double widthPct, double heightPct, String note) { this.id=id; this.pageId=pageId; this.regionType=regionType; this.x=x; this.y=y; this.widthPct=widthPct; this.heightPct=heightPct; this.note=note; } MangakaPageRegionDto toDto() { return new MangakaPageRegionDto(id, pageId, regionType, x, y, widthPct, heightPct, note, new ArrayList<MangakaProductionTaskDto>()); } }
-  private static class TaskRecord { String id, regionId, assistantEmail, taskType, instructions, referenceFileName, createdAt, updatedAt, submittedFileName, submissionNote, submittedAt; MangakaTaskStatus status; TaskRecord(String id, String regionId, String assistantEmail, String taskType, String instructions, String referenceFileName, MangakaTaskStatus status) { this.id=id; this.regionId=regionId; this.assistantEmail=assistantEmail; this.taskType=taskType; this.instructions=instructions; this.referenceFileName=referenceFileName; this.status=status; this.createdAt=this.updatedAt=LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")); } MangakaProductionTaskDto toDto() { return new MangakaProductionTaskDto(id, regionId, assistantEmail, taskType, instructions, referenceFileName, status, createdAt, updatedAt, submittedFileName, submissionNote, submittedAt); } AssistantTaskDto toAssistantDto(RegionRecord r) { return new AssistantTaskDto(id, r == null ? null : r.pageId, null, null, null, 0, null, regionId, r == null ? null : r.regionType, r == null ? null : r.note, assistantEmail, taskType, instructions, referenceFileName, status, submittedFileName, submissionNote, createdAt, updatedAt, submittedAt); } }
+  private static class PageRecord { String id, chapterId, fileName, uploadedAt; int pageNumber; MangakaPageStatus status; TaskRecord task; PageRecord(String id, String chapterId, int pageNumber, String fileName, MangakaPageStatus status) { this.id=id; this.chapterId=chapterId; this.pageNumber=pageNumber; this.fileName=fileName; this.status=status; this.uploadedAt=LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")); } MangakaPageDto toDto() { return new MangakaPageDto(id, chapterId, pageNumber, fileName, status, uploadedAt); } }
+  private static class TaskRecord { String id, pageId, assistantEmail, taskType, instructions, referenceFileName, createdAt, updatedAt, submittedFileName, submissionNote, submittedAt; MangakaTaskStatus status; TaskRecord(String id, String pageId, String assistantEmail, String taskType, String instructions, String referenceFileName, MangakaTaskStatus status) { this.id=id; this.pageId=pageId; this.assistantEmail=assistantEmail; this.taskType=taskType; this.instructions=instructions; this.referenceFileName=referenceFileName; this.status=status; this.createdAt=this.updatedAt=LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")); } MangakaProductionTaskDto toDto() { return new MangakaProductionTaskDto(id, pageId, assistantEmail, taskType, instructions, referenceFileName, status, createdAt, updatedAt, submittedFileName, submissionNote, submittedAt); } AssistantTaskDto toAssistantDto(String pageId) { return new AssistantTaskDto(id, pageId, null, null, null, 0, null, pageId, null, null, assistantEmail, taskType, instructions, referenceFileName, status, submittedFileName, submissionNote, createdAt, updatedAt, submittedAt); } }
 }

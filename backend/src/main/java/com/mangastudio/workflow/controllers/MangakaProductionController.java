@@ -16,6 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Mangaka production endpoints (V2 scope — no region drawing).
+ *
+ * <p>Tasks are assigned at the page level. The {@code region_coordinates} column is kept in the
+ * schema but is no longer exposed through the API path.
+ */
 @RestController
 @RequestMapping("/api/mangaka/proposals/{proposalId}")
 public class MangakaProductionController {
@@ -58,64 +64,46 @@ public class MangakaProductionController {
     }
   }
 
-  @PostMapping("/chapters/{chapterId}/pages/{pageId}/regions")
-  public ResponseEntity<?> addRegion(
-      @PathVariable String proposalId,
-      @PathVariable String chapterId,
-      @PathVariable String pageId,
-      @RequestParam("authorEmail") String authorEmail,
-      @Valid @RequestBody MangakaPageRegionCreateRequest request) {
-    try {
-      return ResponseEntity.status(HttpStatus.CREATED)
-          .body(service.addRegion(proposalId, chapterId, pageId, authorEmail, request));
-    } catch (IllegalArgumentException e) {
-      return error(e);
-    }
-  }
-
-  @PostMapping("/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks")
+  @PostMapping("/chapters/{chapterId}/pages/{pageId}/tasks")
   public ResponseEntity<?> addTask(
       @PathVariable String proposalId,
       @PathVariable String chapterId,
       @PathVariable String pageId,
-      @PathVariable String regionId,
       @RequestParam("authorEmail") String authorEmail,
       @Valid @RequestBody MangakaProductionTaskCreateRequest request) {
     try {
       return ResponseEntity.status(HttpStatus.CREATED)
-          .body(service.assignTask(proposalId, chapterId, pageId, regionId, authorEmail, request));
+          .body(service.assignTask(proposalId, chapterId, pageId, authorEmail, request));
     } catch (IllegalArgumentException e) {
       return error(e);
     }
   }
 
-  @PutMapping("/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/approve")
+  @PutMapping("/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/approve")
   public ResponseEntity<?> approve(
       @PathVariable String proposalId,
       @PathVariable String chapterId,
       @PathVariable String pageId,
-      @PathVariable String regionId,
       @PathVariable String taskId,
       @RequestParam("authorEmail") String authorEmail) {
     try {
       return ResponseEntity.ok(
-          service.approveTask(proposalId, chapterId, pageId, regionId, taskId, authorEmail));
+          service.approveTask(proposalId, chapterId, pageId, taskId, authorEmail));
     } catch (IllegalArgumentException e) {
       return error(e);
     }
   }
 
-  @PutMapping("/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/redo")
+  @PutMapping("/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/redo")
   public ResponseEntity<?> redo(
       @PathVariable String proposalId,
       @PathVariable String chapterId,
       @PathVariable String pageId,
-      @PathVariable String regionId,
       @PathVariable String taskId,
       @RequestParam("authorEmail") String authorEmail) {
     try {
       return ResponseEntity.ok(
-          service.requestRedoTask(proposalId, chapterId, pageId, regionId, taskId, authorEmail));
+          service.requestRedoTask(proposalId, chapterId, pageId, taskId, authorEmail));
     } catch (IllegalArgumentException e) {
       return error(e);
     }
