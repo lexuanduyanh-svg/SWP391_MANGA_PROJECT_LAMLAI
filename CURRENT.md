@@ -1458,3 +1458,77 @@ After scope reduction implementation:
 5. Demo prep: seed data + demo script
 
 **Blockers:** None currently. Scope reduction approved by user.
+
+## 15. Session update - 2026-06-27 (CLOUD DEPLOYMENT — API LIVE ✅)
+
+### Deployment hoàn tất
+
+Backend API + Database đã deploy lên cloud thành công và đang chạy.
+
+| Thành phần | Provider | Trạng thái | URL/Host |
+|---|---|---|---|
+| Database | Supabase PostgreSQL | ✅ Live | Session Pooler (IPv4) |
+| Backend API | Render (Docker, Free) | ✅ Live | https://swp391-manga-api.onrender.com |
+| Frontend | Vercel | ⏳ Chưa deploy (chờ FE dev) | — |
+
+### Stack & công cụ dùng để deploy
+
+```text
+Database  : Supabase (PostgreSQL managed, free tier)
+Backend   : Render Web Service, Docker runtime, free tier
+            - Root directory: backend
+            - Dockerfile: backend/Dockerfile (multi-stage Maven build)
+            - Auto-deploy từ GitHub main branch
+Frontend  : Vercel (planned) — Vite preset, root frontend/
+```
+
+### File deploy đã thêm vào repo (commit b1d83b5)
+
+```text
+backend/Dockerfile        — multi-stage build (Maven build + JRE run)
+backend/.dockerignore     — exclude target/, storage runtime
+backend/Procfile          — backup non-Docker deploy option
+frontend/vercel.json      — SPA rewrite cho Vercel
+```
+
+### Environment variables trên Render
+
+```text
+DB_URL       = jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require
+DB_USERNAME  = postgres.<project-ref>   (Supabase session pooler username dạng postgres.xxxx)
+DB_PASSWORD  = <secret, không commit>
+CORS_ORIGINS = http://localhost:5173    (cần thêm URL Vercel khi FE deploy)
+```
+
+### Bài học / lỗi đã fix khi deploy
+
+- **Lỗi đầu tiên:** Deploy failed, app crash khi connect DB.
+  - Nguyên nhân: Supabase **Direct connection** (`db.xxx.supabase.co`) chỉ hỗ trợ **IPv6**, mà Render free **không hỗ trợ IPv6**.
+  - Fix: Đổi sang Supabase **Session Pooler** (`aws-1-ap-southeast-1.pooler.supabase.com:5432`, IPv4) + username dạng `postgres.<project-ref>`.
+- Sau khi đổi env var → redeploy → **Deploy live** ✅.
+- Test endpoint `GET /api/auth/login` trả về `405 Method Not Allowed` (Whitelabel) = server SỐNG (endpoint cần POST). Đây là kết quả mong muốn.
+
+### Thông tin cho Frontend Developer
+
+```text
+API Base URL: https://swp391-manga-api.onrender.com
+Env var:      VITE_API_BASE_URL=https://swp391-manga-api.onrender.com
+Endpoints:    giữ nguyên /api/... (xem docs/API_CONTRACT.md)
+CORS:         FE deploy xong phải báo URL Vercel để BE thêm vào CORS_ORIGINS
+Cold start:   request đầu sau 15 phút idle sẽ chậm ~50s (Render free tier)
+```
+
+Chi tiết đầy đủ: `docs/DEPLOYMENT.md`.
+
+### Việc còn lại
+
+1. FE dev hoàn thành frontend → deploy lên Vercel + set `VITE_API_BASE_URL`.
+2. Cập nhật `CORS_ORIGINS` trên Render bằng URL Vercel.
+3. Test end-to-end FE↔BE↔DB trên cloud.
+
+### ⚠️ Security note
+
+- Password DB đã bị lộ trong chat session khi cấu hình → nên reset password Supabase (Settings → Database → Reset password) rồi cập nhật lại `DB_PASSWORD` trên Render.
+- Không commit `DB_PASSWORD` vào repo (chỉ set trên Render env).
+
+**Blockers:** None. API live, chờ frontend.

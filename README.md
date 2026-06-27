@@ -2,6 +2,20 @@
 
 Project cho hệ thống **Manga Creation Workflow and Publishing Management System**.
 
+## 🚀 Live API Deployment
+
+| Thành phần | Trạng thái | URL |
+|---|---|---|
+| **Backend API** | ✅ Live | https://swp391-manga-api.onrender.com |
+| **Database** | ✅ Live | Supabase PostgreSQL (cloud) |
+| **Frontend** | ⏳ Chưa deploy | — |
+
+**Frontend dev:** Set `VITE_API_BASE_URL=https://swp391-manga-api.onrender.com` để gọi API live. Chi tiết xem [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+> Lưu ý: Server Free tier ngủ sau 15 phút không dùng → request đầu chậm ~50s để wake up, các request sau chạy bình thường.
+
+---
+
 > **Cập nhật 2026-06-27:** Nhóm còn 3 người (2 backend + 1 frontend), 3 tuần còn lại. Đã giảm scope: bỏ AI summary preview, bỏ region drawing, bỏ annotations, bỏ rankings screen. Task được gán ở mức **page** thay vì pixel-level region. Chi tiết tại `docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md` mục 4.5 và `docs/TEAM_TASK_ASSIGNMENT.md`.
 
 Bản này được tạo lại tại `SWP391_NEW` để nhóm chia module và merge dễ hơn. Luồng chính tách 2 bước:
