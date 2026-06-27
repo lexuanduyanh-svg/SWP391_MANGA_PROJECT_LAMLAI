@@ -1,6 +1,12 @@
 ﻿# SWP391 Manga Project Lam Lai
 
-Project cho hệ thống **Manga Creation Workflow and Publishing Management System**. Bản này được tạo lại tại `SWP391_NEW` để nhóm 5 người chia module, học code theo phần và merge dễ hơn. Luồng chính tách 2 bước: (1) Mangaka tạo series/proposal, upload manuscript, Tantou Editor review, Editorial Board vote; (2) sau khi approved thì Mangaka vào production, tạo chapter/page/task, Assistant submit work và Mangaka duyệt kết quả.
+Project cho hệ thống **Manga Creation Workflow and Publishing Management System**.
+
+> **Cập nhật 2026-06-27:** Nhóm còn 3 người (2 backend + 1 frontend), 3 tuần còn lại. Đã giảm scope: bỏ AI summary preview, bỏ region drawing, bỏ annotations, bỏ rankings screen. Task được gán ở mức **page** thay vì pixel-level region. Chi tiết tại `docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md` mục 4.5 và `docs/TEAM_TASK_ASSIGNMENT.md`.
+
+Bản này được tạo lại tại `SWP391_NEW` để nhóm chia module và merge dễ hơn. Luồng chính tách 2 bước:
+1. Mangaka tạo series/proposal, upload manuscript, Tantou Editor review, Editorial Board vote.
+2. Sau khi approved thì Mangaka vào production, tạo chapter/page/task, Assistant submit work và Mangaka duyệt kết quả.
 
 Repository đang dùng để demo/develop:
 
@@ -19,42 +25,49 @@ https://github.com/lexuanduyanh-svg/SWP391_MANGA_PROJECT_LAMLAI
 - UI/code series wording: Draft, SubmittedToEditor, NeedsRevision, UnderBoardReview, Approved, Rejected.
 - Task DB statuses: `ASSIGNED`, `PENDING_REVIEW`, `APPROVED`, `REVISION_REQUESTED`.
 - UI/code task wording: Pending/Assigned, Submitted/Pending Review, Approved, RedoRequested/Revision Requested.
-- `tasks.region_coordinates` JSONB stores region data; there is no separate regions table in DB.
-- `submissions` store Assistant output assets; `annotations` store editor page markups; `reader_metrics` support ranking/metrics.
+- `tasks.region_coordinates` JSONB column kept in schema but **not used in V2 UI** (set null or `{"fullPage": true}`); no VisualCanvas region drawing.
+- `submissions` store Assistant output assets (file + note).
+- `annotations` and `reader_metrics` **kept in schema but NOT implemented in V2 UI/API**.
 
 ## 2. Trạng thái hiện tại
 
-Bản hiện tại đã có thể chạy demo các màn hình chính:
+**Flow 1 (Proposal workflow) — HOÀN THÀNH ✅**
 
-- Login theo role mẫu và lưu phiên đăng nhập ở frontend bằng `localStorage`.
+- Login theo role và lưu phiên đăng nhập ở frontend bằng `localStorage`.
 - Admin dashboard: quản lý account demo, skill/category và gán skill/category cho account.
-- Mangaka dashboard:
+- Mangaka dashboard (Flow 1):
   - Tạo/sửa/xóa proposal.
-  - Validate file đầu vào trước upload.
-  - Xem AI/content summary preview của file đã chọn trước khi submit.
+  - Validate file đầu vào trước upload (JS validation: type, size).
   - Upload manuscript file thật qua backend.
   - `Save & Submit to Tantou` để lưu và gửi proposal trong một bước.
   - Theo dõi trạng thái review bằng modal chi tiết.
-  - Sau khi Board approve, tạo chapter/page/task region để giao việc sản xuất.
-  - Review task Assistant đã submit: approve hoặc request redo.
 - Tantou Editor dashboard:
   - Xem proposal mới nhất trước.
   - Download manuscript.
   - Forward proposal sang Editorial Board.
   - Request revision cho Mangaka.
-  - UI hiện tại không dùng luồng reject ở vòng Tantou để demo gọn hơn.
 - Editorial Board dashboard:
   - Có 3 tài khoản Board demo.
   - Mỗi Board member được vote một lần: Approve hoặc Reject.
   - Khi đủ 3 phiếu, backend tự quyết định theo đa số.
   - Approve đa số chuyển series sang `APPROVED` / `Approved`, mở production cho Mangaka.
-- Assistant dashboard:
-  - Xem task được giao kèm chapter/page/region context.
-  - Start task.
-  - Submit file/note hoàn thành.
-  - Xem lịch sử task và estimated demo earnings.
-- Backend Java Spring Boot, có persistence qua database khi cấu hình profile/database.
-- Frontend React + Vite + TypeScript.
+
+**Flow 2 (Production workflow) — ĐANG IMPLEMENT (3 tuần)**
+
+- Sau khi Board approve, Mangaka tạo chapter/page/task (task gán ở page level, không có region).
+- Assistant nhận/start/submit task (upload file + note).
+- Mangaka review task: approve hoặc request redo.
+
+**Đã CẮT khỏi V2 scope:**
+
+- ~~AI summary preview~~ (cần Python service riêng)
+- ~~Region drawing / VisualCanvas~~ (task gán page level)
+- ~~Annotations (editor markup pins)~~ (dùng `series.editor_notes` text thay thế)
+- ~~Rankings screen / reader metrics UI~~
+- ~~Earnings calculation logic~~ (chỉ hiển thị seed value)
+
+Backend Java Spring Boot, persistence qua PostgreSQL hoặc H2 local profile.
+Frontend React + Vite + TypeScript (folder `Build as requested/`).
 
 ## 3. Demo flow chính để trình bày
 

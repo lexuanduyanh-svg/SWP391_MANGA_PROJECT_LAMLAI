@@ -1362,5 +1362,99 @@ Completed this round:
 Important note:
 
 - Series 1/ is still kept local as UI reference and was not pushed.
-- ackend/storage-server/ contains local/generated runtime files and was not pushed.
+- ackend/storage-server/ contains local/generated runtime files and was not pushed.
 - No blocker right now.
+
+## 14. Session update - 2026-06-27 (scope reduction for 3-member team)
+
+### Team change context
+
+Team reduced from 5 members to 3 members (2 members dropped out).
+
+Current team structure:
+- 2 backend developers
+- 1 frontend developer
+- Timeline: 3 weeks remaining
+
+Flow 1 (Proposal workflow) is COMPLETE and working ✅
+
+Need to reduce Flow 2 scope to fit 3 people / 3 weeks.
+
+### Scope reduction decisions
+
+**Features CUT entirely:**
+
+| Feature | Why cut | Effort saved |
+|---------|---------|-------------|
+| ❌ AI Summary preview (`api_bridge.py`, `/preview-upload` endpoint) | Requires Python service + AI model + preview UI modal | 1-2 weeks full-time |
+| ❌ Region drawing (VisualCanvas component) | Requires HTML5 canvas + mouse event handling + region CRUD UI | 3-4 days frontend |
+| ❌ Annotations (Editor page markup pins) | Requires canvas click positioning + comment modal + annotations API | 2-3 days FE+BE |
+| ❌ Rankings screen (`reader_metrics` UI + `RankingService`) | Stretch goal, not core workflow demo | 2 days FE+BE |
+
+**Features SIMPLIFIED:**
+
+| Feature | Simplification | Implementation |
+|---------|---------------|----------------|
+| ⚠️ Earnings calculation | Show static seed value only, no dynamic calculation logic | Display `assistant_profiles.monthly_earnings` from DB, skip `EarningsService` |
+| ✅ Region coordinates | Task assigned at **page level**, not pixel-level region | `tasks.region_coordinates = null` or `{"fullPage": true}`, no VisualCanvas UI |
+| ✅ File validation | Frontend-only (JS check file type/size) | Keep simple validation, no AI preview |
+| ✅ Manuscript upload | Keep existing backend implementation | Already working ✅ |
+| ✅ Submission upload | Keep file upload (clone manuscript pattern) | Backend pattern exists ✅ |
+
+### Flow 2 scope after reduction
+
+```
+Mangaka (after proposal approved):
+1. Create chapter (title, chapter_number)
+2. Create page (page_number, optionally upload page manuscript image)
+3. Create task on page (description, payment, assign assistant_id)
+   → No region drawing, task = work on full page
+4. Assistant: Start task → Submit (file + note)
+5. Mangaka: Approve or Request Redo
+```
+
+**Database tables used:**
+- `chapters`, `pages`, `tasks`, `submissions` ✅
+- `tasks.region_coordinates` column kept in schema but not used in UI (set null or fullPage JSONB)
+
+**Database tables NOT implemented in UI:**
+- `annotations` (schema kept, no UI/API)
+- `reader_metrics` (schema kept, no UI/API)
+
+### 3-week task split (3 members)
+
+| Week | Backend Dev 1 | Backend Dev 2 | Frontend Dev |
+|------|--------------|---------------|-------------|
+| **Week 1** | Complete `MangakaProductionService` (chapter/page/task CRUD, no regions) | Complete `AssistantTaskController` (start/submit with file+note) | `ProductionDashboard`: Mangaka create chapter/page/task, assign assistant |
+| **Week 2** | Unit tests for production flow + PostgreSQL integration | API task approve/redo + tests | `AssistantTaskBoard`: start/submit UI, polish 3-column kanban |
+| **Week 3** | Bug fixes, ensure Newman API tests pass, seed demo data | Bug fixes, endpoint polish | FE-BE integration, polish UI, demo prep |
+
+### What stays in schema but not implemented
+
+Schema tables/columns preserved for future but not implemented now:
+- `annotations` table (editor page markup)
+- `reader_metrics` table (rankings/leaderboard)
+- `tasks.region_coordinates` (spatial region data, will use null or `{"fullPage": true}`)
+- AI subsystem (`ai-subsystem/api_bridge.py` remains placeholder)
+
+### Verification targets
+
+After scope reduction implementation:
+
+**Backend:**
+- `mvnw.cmd test` — all tests pass ✅
+- Newman full-flow test — Flow 1 + Flow 2 basic production workflow pass
+
+**Frontend:**
+- `npm run build` — clean build ✅
+- Manual smoke test: Mangaka create chapter/page/task → Assistant submit → Mangaka approve
+
+### Next steps for implementation
+
+1. Backend devs: implement simplified production endpoints (no region logic)
+2. Frontend dev: build ProductionDashboard + AssistantTaskBoard (page-level task assignment)
+3. Integration: connect FE-BE for Flow 2 workflow
+4. Testing: Newman API + manual smoke test
+5. Demo prep: seed data + demo script
+
+**Blockers:** None currently. Scope reduction approved by user.

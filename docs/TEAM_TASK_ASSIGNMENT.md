@@ -1,300 +1,193 @@
 ﻿# Team Task Assignment - SWP391 Manga Project Lam Lai
 
-> Muc tieu: chia viec cho nhom 5 nguoi de moi nguoi hoc/code mot phan ro rang, van merge duoc ve mot project chung.
+> Cap nhat 2026-06-27: Nhom con lai 3 nguoi (2 member dropped out).
+> Scope da duoc giam de phu hop voi 3 nguoi / 3 tuan con lai.
 
-## 1. Nguyen tac chia viec
+## 1. Thay doi team
 
-- Chia theo module chuc nang, khong de mot nguoi phai hieu toan bo code.
-- Moi module co owner ro rang.
-- Khong doi API/status/database schema neu chua bao nhom va cap nhat tai lieu.
-- Truoc khi merge phai build/test phan lien quan.
-- V1 nay co them scope nho hon: file validation cho Mangaka va AI summary preview truoc upload.
-- Project moi lam tai: `C:\Users\AD\OneDrive\May tinh\Giao trinh FPT\KY5\SWP391_NEW`.
-- GitHub moi: `https://github.com/lexuanduyanh-svg/SWP391_MANGA_PROJECT_LAMLAI`.
-- Nhom can interact voi giao vien thuong xuyen: noi ro V1 scope, lay feedback som, va cap nhat tai lieu sau moi checkpoint.
+Nhom ban dau 5 nguoi, hien tai con 3 nguoi:
 
-## 2. Bang chia viec tong quan
+| Vi tri | So luong |
+|--------|---------|
+| Backend developer | 2 |
+| Frontend developer | 1 |
+| PM/BA/QA | 0 (be dam nhiem boi backend/frontend) |
 
-| Thanh vien | Vai tro | Pham vi chinh | Ket qua can ban giao |
-|---|---|---|---|
-| Member 1 | Backend 1 | Auth, Admin, Mangaka Proposal | API login/admin/proposal chay on |
-| Member 2 | Backend 2 | Tantou Review, Board Voting, Production, Assistant | API review/vote/task chay on |
-| Member 3 | Database + Persistence | PostgreSQL, schema, entity, repository, seed data | Du lieu luu duoc va restart khong mat |
-| Member 4 | Frontend | UI, dashboard theo role, form, API service | Demo UI chay duoc full flow |
-| Member 5 | PM/BA/QA/Docs/Integration | Requirement, report, test case, demo script, merge checklist | Tai lieu + QA + dieu phoi merge |
+**Flow 1 (Proposal workflow) da hoan thanh** ✅
 
-## 3. Member 1 - Backend Auth/Admin/Proposal
+Con lai: Flow 2 (Production workflow) — 3 tuan.
 
-### Phu trach
+## 2. Scope giam (so voi ke hoach ban dau)
 
-- Login theo role.
-- Admin quan ly account.
-- Admin quan ly skill/category.
-- Mangaka tao/sua/xoa proposal.
-- Upload/download manuscript.
-- Ràng buộc file đầu vào cua Mangaka truoc upload: type/size/format hop le.
-- Tao AI summary preview cho file duoc chon truoc khi upload/final submit.
-- Submit proposal to Tantou.
-- Update/resubmit revision khi Tantou yeu cau sua.
-- Ghi lai summary metadata cho proposal de giao vien/nhom de demo.
+### Cat bo hoan toan
 
-### API so huu
+| Tinh nang | Ly do cat |
+|-----------|-----------|
+| ❌ AI Summary preview (`/preview-upload` endpoint, `api_bridge.py`) | Can Python service + AI model rieng, khong kha thi trong 3 tuan |
+| ❌ Region drawing (VisualCanvas, pixel-level selection) | Canvas UI phuc tap, khong bat buoc demo |
+| ❌ Annotations (Editor markup pins tren anh page) | Khong co trong demo script bat buoc |
+| ❌ Rankings screen (`reader_metrics` UI + logic) | Stretch goal, khong core workflow |
 
-```text
-POST /api/auth/login
+### Don gian hoa
 
-GET /api/admin/accounts
-POST /api/admin/accounts
-PUT /api/admin/accounts/{id}
-DELETE /api/admin/accounts/{id}
+| Tinh nang | Truoc | Sau |
+|-----------|-------|-----|
+| Region | Ve vung pixel tren anh, luu JSONB toa do | Task gan thang vao page, `region_coordinates = null` |
+| File validation | AI summary preview truoc upload | Chi JS validation type/size o frontend |
+| Earnings | Tinh dong tu tasks approved | Hien thi so seed static tu DB |
+| Submission | Upload file + AI annotation | Upload file + text note |
 
-GET /api/admin/skills
-POST /api/admin/skills
-PUT /api/admin/skills/{id}
-DELETE /api/admin/skills/{id}
+### Giu nguyen
 
-GET /api/mangaka/proposals
-POST /api/mangaka/proposals
-PUT /api/mangaka/proposals/{id}
-DELETE /api/mangaka/proposals/{id}
+- ✅ Manuscript upload (Mangaka upload file proposal)
+- ✅ Submission file upload (Assistant submit file hoan thanh)
+- ✅ Chapter → Page → Task flow
+- ✅ Assistant start/submit task
+- ✅ Mangaka approve/redo task
 
-POST /api/mangaka/proposals/upload
-GET /api/mangaka/proposals/files/{fileName}
+## 3. Phan cong 3 nguoi — Flow 2
 
-PUT /api/mangaka/proposals/{id}/submit
-```
+### Backend Dev 1 — Production Service (Mangaka side)
 
-### Deliverable check
+**Phu trach:**
+- `InMemoryMangakaProductionService.java` — hoan thien CRUD:
+  - Tao chapter (title, chapter_number)
+  - Tao page (page_number, manuscript_file_path optional)
+  - Tao task tren page (description, payment, assign assistant_id)
+  - Khong can region logic — task gan thang vao page
+- Unit tests cho production service
+- Ket noi PostgreSQL cho production data
 
-- Login duoc bang account demo.
-- Admin tao/sua account va skill duoc.
-- Mangaka upload file dung dinh dang va bi chan neu file sai.
-- Mangaka thay AI summary preview cua file truoc khi submit.
-- Mangaka tao proposal va upload file duoc.
-- Mangaka submit proposal duoc.
-- Mangaka resubmit revision duoc.
-- Demo co checkpoint tra loi giao vien ve cach summary hoat dong.
-
-### Branch goi y
+**API so huu:**
 
 ```text
-feature/backend-auth-admin-proposal
-```
-
-## 4. Member 2 - Backend Review/Production/Assistant
-
-### Phu trach
-
-- Tantou Editor xem proposal.
-- Tantou request revision.
-- Tantou forward proposal to Board.
-- Editorial Board vote Approve/Reject.
-- Tu dong quyet dinh Approved/Rejected khi du 3 phieu.
-- Mangaka tao chapter/page/region/task sau khi proposal da approved.
-- Assistant start/submit task.
-- Mangaka approve/redo task.
-
-### API so huu
-
-```text
-GET /api/editor/proposals?editorEmail={email}
-PUT /api/editor/proposals/{id}/request-revision
-PUT /api/editor/proposals/{id}/forward-board
-
-GET /api/board/proposals?memberEmail={email}
-PUT /api/board/proposals/{id}/approve
-PUT /api/board/proposals/{id}/reject
-
-GET /api/mangaka/proposals/{proposalId}/chapters
+GET  /api/mangaka/proposals/{proposalId}/chapters
 POST /api/mangaka/proposals/{proposalId}/chapters
 POST /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages
-POST /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions
-POST /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks
+POST /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks
+PUT  /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/approve
+PUT  /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/redo
+```
 
-GET /api/assistant/tasks
+**Deliverable:**
+- Chapter/page/task CRUD hoat dong voi PostgreSQL
+- Task approve/redo doi status dung
+- Unit tests pass
+
+**Branch:**
+```text
+feature/backend-production-mangaka
+```
+
+---
+
+### Backend Dev 2 — Assistant Task Service + Integration
+
+**Phu trach:**
+- `AssistantTaskController.java` — hoan thien:
+  - List tasks cua assistant (kem chapter/page context)
+  - Start task (ASSIGNED → PENDING_REVIEW)
+  - Submit task (upload file + note, chuyen sang PENDING_REVIEW)
+- Task approve/redo (APPROVED / REVISION_REQUESTED)
+- Seed data demo cho Flow 2
+- Newman API test cho Flow 2
+- Fix bugs integration BE1 + BE2
+
+**API so huu:**
+
+```text
+GET /api/assistant/tasks?assistantEmail={email}
 PUT /api/assistant/tasks/{taskId}/start
 PUT /api/assistant/tasks/{taskId}/submit
-
-PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/approve?authorEmail={email}
-PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/redo?authorEmail={email}
 ```
 
-### Deliverable check
+**Deliverable:**
+- Assistant nhan/start/submit task hoat dong
+- File submission luu vao `storage-server/submissions/`
+- Newman Flow 2 test pass
+- Seed data du cho demo
 
-- Tantou thay proposal da submit.
-- Tantou request revision/forward Board duoc.
-- `board`, `board2`, `board3` vote duoc.
-- Sau 3 vote, status tu chuyen Approved/Rejected.
-- Mangaka tao task duoc.
-- Assistant start/submit duoc.
-- Mangaka approve/redo duoc.
-
-### Branch goi y
-
+**Branch:**
 ```text
-feature/backend-review-production-assistant
+feature/backend-assistant-tasks
 ```
 
-## 5. Member 3 - Database + Persistence
+---
 
-### Phu trach
+### Frontend Dev — Production UI
 
-- PostgreSQL schema.
-- Entity JPA.
-- Repository.
-- Seed/bootstrap data aligned to `database/schema.sql`.
-- Cau hinh H2 local/PostgreSQL.
-- Kiem tra du lieu sau moi flow.
-- Dam bao restart backend khong mat du lieu khi dung DB profile.
+**Phu trach:**
+- `ProductionDashboard.tsx` — Mangaka sau khi proposal approved:
+  - Danh sach chapter
+  - Tao chapter → tao page → tao task → assign assistant
+  - Xem task status, approve/redo
+- `AssistantTaskBoard.tsx` — Assistant:
+  - 3-column kanban: Pending → In Progress → Submitted
+  - Start task, submit file + note
+- Ket noi FE-BE cho Flow 2
+- Polish UI cho demo
 
-### Bang du lieu chinh
+**Deliverable:**
+- `npm run build` pass
+- Mangaka tao duoc chapter/page/task va giao cho assistant
+- Assistant start/submit duoc
+- Mangaka approve/redo duoc
+- UI khong bi ket o bat ky buoc nao
 
+**Branch:**
 ```text
-users
-roles
-permissions
-role_permissions
-skills
-user_skills
-assistant_profiles
-series
-board_votes
-chapters
-pages
-tasks
-submissions
-annotations
-reader_metrics
+feature/frontend-production-ui
 ```
 
-### File so huu chinh
+---
+
+## 4. Lich 3 tuan
+
+| Tuan | Backend Dev 1 | Backend Dev 2 | Frontend Dev |
+|------|--------------|---------------|-------------|
+| **Tuan 1** | Complete `MangakaProductionService` (chapter/page/task CRUD, khong region) | Complete `AssistantTaskController` (start/submit voi file+note) | `ProductionDashboard`: Mangaka tao chapter/page/task, assign assistant |
+| **Tuan 2** | Unit tests production + PostgreSQL integration | Task approve/redo + tests + seed data | `AssistantTaskBoard`: start/submit UI, polish kanban |
+| **Tuan 3** | Fix bugs, Newman API test Flow 2 | Fix bugs, endpoint polish | FE-BE integration, polish, demo prep |
+
+## 5. Flow demo sau khi giam scope
 
 ```text
-database/schema.sql
-backend/src/main/resources/application.properties
-backend/src/main/resources/application-local.properties
-backend/src/main/resources/application-demo.properties
-backend/src/main/java/com/mangastudio/workflow/entities/
-backend/src/main/java/com/mangastudio/workflow/repositories/
-```
-
-### Deliverable check
-
-- Backend connect PostgreSQL duoc.
-- Account demo co san.
-- Proposal luu DB duoc.
-- Board vote luu DB duoc.
-- Task luu DB duoc.
-- Restart backend khong mat data.
-
-### Branch goi y
-
-```text
-feature/database-persistence
-```
-
-## 6. Member 4 - Frontend
-
-### Phu trach
-
-- Login page.
-- Role dashboard routing.
-- Admin dashboard.
-- Mangaka dashboard.
-- Tantou Editor dashboard.
-- Editorial Board dashboard.
-- Assistant dashboard.
-- Goi API service.
-- Hien thi loading/error/success.
-- UI de demo cho giao vien.
-
-### Folder muc tieu
-
-```text
-frontend/src/features/auth/
-frontend/src/features/admin/
-frontend/src/features/proposal-authoring/
-frontend/src/features/editor-review/
-frontend/src/features/board-review/
-frontend/src/features/production/
-frontend/src/features/assistant-tasks/
-frontend/src/shared/
-```
-
-### Deliverable check
-
-- `npm run build` pass.
-- Login vao tung role duoc.
-- UI goi API dung contract.
-- Demo full flow khong ket o UI.
-
-### Branch goi y
-
-```text
-feature/frontend-workspaces
-```
-
-## 7. Member 5 - PM/BA/QA/Docs/Integration
-
-### Phu trach
-
-- Chot requirement.
-- Viet SRS/report.
-- Viet use case/activity/sequence neu can.
-- Viet demo script.
-- Viet test case.
-- Quan ly GitHub issue/branch.
-- Kiem tra truoc khi merge.
-- Manual test full flow.
-- Chuan bi slide thuyet trinh.
-- Ghi bug va assign dung nguoi.
-
-### File so huu chinh
-
-```text
-docs/API_CONTRACT.md
-docs/DATABASE_DESIGN.md
-docs/DEMO_SCRIPT.md
-docs/TEST_CASES.md
-docs/TEAM_TASK_ASSIGNMENT.md
-docs/GIT_WORKFLOW.md
-docs/PROJECT_RULES.md
-README.md
-```
-
-### Deliverable check
-
-- Co API contract moi nhat.
-- Co database design moi nhat.
-- Co test case.
-- Co demo script.
-- Co checklist truoc khi nop.
-
-### Branch goi y
-
-```text
-feature/docs-demo-plan
-```
-
-## 8. Flow demo chinh
-
-```text
+Flow 1 (DONE ✅):
 Mangaka tao proposal + upload manuscript
--> Submit to Tantou
+-> Submit cho Tantou Editor
 -> Tantou request revision hoac forward Board
--> Board 3 thanh vien vote
+-> 3 Board members vote
 -> He thong auto Approved/Rejected
--> Neu Approved, Mangaka tao chapter/page/region/task
--> Assistant start/submit task
--> Mangaka approve hoac redo task
+
+Flow 2 (Can implement trong 3 tuan):
+Proposal APPROVED
+-> Mangaka tao chapter (title, so chuong)
+-> Mangaka tao page (so trang)
+-> Mangaka tao task tren page + assign cho Assistant
+   (Khong ve region, task = toan bo trang)
+-> Assistant start task
+-> Assistant submit (upload file + note)
+-> Mangaka approve (APPROVED) hoac request redo (REVISION_REQUESTED)
 ```
 
-## 9. Ai chiu trach nhiem khi co loi
+## 6. Ai chiu trach nhiem khi co loi
 
 | Loi | Assign |
-|---|---|
-| Login/Admin/Proposal loi | Member 1 |
-| Tantou/Board/Production/Assistant API loi | Member 2 |
-| Data khong luu/restart mat data/schema loi | Member 3 |
-| UI khong goi duoc API/hien thi sai | Member 4 |
-| Requirement/test/demo/docs thieu | Member 5 |
+|-----|--------|
+| Login/Admin/Proposal/Auth loi | Backend Dev 1 (Flow 1 da done) |
+| Tantou/Board API loi | Backend Dev 1 |
+| Production chapter/page/task API loi | Backend Dev 1 |
+| Assistant start/submit API loi | Backend Dev 2 |
+| Data khong luu/mat sau restart | Backend Dev 2 |
+| UI production dashboard loi | Frontend Dev |
+| UI assistant board loi | Frontend Dev |
+| UI khong goi duoc API | Frontend Dev |
+
+## 7. Nguyen tac giu nguyen
+
+- Khong doi API/status/database schema neu chua bao nhau.
+- Truoc khi merge phai build/test phan lien quan.
+- Khong commit secret, local DB file, node_modules, target, dist, uploads, logs.
+- Khong commit/push khi chua co yeu cau ro rang.
+- Canonical schema: `database/schema.sql`.
+- Canonical backend package: `com.mangastudio.workflow`.
