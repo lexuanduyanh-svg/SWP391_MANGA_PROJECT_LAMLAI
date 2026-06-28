@@ -92,14 +92,14 @@ fileSize
 
 ```text
 POST /api/auth/login
-GET /api/admin/accounts
-POST /api/admin/accounts
-PUT /api/admin/accounts/{id}
-DELETE /api/admin/accounts/{id}
-GET /api/admin/skills
-POST /api/admin/skills
-PUT /api/admin/skills/{id}
-DELETE /api/admin/skills/{id}
+GET /admin/accounts
+POST /admin/accounts
+PUT /admin/accounts/{id}
+DELETE /admin/accounts/{id}
+GET /admin/skills
+POST /admin/skills
+PUT /admin/skills/{id}
+DELETE /admin/skills/{id}
 
 GET /api/mangaka/proposals?authorEmail={email}
 POST /api/mangaka/proposals
@@ -109,6 +109,8 @@ POST /api/mangaka/proposals/upload
 GET /api/mangaka/proposals/files/{fileName}
 PUT /api/mangaka/proposals/{id}/submit
 ```
+
+> ⚠️ Admin prefix là `/admin`, KHÔNG có `/api` trước. Các nhóm còn lại đều có `/api/`.
 
 ## 5. Review/Board - Owner: Member 2
 

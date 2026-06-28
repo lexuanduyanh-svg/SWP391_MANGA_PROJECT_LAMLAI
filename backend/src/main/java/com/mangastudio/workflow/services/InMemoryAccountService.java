@@ -203,7 +203,7 @@ public class InMemoryAccountService {
       return Optional.empty();
     }
     String stored = passwordByEmail.get(r.email);
-    return stored != null && passwordEncoder.matches(password, stored) ? Optional.of(r.toDto()) : Optional.empty();
+    return stored != null && passwordMatches(password, stored) ? Optional.of(r.toDto()) : Optional.empty();
   }
 
   private Optional<AccountDto> authenticateDb(String email, String password) {
@@ -217,7 +217,15 @@ public class InMemoryAccountService {
     if (!"ACTIVE".equalsIgnoreCase(e.getStatus())) {
       return Optional.empty();
     }
-    return password.equals(e.getPasswordHash()) ? Optional.of(toDto(e)) : Optional.empty();
+    return passwordMatches(password, e.getPasswordHash()) ? Optional.of(toDto(e)) : Optional.empty();
+  }
+
+  private boolean passwordMatches(String rawPassword, String encodedPassword) {
+    if (encodedPassword == null) return false;
+    if (!encodedPassword.startsWith("$2a$") && !encodedPassword.startsWith("$2y$") && !encodedPassword.startsWith("$2b$")) {
+      return rawPassword.equals(encodedPassword);
+    }
+    return passwordEncoder.matches(rawPassword, encodedPassword);
   }
 
   private AccountDto createMemory(AccountCreateRequest request) {
@@ -227,7 +235,7 @@ public class InMemoryAccountService {
     String id = String.valueOf(sequence.incrementAndGet());
     AccountRecord record = new AccountRecord(id, request.getFullName().trim(), normalizedEmail, request.getRole(), AccountStatus.Active);
     accountsById.put(id, record);
-    passwordByEmail.put(normalizedEmail, request.getPassword());
+    passwordByEmail.put(normalizedEmail, passwordEncoder.encode(request.getPassword()));
     return record.toDto();
   }
 
