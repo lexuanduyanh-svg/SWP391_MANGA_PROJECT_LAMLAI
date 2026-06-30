@@ -4,6 +4,7 @@ import {
   forwardProposalToBoard,
   getManuscriptDownloadUrl,
   listTantouEditorProposals,
+  rejectProposalByEditor,
   requestProposalRevision,
 } from "../services/tantouEditorProposalService";
 import type { LoginResponse } from "../types/auth";
@@ -137,7 +138,7 @@ export function TantouEditorDashboard({
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<EditorSection>("proposals");
   const [activeAction, setActiveAction] = useState<
-    "forward" | "revision" | null
+    "forward" | "revision" | "reject" | null
   >(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -244,7 +245,7 @@ export function TantouEditorDashboard({
   }
 
   async function handleAction(
-    action: "forward" | "revision",
+    action: "forward" | "revision" | "reject",
     request: (
       proposalId: string,
       payload: { editorEmail: string; note: string },
@@ -612,6 +613,23 @@ export function TantouEditorDashboard({
                     {activeAction === "revision"
                       ? "Sending..."
                       : "Request revision from author"}
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-danger"
+                    onClick={() =>
+                      void handleAction(
+                        "reject",
+                        rejectProposalByEditor,
+                        "Proposal rejected.",
+                        "Rejected",
+                      )
+                    }
+                    disabled={activeAction !== null}
+                  >
+                    {activeAction === "reject"
+                      ? "Rejecting..."
+                      : "Reject proposal"}
                   </button>
                 </div>
               </>

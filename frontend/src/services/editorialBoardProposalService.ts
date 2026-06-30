@@ -37,7 +37,7 @@ async function requestProposalAction(
   payload: { memberEmail: string; note: string },
 ): Promise<MangaProposal | null> {
   const response = await fetch(
-    `${API_BASE_URL}/api/editorial-board/proposals/${proposalId}/${action}`,
+    `${API_BASE_URL}/api/board/proposals/${proposalId}/${action}`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -56,7 +56,7 @@ export async function listEditorialBoardProposals(
   memberEmail: string,
 ): Promise<MangaProposal[]> {
   const response = await fetch(
-    `${API_BASE_URL}/api/editorial-board/proposals?memberEmail=${encodeURIComponent(memberEmail)}`,
+    `${API_BASE_URL}/api/board/proposals?memberEmail=${encodeURIComponent(memberEmail)}`,
   );
 
   if (!response.ok) {

@@ -33,11 +33,11 @@ async function readJson<T>(response: Response): Promise<T | null> {
 
 async function requestProposalAction(
   proposalId: string,
-  action: "forward-board" | "request-revision",
+  action: "forward-board" | "request-revision" | "reject",
   payload: { editorEmail: string; note: string },
 ): Promise<MangaProposal | null> {
   const response = await fetch(
-    `${API_BASE_URL}/api/tantou-editor/proposals/${proposalId}/${action}`,
+    `${API_BASE_URL}/api/editor/proposals/${proposalId}/${action}`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -56,7 +56,7 @@ export async function listTantouEditorProposals(
   editorEmail: string,
 ): Promise<MangaProposal[]> {
   const response = await fetch(
-    `${API_BASE_URL}/api/tantou-editor/proposals?editorEmail=${encodeURIComponent(editorEmail)}`,
+    `${API_BASE_URL}/api/editor/proposals?editorEmail=${encodeURIComponent(editorEmail)}`,
   );
 
   if (!response.ok) {
@@ -78,6 +78,13 @@ export async function requestProposalRevision(
   payload: { editorEmail: string; note: string },
 ): Promise<MangaProposal | null> {
   return requestProposalAction(proposalId, "request-revision", payload);
+}
+
+export async function rejectProposalByEditor(
+  proposalId: string,
+  payload: { editorEmail: string; note: string },
+): Promise<MangaProposal | null> {
+  return requestProposalAction(proposalId, "reject", payload);
 }
 
 export function getManuscriptDownloadUrl(fileName: string): string {
