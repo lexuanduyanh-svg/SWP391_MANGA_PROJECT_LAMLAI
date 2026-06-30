@@ -32,28 +32,59 @@ Hoặc set biến môi trường trên hosting (Vercel/Netlify):
 |---|---|
 | `VITE_API_BASE_URL` | `https://swp391-manga-api.onrender.com` |
 
-### API Endpoints (giữ nguyên)
+### API Endpoints hiện tại
 
-Tất cả endpoint đều bắt đầu bằng `/api/...`:
+> Lưu ý: Admin dùng prefix `/admin` (**không có `/api`**). Các nhóm còn lại dùng `/api/...`.
 
-```
+```text
+# Auth
 POST   /api/auth/login
-GET    /api/admin/accounts
+
+# Admin
+GET    /admin/accounts
+POST   /admin/accounts
+PUT    /admin/accounts/{id}
+PUT    /admin/accounts/{id}/status
+PUT    /admin/accounts/{id}/skills
+DELETE /admin/accounts/{id}
+GET    /admin/skills
+POST   /admin/skills
+PUT    /admin/skills/{id}
+PUT    /admin/skills/{id}/status
+DELETE /admin/skills/{id}
+
+# Mangaka - Proposal / Flow 1
+GET    /api/mangaka/proposals?authorEmail={email}
 POST   /api/mangaka/proposals
-GET    /api/mangaka/proposals
 PUT    /api/mangaka/proposals/{id}
-POST   /api/mangaka/proposals/{id}/submit
-POST   /api/mangaka/proposals/{id}/manuscript
-GET    /api/mangaka/proposals/{id}/manuscript
-POST   /api/tantou-editor/proposals/{id}/forward-to-board
-POST   /api/tantou-editor/proposals/{id}/request-revision
-POST   /api/editorial-board/proposals/{id}/vote
-GET    /api/mangaka/production/series
-POST   /api/mangaka/production/series/{id}/chapters
-...
+PUT    /api/mangaka/proposals/{id}/submit
+DELETE /api/mangaka/proposals/{id}?authorEmail={email}
+POST   /api/mangaka/proposals/preview-upload
+POST   /api/mangaka/proposals/upload
+GET    /api/mangaka/proposals/files/{fileName}
+
+# Editor / Board - Flow 1
+GET    /api/editor/proposals?editorEmail={email}
+PUT    /api/editor/proposals/{id}/forward-board
+PUT    /api/editor/proposals/{id}/request-revision
+PUT    /api/editor/proposals/{id}/reject
+GET    /api/board/proposals?memberEmail={email}
+PUT    /api/board/proposals/{id}/approve
+PUT    /api/board/proposals/{id}/reject
+
+# Production / Assistant - Flow 2
+GET    /api/mangaka/proposals/{proposalId}/chapters
+POST   /api/mangaka/proposals/{proposalId}/chapters
+POST   /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages
+POST   /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks
+PUT    /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/approve
+PUT    /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/redo
+GET    /api/assistant/tasks?assistantEmail={email}
+PUT    /api/assistant/tasks/{taskId}/start
+PUT    /api/assistant/tasks/{taskId}/submit
 ```
 
-Chi tiết: xem `docs/API_CONTRACT.md`.
+Chi tiết đầy đủ: xem `docs/API_LIST.md` và `docs/API_CONTRACT.md`.
 
 ### Demo Accounts (seed data)
 
