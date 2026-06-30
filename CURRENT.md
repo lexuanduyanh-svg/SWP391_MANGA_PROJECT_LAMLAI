@@ -35,6 +35,11 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 - **Cleaned series status**: Schema: `HIATUS` removed, kept `ACTIVE`/`COMPLETED`/`CANCELLED`.
 - **Fixed chapters default**: `DEFAULT 'Draft'` → `'DRAFT'` to match enum.
 - **Simplified page status**: MangakaPageStatus 6→3: DRAFT, IN_TASK, DONE. Updated enum, service, schema (CHECK constraint), frontend types, tests. Removed no-op status transitions in service.
+- **Integrated PageAnnotations** into TantouEditorDashboard "Production Review" tab (hardcoded pageId=601 for now).
+- **Integrated RankingsDashboard** into EditorialBoardDashboard "Rankings" tab.
+- **Integrated SeriesDecisionsDashboard** into EditorialBoardDashboard "Decisions" tab.
+- **Created FLOW_OVERVIEW.md**: detailed status machines for both Flow 1 (Proposal) and Flow 2 (Production) with full transition tables.
+- **Frontend routing**: All dashboards already wired via LoginPage role-based routing. No routing library needed.
 
 ### Blocked
 - Render build failing — needs build logs from user to diagnose
@@ -51,14 +56,16 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 
 ## Next Steps
 1. Get Render build logs to debug Docker build failure
-2. Integrate PageAnnotations into TantouEditorDashboard for editors to annotate pages.
-3. Integrate RankingsDashboard into EditorialBoardDashboard.
-4. Integrate SeriesDecisionsPanel/Dashboard into EditorialBoardDashboard.
-5. Frontend routing: wire new components into the app's login→dashboard flow.
-6. Demo end-to-end flows.
+2. Add `editorial-board` and `editor` seed accounts for easier demo login
+3. Demo end-to-end flows
+
+## Open Items
+- PageAnnotations currently hardcoded to pageId=601 — should show dynamic page selection from the editor's assigned series
+- RankingsDashboard uses hardcoded series list — should fetch real series data
+- SeriesDecisionsDashboard would benefit from real search/sort of all production series
 
 ## Critical Context
-- `MangakaDashboard.tsx` is ~3067 lines — contains Flow 1 (proposal CRUD) + Flow 2 (chapter/page/task/region) in one file.
+- `MangakaDashboard.tsx` is ~3052 lines — contains Flow 1 (proposal CRUD) + Flow 2 (chapter/page/task/region) in one file.
 - Backend seed has proposal "4" (Approved) linked to series "801", with seed chapter "600" and page "601".
 - Annotations are seeded on page "601" (2 sample annotations).
 - Reader metrics seeded with 2 entries for series "801".
@@ -86,3 +93,4 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 - `frontend/src/components/RankingsDashboard.tsx`
 - `frontend/src/components/SeriesDecisionsPanel.tsx`
 - `frontend/src/components/SeriesDecisionsDashboard.tsx`
+- `docs/requirements/FLOW_OVERVIEW.md`
