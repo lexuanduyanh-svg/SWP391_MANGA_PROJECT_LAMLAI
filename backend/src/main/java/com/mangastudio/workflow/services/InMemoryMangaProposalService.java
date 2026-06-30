@@ -159,7 +159,6 @@ public class InMemoryMangaProposalService {
     seed("2", "Seed Revision", MangaProposalStatus.NeedsRevision);
     seed("3", "Seed Submitted", MangaProposalStatus.SubmittedToEditor);
     seed("4", "Seed Approved", MangaProposalStatus.Approved);
-    seed("5", "Seed Serializing", MangaProposalStatus.Serializing);
   }
 
   private void seedDbIfEmpty() {
@@ -403,8 +402,7 @@ public class InMemoryMangaProposalService {
     for (ProposalRecord r : proposals.values())
       if (r.status == MangaProposalStatus.UnderBoardReview
           || r.status == MangaProposalStatus.Approved
-          || r.status == MangaProposalStatus.Rejected
-          || r.status == MangaProposalStatus.Serializing) result.add(r.toDtoFor(viewer));
+          || r.status == MangaProposalStatus.Rejected) result.add(r.toDtoFor(viewer));
     sortNewest(result);
     return Collections.unmodifiableList(result);
   }

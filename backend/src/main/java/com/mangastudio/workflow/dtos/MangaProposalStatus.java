@@ -6,6 +6,5 @@ public enum MangaProposalStatus {
   UnderBoardReview,
   NeedsRevision,
   Approved,
-  Serializing,
   Rejected
 }

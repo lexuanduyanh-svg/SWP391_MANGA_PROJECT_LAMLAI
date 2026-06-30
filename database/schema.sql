@@ -44,6 +44,8 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     role_id INTEGER REFERENCES roles(role_id),
     status VARCHAR(20) DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_user_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
 );
 
@@ -54,12 +56,14 @@ CREATE TABLE assistant_profiles (
 
 CREATE TABLE skills (
     skill_id SERIAL PRIMARY KEY,
-    skill_name VARCHAR(100) NOT NULL UNIQUE
+    skill_name VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE user_skills (
     user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
     skill_id INTEGER REFERENCES skills(skill_id) ON DELETE CASCADE,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, skill_id)
 );
 
@@ -97,8 +101,14 @@ CREATE TABLE chapters (
     series_id INTEGER REFERENCES series(series_id) ON DELETE CASCADE,
     chapter_number INTEGER NOT NULL,
     title VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'Draft',
     print_deadline TIMESTAMP,
-    CONSTRAINT unique_series_chapter UNIQUE (series_id, chapter_number)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_series_chapter UNIQUE (series_id, chapter_number),
+    CONSTRAINT chk_chapter_status CHECK (status IN (
+        'Draft', 'InProgress', 'PagesUploaded', 'TasksInProgress', 'ReadyForEditor', 'Published', 'Cancelled'
+    ))
 );
 
 CREATE TABLE pages (
@@ -106,6 +116,9 @@ CREATE TABLE pages (
     chapter_id INTEGER REFERENCES chapters(chapter_id) ON DELETE CASCADE,
     page_number INTEGER NOT NULL,
     manuscript_file_path VARCHAR(512),
+    status VARCHAR(50) DEFAULT 'Uploaded',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_chapter_page UNIQUE (chapter_id, page_number)
 );
 
@@ -124,13 +137,16 @@ CREATE TABLE tasks (
 
     -- [NEW COLUMN]: Holds Mangaka's revision feedback for the Assistant
     feedback_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     -- [UPDATED STATUS STATES]
     CONSTRAINT chk_task_status CHECK (status IN (
         'ASSIGNED',
+        'IN_PROGRESS',
         'PENDING_REVIEW',
         'APPROVED',
-        'REVISION_REQUESTED' -- Sent back by Mangaka to Assistant
+        'REVISION_REQUESTED'
     ))
 );
 
@@ -138,7 +154,7 @@ CREATE TABLE submissions (
     submission_id SERIAL PRIMARY KEY,
     task_id INTEGER REFERENCES tasks(task_id) ON DELETE CASCADE,
     asset_file_path VARCHAR(512) NOT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE annotations (
@@ -147,6 +163,7 @@ CREATE TABLE annotations (
     editor_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
     spatial_coordinates JSONB, -- For pinning comments on a specific location
     content TEXT NOT NULL,
+    resolved BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -164,6 +181,8 @@ CREATE TABLE reader_metrics (
     likes_count INTEGER DEFAULT 0 CHECK (likes_count >= 0),
     shares_count INTEGER DEFAULT 0 CHECK (shares_count >= 0),
     votes_count INTEGER DEFAULT 0 CHECK (votes_count >= 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     -- [BR-56 Guard]: Prevents negative inputs right at the database layer
     CONSTRAINT unique_series_cycle UNIQUE (series_id, publication_cycle)

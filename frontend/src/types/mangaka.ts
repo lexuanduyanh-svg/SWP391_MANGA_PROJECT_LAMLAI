@@ -4,7 +4,6 @@ export type MangaProposalStatus =
   | "UnderBoardReview"
   | "NeedsRevision"
   | "Approved"
-  | "Serializing"
   | "Rejected";
 
 export interface MangaProposal {

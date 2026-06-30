@@ -153,7 +153,7 @@ const REVIEW_LANES: Array<{
   },
   {
     label: "Approved",
-    statuses: ["Approved", "Serializing"],
+    statuses: ["Approved"],
     emptyHint: "Approved proposals move into Production.",
   },
 ];
@@ -282,9 +282,6 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
   const totalApproved = proposals.filter(
     (proposal) => proposal.status === "Approved",
   ).length;
-  const totalSerializing = proposals.filter(
-    (proposal) => proposal.status === "Serializing",
-  ).length;
   const totalSubmitted = proposals.filter(
     (proposal) => proposal.status === "SubmittedToEditor",
   ).length;
@@ -295,7 +292,7 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
     (proposal) =>
       proposal.status === "Draft" || proposal.status === "NeedsRevision",
   ).length;
-  const productionReadyCount = totalApproved + totalSerializing;
+  const productionReadyCount = totalApproved;
   const visibleDraftCount = visibleProposals.filter(
     (proposal) =>
       proposal.status === "Draft" || proposal.status === "NeedsRevision",
@@ -1975,7 +1972,7 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
                 {!selectedProductionProposalId ? (
                   <div className="admin-empty-state">
                     <strong>No series selected</strong>
-                    <p>Pick an approved or serializing proposal first.</p>
+                    <p>Pick an approved proposal first.</p>
                   </div>
                 ) : (
                   <div className="mangaka-action-grid mangaka-action-grid--production">
@@ -2871,7 +2868,7 @@ function reviewSummary(proposal: MangaProposal) {
   }
 
   if (
-    (proposal.status === "Approved" || proposal.status === "Serializing") &&
+    proposal.status === "Approved" &&
     proposal.boardDecisionNote
   ) {
     return {
@@ -2886,7 +2883,7 @@ function reviewSummary(proposal: MangaProposal) {
 }
 
 function isProductionReady(status: MangaProposalStatus) {
-  return status === "Approved" || status === "Serializing";
+  return status === "Approved";
 }
 
 function normalizeTaskStatus(status?: string | null) {
@@ -2918,8 +2915,6 @@ function formatStatus(status: MangaProposalStatus) {
       return "Needs revision";
     case "Approved":
       return "Approved";
-    case "Serializing":
-      return "Serializing";
     case "Rejected":
       return "Rejected";
   }
@@ -2937,8 +2932,6 @@ function statusClass(status: MangaProposalStatus) {
       return "revision";
     case "Approved":
       return "approved";
-    case "Serializing":
-      return "serializing";
     case "Rejected":
       return "rejected";
   }

@@ -31,9 +31,9 @@ const BUCKETS: Array<{
   {
     key: "approved",
     label: "Approved",
-    statuses: ["Approved", "Serializing"],
+    statuses: ["Approved"],
     description:
-      "Approved for production or already moving into serialization.",
+      "Approved for production.",
   },
   {
     key: "rejected",
@@ -49,7 +49,6 @@ function normalizeStatus(status?: string | null): MangaProposalStatus | null {
   const compact = status.toLowerCase().replace(/[\s_-]/g, "");
   if (compact.includes("underboardreview")) return "UnderBoardReview";
   if (compact.includes("approved")) return "Approved";
-  if (compact.includes("serializing")) return "Serializing";
   if (compact.includes("rejected")) return "Rejected";
   if (compact.includes("needsrevision")) return "NeedsRevision";
   if (compact.includes("submittedtoeditor")) return "SubmittedToEditor";
@@ -87,7 +86,6 @@ function displayFileName(value?: string | null): string {
 function statusLabel(status?: string | null): string {
   const normalized = normalizeStatus(status);
   if (normalized === "UnderBoardReview") return "Under Board Review";
-  if (normalized === "Serializing") return "Serializing";
   if (normalized === "Approved") return "Approved";
   if (normalized === "Rejected") return "Rejected";
   return valueOrDash(status);
@@ -96,7 +94,7 @@ function statusLabel(status?: string | null): string {
 function statusTone(status?: string | null): string {
   const normalized = normalizeStatus(status);
   if (normalized === "UnderBoardReview") return "role-pill role-pill--info";
-  if (normalized === "Approved" || normalized === "Serializing")
+  if (normalized === "Approved")
     return "role-pill role-pill--success";
   if (normalized === "Rejected") return "role-pill role-pill--danger";
   return "role-pill role-pill--neutral";
@@ -113,7 +111,6 @@ function boardVoteDisplay(proposal: MangaProposal) {
     (proposal.boardApproveVotes ?? 0) + (proposal.boardRejectVotes ?? 0) > 0;
   if (
     (status === "Approved" ||
-      status === "Serializing" ||
       status === "Rejected") &&
     !hasRecordedVotes
   ) {

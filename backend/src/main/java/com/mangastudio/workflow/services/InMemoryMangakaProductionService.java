@@ -69,6 +69,29 @@ public class InMemoryMangakaProductionService {
   private String id() { return String.valueOf(seq.incrementAndGet()); }
   private boolean blank(String s) { return s == null || s.trim().isEmpty(); }
 
+  private String toTaskDbStatus(MangakaTaskStatus status) {
+    switch (status) {
+      case Pending:       return "ASSIGNED";
+      case InProgress:    return "IN_PROGRESS";
+      case Submitted:     return "PENDING_REVIEW";
+      case Approved:      return "APPROVED";
+      case RedoRequested: return "REVISION_REQUESTED";
+      default:            return status.name();
+    }
+  }
+
+  private MangakaTaskStatus fromTaskDbStatus(String dbStatus) {
+    if (dbStatus == null) return MangakaTaskStatus.Pending;
+    switch (dbStatus) {
+      case "ASSIGNED":           return MangakaTaskStatus.Pending;
+      case "IN_PROGRESS":        return MangakaTaskStatus.InProgress;
+      case "PENDING_REVIEW":     return MangakaTaskStatus.Submitted;
+      case "APPROVED":           return MangakaTaskStatus.Approved;
+      case "REVISION_REQUESTED": return MangakaTaskStatus.RedoRequested;
+      default:                   return MangakaTaskStatus.Pending;
+    }
+  }
+
   private void seedMemory() {
     if (!chapters.isEmpty()) return;
 
@@ -202,7 +225,7 @@ public class InMemoryMangakaProductionService {
     task.setAssistant(assistant);
     task.setTaskType(skill);
     task.setRegionCoordinates(null);
-    task.setStatus(MangakaTaskStatus.Pending.name());
+    task.setStatus(toTaskDbStatus(MangakaTaskStatus.Pending));
     task.setFeedbackNotes(request.getInstructions());
     task.setCreatedAt(LocalDateTime.now());
     task.setUpdatedAt(LocalDateTime.now());
@@ -216,7 +239,7 @@ public class InMemoryMangakaProductionService {
         skill.getSkillName(),
         saved.getFeedbackNotes(),
         request.getReferenceFileName(),
-        MangakaTaskStatus.valueOf(saved.getStatus()),
+        fromTaskDbStatus(saved.getStatus()),
         saved.getCreatedAt().format(f),
         saved.getUpdatedAt().format(f),
         null,
@@ -225,9 +248,47 @@ public class InMemoryMangakaProductionService {
     );
   }
   
-  private List<AssistantTaskDto> listAssistantTasksDb(String assistantEmail) { return listAssistantTasksMemory(assistantEmail); }
-  private AssistantTaskDto startAssistantTaskDb(String taskId, String assistantEmail) { return startAssistantTaskMemory(taskId, assistantEmail); }
-  private AssistantTaskDto submitAssistantTaskDb(String taskId, String assistantEmail, String submittedFileName, String submissionNote) { return submitAssistantTaskMemory(taskId, assistantEmail, submittedFileName, submissionNote); }
+  private List<AssistantTaskDto> listAssistantTasksDb(String assistantEmail) {
+    if (blank(assistantEmail)) throw new IllegalArgumentException("Assistant email is required");
+    List<TaskEntity> tasks = taskRepository.findByAssistant_EmailIgnoreCaseOrderByUpdatedAtDesc(assistantEmail);
+    List<AssistantTaskDto> out = new ArrayList<AssistantTaskDto>();
+    for (TaskEntity t : tasks) {
+      out.add(toAssistantTaskDto(t));
+    }
+    return out;
+  }
+
+  private AssistantTaskDto startAssistantTaskDb(String taskId, String assistantEmail) {
+    TaskEntity task = taskRepository.findById(Long.parseLong(taskId))
+        .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+    String dbStatus = task.getStatus();
+    if (!"ASSIGNED".equals(dbStatus) && !"REVISION_REQUESTED".equals(dbStatus)) {
+      throw new IllegalArgumentException("Task cannot be started in current status");
+    }
+    task.setStatus(toTaskDbStatus(MangakaTaskStatus.InProgress));
+    task.setUpdatedAt(LocalDateTime.now());
+    TaskEntity saved = taskRepository.save(task);
+    return toAssistantTaskDto(saved);
+  }
+
+  private AssistantTaskDto submitAssistantTaskDb(String taskId, String assistantEmail, String submittedFileName, String submissionNote) {
+    TaskEntity task = taskRepository.findById(Long.parseLong(taskId))
+        .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+    if (!"IN_PROGRESS".equals(task.getStatus())) {
+      throw new IllegalArgumentException("Task cannot be submitted in current status");
+    }
+    task.setStatus(toTaskDbStatus(MangakaTaskStatus.Submitted));
+    task.setUpdatedAt(LocalDateTime.now());
+    TaskEntity savedTask = taskRepository.save(task);
+
+    SubmissionEntity submission = new SubmissionEntity();
+    submission.setTask(savedTask);
+    submission.setAssetFilePath(submittedFileName);
+    submission.setSubmittedAt(LocalDateTime.now());
+    submissionRepository.save(submission);
+
+    return toAssistantTaskDto(savedTask);
+  }
   
   private MangakaProductionTaskDto approveTaskDb(String proposalId, String chapterId, String pageId, String taskId, String authorEmail) {
     ensureAllowed(proposalId, authorEmail);
@@ -235,11 +296,11 @@ public class InMemoryMangakaProductionService {
     TaskEntity task = taskRepository.findById(Long.parseLong(taskId))
         .orElseThrow(() -> new IllegalArgumentException("Task not found"));
     
-    if (!MangakaTaskStatus.Submitted.name().equals(task.getStatus())) {
+    if (!"PENDING_REVIEW".equals(task.getStatus())) {
       throw new IllegalArgumentException("Task cannot be approved in current status");
     }
     
-    task.setStatus(MangakaTaskStatus.Approved.name());
+    task.setStatus(toTaskDbStatus(MangakaTaskStatus.Approved));
     task.setUpdatedAt(LocalDateTime.now());
     
     TaskEntity saved = taskRepository.save(task);
@@ -251,7 +312,7 @@ public class InMemoryMangakaProductionService {
         saved.getTaskType().getSkillName(),
         saved.getFeedbackNotes(),
         null,
-        MangakaTaskStatus.valueOf(saved.getStatus()),
+        fromTaskDbStatus(saved.getStatus()),
         saved.getCreatedAt().format(f),
         saved.getUpdatedAt().format(f),
         null,
@@ -266,11 +327,11 @@ public class InMemoryMangakaProductionService {
     TaskEntity task = taskRepository.findById(Long.parseLong(taskId))
         .orElseThrow(() -> new IllegalArgumentException("Task not found"));
     
-    if (MangakaTaskStatus.Approved.name().equals(task.getStatus())) {
+    if ("APPROVED".equals(task.getStatus())) {
       throw new IllegalArgumentException("Approved task cannot be sent back for redo");
     }
     
-    task.setStatus(MangakaTaskStatus.RedoRequested.name());
+    task.setStatus(toTaskDbStatus(MangakaTaskStatus.RedoRequested));
     task.setUpdatedAt(LocalDateTime.now());
     
     TaskEntity saved = taskRepository.save(task);
@@ -282,11 +343,49 @@ public class InMemoryMangakaProductionService {
         saved.getTaskType().getSkillName(),
         saved.getFeedbackNotes(),
         null,
-        MangakaTaskStatus.valueOf(saved.getStatus()),
+        fromTaskDbStatus(saved.getStatus()),
         saved.getCreatedAt().format(f),
         saved.getUpdatedAt().format(f),
         null,
         null,
+        null
+    );
+  }
+
+  private AssistantTaskDto toAssistantTaskDto(TaskEntity t) {
+    String pageId = t.getPage() != null ? String.valueOf(t.getPage().getId()) : null;
+    String chapterId = null;
+    String chapterTitle = null;
+    int pageNumber = 0;
+    String pageFileName = null;
+    if (t.getPage() != null) {
+      pageNumber = t.getPage().getPageNumber();
+      pageFileName = t.getPage().getManuscriptFilePath();
+      if (t.getPage().getChapter() != null) {
+        chapterId = String.valueOf(t.getPage().getChapter().getId());
+        chapterTitle = t.getPage().getChapter().getTitle();
+      }
+    }
+    return new AssistantTaskDto(
+        String.valueOf(t.getId()),
+        null,
+        chapterId,
+        chapterTitle,
+        pageId,
+        pageNumber,
+        pageFileName,
+        t.getRegionCoordinates(),
+        null,
+        null,
+        t.getAssistant() != null ? t.getAssistant().getEmail() : null,
+        t.getTaskType() != null ? t.getTaskType().getSkillName() : null,
+        t.getFeedbackNotes(),
+        null,
+        fromTaskDbStatus(t.getStatus()),
+        null,
+        null,
+        t.getCreatedAt() != null ? t.getCreatedAt().format(f) : null,
+        t.getUpdatedAt() != null ? t.getUpdatedAt().format(f) : null,
         null
     );
   }

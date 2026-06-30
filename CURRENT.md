@@ -238,6 +238,42 @@ Keep this split as team context unless the user changes it.
 - `Series 1/` kept as screenshot/reference assets.
 - `backend/storage-server/` kept as runtime storage folder.
 
+## 16. Session update - 2026-06-29 (Cleanup Constraints & DB Schema for V2)
+
+**Completed work:**
+
+1. Flow 3 Rollback finalized:
+   - Evaluated by `oracle` and `explore` subagents: Flow 3 is fully removed (`SeriesDecision*`, `Ranking*`).
+
+2. Enforcing DB constraints (Flow 2 / Postgres Readiness):
+   - Fixed Flow 2 Tasks enum mismatch: Mapped `MangakaTaskStatus` (Pending, InProgress, Submitted... ) to database checking constraints (`ASSIGNED`, `IN_PROGRESS`, `PENDING_REVIEW`...) directly inside `InMemoryMangakaProductionService.java`.
+   - Re-wrote DB delegation for Assistant actions (`listAssistantTasksDb`, `startAssistantTaskDb`, `submitAssistantTaskDb`) to use Repositories properly instead of deferring to memory caches.
+   - Handled `SubmissionEntity` persistence for Assistant submissions.
+
+3. Aligning Schema and Entities:
+   - Added missing core fields `created_at` and `updated_at` across tables (`tasks`, `users`, `skills`, `reader_metrics`) into `database/schema.sql` to avoid Hibernate auto-mutating the DDL when connected to real Postgres.
+   - Updated `submissions.submitted_at` mapping accurately.
+   - Removed entirely out-of-scope `AnnotationEntity` and `AnnotationRepository`.
+   
+4. Cleaned up Frontend/Backend DTO leftovers:
+   - Completely purged `Serializing` enum variant from Proposal Status on both Backend Data Models and React Frontend union types. "Approved" is the final production-ready state now.
+
+**Final save for current session (backend-focused):**
+- User clarified: from now on, focus on backend only; frontend will be handled by someone else.
+- Backend canonical scope is V2 reduced scope: only Flow 1 (Proposal Review) and Flow 2 (Production/Assistant Tasks).
+- Flow 1 backend path: Mangaka Draft -> SubmittedToEditor -> Editor revision/forward -> UnderBoardReview -> 3 Board votes -> Approved/Rejected.
+- Flow 2 backend path: only Approved proposals can enter production; Mangaka creates chapters/pages and assigns page-level tasks; Assistant starts/submits; Mangaka approves or requests redo.
+- Out-of-scope confirmed removed from backend: Flow 3 ranking/decision APIs/services/entities/tests, `Serializing` proposal status, annotation Java entity/repository, external AI-summary service, and region drawing behavior.
+- Schema/entity alignment was tightened for real PostgreSQL demo: `users`, `skills`, `user_skills`, `chapters`, `pages`, `tasks`, `submissions`, `reader_metrics`, and relevant timestamp/status columns now align with mapped entities.
+- Verification completed:
+  - Backend: `mvn test` -> 29 tests passed, BUILD SUCCESS.
+  - Frontend build was run only to ensure previous type cleanup did not break compilation, but future work should remain backend-only unless user asks otherwise.
+
+**Next steps:**
+- If continuing backend, prefer PostgreSQL integration smoke test for Flow 1 and Flow 2 using real DB schema.
+- Then prepare concise backend report/demo notes around controllers, services, schema constraints, and state machines.
+- Do not start frontend work unless user explicitly requests it.
+
 ### In progress / known issues
 - `DraftForm` submit flow still needs clearer backend error display.
 - File picker / Chrome "not responding" appears to be environment/browser-side, not app logic.

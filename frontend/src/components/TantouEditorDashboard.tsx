@@ -37,7 +37,7 @@ const BUCKETS: Array<{
   {
     key: "needsWork",
     label: "Revision / Completed",
-    statuses: ["NeedsRevision", "Approved", "Serializing"],
+    statuses: ["NeedsRevision", "Approved"],
     description:
       "Sent back for author revision or already completed beyond editor review.",
   },
@@ -50,7 +50,6 @@ function normalizeStatus(status?: string | null): MangaProposalStatus | null {
   if (compact.includes("underboardreview")) return "UnderBoardReview";
   if (compact.includes("submittedtoeditor")) return "SubmittedToEditor";
   if (compact.includes("needsrevision")) return "NeedsRevision";
-  if (compact.includes("serializing")) return "Serializing";
   if (compact.includes("approved")) return "Approved";
   if (compact.includes("rejected")) return "Rejected";
   if (compact.includes("draft")) return "Draft";
@@ -88,7 +87,6 @@ function statusLabel(status?: string | null): string {
   const normalized = normalizeStatus(status);
   if (normalized === "UnderBoardReview") return "Forwarded to Board";
   if (normalized === "NeedsRevision") return "Needs Revision";
-  if (normalized === "Serializing") return "Serializing";
   if (normalized === "Approved") return "Approved";
   if (normalized === "Rejected") return "Rejected";
   if (normalized === "SubmittedToEditor") return "Submitted";
@@ -99,7 +97,7 @@ function statusLabel(status?: string | null): string {
 function statusTone(status?: string | null): string {
   const normalized = normalizeStatus(status);
   if (normalized === "UnderBoardReview") return "role-pill role-pill--info";
-  if (normalized === "Approved" || normalized === "Serializing")
+  if (normalized === "Approved")
     return "role-pill role-pill--success";
   if (normalized === "NeedsRevision") return "role-pill role-pill--warning";
   if (normalized === "Rejected") return "role-pill role-pill--danger";

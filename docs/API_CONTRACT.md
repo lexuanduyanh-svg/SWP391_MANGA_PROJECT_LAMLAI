@@ -54,7 +54,7 @@ series, board_votes, chapters, pages, tasks, submissions, annotations, reader_me
 | `APPROVED` | `Approved` |
 | `REJECTED` | `Rejected` |
 
-Do not use `PENDING` as proposal/series status. `Serializing` may appear only as backward app compatibility wording because DB schema does not define `SERIALIZING`.
+Do not use `PENDING` as proposal/series status.
 
 ### Task status
 
