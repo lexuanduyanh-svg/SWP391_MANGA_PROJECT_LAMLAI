@@ -34,7 +34,7 @@ Con lai: Flow 2 (Production workflow) theo ban full truoc khi giam scope.
 | Noi dung cua ban giam scope | Trang thai hien tai |
 |---------------------------|----------------|
 | Task gan thang vao page, khong co region | Bo, quay lai chapter -> page -> region -> task |
-| `region_coordinates = null` / full-page only | Bo, luu toa do region JSON |
+| `region_coordinates = null` / full-page only | Bo, region la entity rieng (x, y, w, h) |
 | Chi JS validation type/size, bo AI preview | Bo, giu AI summary preview trong scope |
 | Bo annotations/rankings | Bo, giu annotations/rankings trong scope |
 

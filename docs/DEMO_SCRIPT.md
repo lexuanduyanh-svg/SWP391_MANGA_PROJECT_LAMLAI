@@ -85,9 +85,8 @@ UI map: `Editor` -> Tantou Editor; `Board` -> Editorial Board Member.
 14. Them Page vao chapter (so trang, tuy chon upload anh trang).
 15. Tao Region tren page, sau do tao Task cho region:
     - Mo ta cong viec
-    - Payment amount
+    - Deadline
     - Chon assistant de assign
-    - `region_coordinates` luu vung da chon tren page
 16. Login Assistant (`assistant@manga.local`).
 17. Xem task duoc giao kem chapter/page context.
 18. Bam `Start` de nhan task. Status: `ASSIGNED`.

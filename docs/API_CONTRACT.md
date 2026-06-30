@@ -27,7 +27,7 @@ proposals, series, board_votes, chapters, pages, tasks, submissions, annotations
 
 - Flow 1 proposal table is `proposals`; Flow 2 production table is `series`, linked by `series.proposal_id`. `database/schema.sql` is canonical for these fields.
 - `chapters` vÃ  `pages` khÃ´ng cÃ³ status column trong DB.
-- KhÃ´ng cÃ³ table `regions`; region data náº±m trong `tasks.region_coordinates` JSONB.
+- Regions lÃ  entity riÃªng (MangakaPageRegionDto), lÆ°u coordinates dáº¡ng x, y, widthPct, heightPct. Task gÃ¡n vÃ o region qua regionId.
 - `submissions` lÆ°u output asset cá»§a Assistant. `annotations` lÆ°u editor page markup. `reader_metrics` dÃ¹ng cho metrics/ranking.
 - API workflow filters hiá»‡n dÃ¹ng email (`authorEmail`, `editorEmail`, `memberEmail`, `assistantEmail`) dÃ¹ DB ownership dÃ¹ng user id FKs.
 

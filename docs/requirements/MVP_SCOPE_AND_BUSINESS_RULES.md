@@ -121,7 +121,7 @@ Flow 2 returns to chapter/page/region/task production scope.
 | Old reduced behavior | Restored behavior |
 |----------------------|-------------------|
 | Task assigned at page level only | Task assigned to a page region |
-| `region_coordinates = null` or `{"fullPage": true}` | `region_coordinates` stores the selected region geometry |
+| `region_coordinates = null` or `{"fullPage": true}` | Region stored as entity (x, y, w, h), task linked by regionId |
 | Static seed earnings only | Estimated earnings derive from approved tasks and earning rates |
 | File upload + text note only | Submission can include file, note, and version/annotation context |
 | JS frontend validation only | JS validation plus AI summary preview where applicable |

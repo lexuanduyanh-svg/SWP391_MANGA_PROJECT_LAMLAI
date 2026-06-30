@@ -146,6 +146,6 @@ board@manga.local     / Board@123
 > ðŸ“Œ **LÆ°u Ã½ chÃªnh lá»‡ch path:**
 > - NhÃ³m Admin dÃ¹ng prefix `/admin` (**khÃ´ng** cÃ³ `/api`).
 > - CÃ¡c nhÃ³m cÃ²n láº¡i dÃ¹ng `/api/...`.
-> - Flow 2 dùng cấp `regions`: `.../pages/{pageId}/regions/{regionId}/tasks`. Region được lưu bằng `tasks.region_coordinates` JSONB.
+> - Flow 2 dùng cấp `regions`: `.../pages/{pageId}/regions/{regionId}/tasks`. Region là entity riêng (MangakaPageRegionDto) với coordinates dạng x, y, widthPct, heightPct.
 
 
