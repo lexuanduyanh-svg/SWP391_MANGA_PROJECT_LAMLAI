@@ -98,7 +98,7 @@ CREATE TABLE series (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_series_status CHECK (status IN (
-        'ACTIVE'
+        'ACTIVE', 'COMPLETED', 'CANCELLED'
     )),
     CONSTRAINT chk_publishing_frequency CHECK (publishing_frequency IN ('WEEKLY', 'MONTHLY'))
 );
