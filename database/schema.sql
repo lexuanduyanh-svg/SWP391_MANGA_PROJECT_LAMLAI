@@ -13,10 +13,7 @@ DROP TABLE IF EXISTS series CASCADE;
 DROP TABLE IF EXISTS proposals CASCADE;
 DROP TABLE IF EXISTS user_skills CASCADE;
 DROP TABLE IF EXISTS skills CASCADE;
-DROP TABLE IF EXISTS assistant_profiles CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS role_permissions CASCADE;
-DROP TABLE IF EXISTS permissions CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
 
 -- ====================================================================
@@ -26,17 +23,6 @@ DROP TABLE IF EXISTS roles CASCADE;
 CREATE TABLE roles (
     role_id SERIAL PRIMARY KEY,
     role_name VARCHAR(50) NOT NULL UNIQUE
-);
-
-CREATE TABLE permissions (
-    permission_id SERIAL PRIMARY KEY,
-    action_name VARCHAR(100) NOT NULL UNIQUE
-);
-
-CREATE TABLE role_permissions (
-    role_id INTEGER REFERENCES roles(role_id) ON DELETE CASCADE,
-    permission_id INTEGER REFERENCES permissions(permission_id) ON DELETE CASCADE,
-    PRIMARY KEY (role_id, permission_id)
 );
 
 CREATE TABLE users (
@@ -49,11 +35,6 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_user_status CHECK (status IN ('ACTIVE', 'INACTIVE'))
-);
-
-CREATE TABLE assistant_profiles (
-    user_id INTEGER PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
-    monthly_earnings DECIMAL(10, 2) DEFAULT 0.00 CHECK (monthly_earnings >= 0)
 );
 
 CREATE TABLE skills (
@@ -117,7 +98,7 @@ CREATE TABLE series (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_series_status CHECK (status IN (
-        'ACTIVE', 'HIATUS', 'COMPLETED', 'CANCELLED'
+        'ACTIVE'
     )),
     CONSTRAINT chk_publishing_frequency CHECK (publishing_frequency IN ('WEEKLY', 'MONTHLY'))
 );
@@ -131,7 +112,7 @@ CREATE TABLE chapters (
     series_id INTEGER REFERENCES series(series_id) ON DELETE CASCADE,
     chapter_number INTEGER NOT NULL,
     title VARCHAR(255),
-    status VARCHAR(50) DEFAULT 'Draft',
+    status VARCHAR(50) DEFAULT 'DRAFT',
     print_deadline TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
