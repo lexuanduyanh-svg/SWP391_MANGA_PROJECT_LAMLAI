@@ -1,4 +1,4 @@
-﻿# SWP391 Manga Project Lam Lai
+# SWP391 Manga Project Lam Lai
 
 Project cho hệ thống **Manga Creation Workflow and Publishing Management System**.
 
@@ -16,7 +16,7 @@ Project cho hệ thống **Manga Creation Workflow and Publishing Management Sys
 
 ---
 
-> **Cập nhật 2026-06-27:** Nhóm còn 3 người (2 backend + 1 frontend), 3 tuần còn lại. Đã giảm scope: bỏ AI summary preview, bỏ region drawing, bỏ annotations, bỏ rankings screen. Task được gán ở mức **page** thay vì pixel-level region. Chi tiết tại `docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md` mục 4.5 và `docs/TEAM_TASK_ASSIGNMENT.md`.
+> **Cập nhật 2026-06-27:** Scope đã restore về kế hoạch nhóm 5 người: giữ AI summary preview, region drawing / VisualCanvas, annotations, rankings/reader metrics. Flow 2 dùng chapter -> page -> region -> task. Chi tiết tại `docs/requirements/MVP_SCOPE_AND_BUSINESS_RULES.md` mục 4.5 và `docs/TEAM_TASK_ASSIGNMENT.md`.
 
 Bản này được tạo lại tại `SWP391_NEW` để nhóm chia module và merge dễ hơn. Luồng chính tách 2 bước:
 1. Mangaka tạo series/proposal, upload manuscript, Tantou Editor review, Editorial Board vote.
@@ -34,14 +34,14 @@ https://github.com/lexuanduyanh-svg/SWP391_MANGA_PROJECT_LAMLAI
 
 - DB roles seeded: `Admin`, `Mangaka`, `Assistant`, `Editor`, `Board`.
 - UI/code roles: `Admin`, `Mangaka`, `Assistant`, `TantouEditor`/Tantou Editor -> DB `Editor`, `EditorialBoardMember`/Editorial Board Member -> DB `Board`.
-- Unified proposal/series table: `series` (`series_id`, `mangaka_id`, `tantou_editor_id`, `title`, `synopsis`, `genre`, `status`, `publishing_frequency`, `editor_notes`, timestamps).
+- Flow 1 proposal table: `proposals` (`proposal_id`, `mangaka_id`, `tantou_editor_id`, `title`, `synopsis`, manuscript metadata, `status`, `editor_notes`, timestamps).`r`n- Flow 2 series table: `series` (`series_id`, `proposal_id`, `mangaka_id`, `tantou_editor_id`, `title`, `synopsis`, `publishing_frequency`, `status`, timestamps), created after proposal approval.
 - Series DB statuses: `DRAFT`, `SUBMITTED_TO_EDITOR`, `REVISION_REQUESTED`, `UNDER_BOARD_REVIEW`, `APPROVED`, `REJECTED`.
 - UI/code series wording: Draft, SubmittedToEditor, NeedsRevision, UnderBoardReview, Approved, Rejected.
 - Task DB statuses: `ASSIGNED`, `PENDING_REVIEW`, `APPROVED`, `REVISION_REQUESTED`.
 - UI/code task wording: Pending/Assigned, Submitted/Pending Review, Approved, RedoRequested/Revision Requested.
-- `tasks.region_coordinates` JSONB column kept in schema but **not used in V2 UI** (set null or `{"fullPage": true}`); no VisualCanvas region drawing.
+- `tasks.region_coordinates` JSONB column is used for page-region task assignment; VisualCanvas/region drawing is part of Flow 2 scope.
 - `submissions` store Assistant output assets (file + note).
-- `annotations` and `reader_metrics` **kept in schema but NOT implemented in V2 UI/API**.
+- `annotations` and `reader_metrics` remain in scope for the restored 5-person plan.
 
 ## 2. Trạng thái hiện tại
 
@@ -66,19 +66,19 @@ https://github.com/lexuanduyanh-svg/SWP391_MANGA_PROJECT_LAMLAI
   - Khi đủ 3 phiếu, backend tự quyết định theo đa số.
   - Approve đa số chuyển series sang `APPROVED` / `Approved`, mở production cho Mangaka.
 
-**Flow 2 (Production workflow) — ĐANG IMPLEMENT (3 tuần)**
+**Flow 2 (Production workflow) — ĐANG IMPLEMENT theo scope 5 người**
 
-- Sau khi Board approve, Mangaka tạo chapter/page/task (task gán ở page level, không có region).
+- Sau khi Board approve, Mangaka tạo chapter/page/region/task.
 - Assistant nhận/start/submit task (upload file + note).
 - Mangaka review task: approve hoặc request redo.
 
-**Đã CẮT khỏi V2 scope:**
+**Scope đã restore về bản trước khi giảm còn 3 người:**
 
-- ~~AI summary preview~~ (cần Python service riêng)
-- ~~Region drawing / VisualCanvas~~ (task gán page level)
-- ~~Annotations (editor markup pins)~~ (dùng `series.editor_notes` text thay thế)
-- ~~Rankings screen / reader metrics UI~~
-- ~~Earnings calculation logic~~ (chỉ hiển thị seed value)
+- AI summary preview trước upload.
+- Region drawing / VisualCanvas để chọn vùng trên page.
+- Annotations / editor markup pins trên manuscript/page.
+- Rankings / reader metrics screen.
+- Earnings estimate từ task đã approve.
 
 Backend Java Spring Boot, persistence qua PostgreSQL hoặc H2 local profile.
 Frontend React + Vite + TypeScript (folder `Build as requested/`).
@@ -390,8 +390,8 @@ Lưu ý local/dev:
 - Chưa có JWT/session backend production đầy đủ.
 - Phân quyền backend hiện dựa trên email/role local, chưa có token guard production.
 - File upload/download đã có lưu file local, nhưng chưa có storage service/cloud storage.
-- Chưa có annotation trực tiếp trên ảnh/PDF.
-- Chưa có reader poll/ranking UI hoàn chỉnh.
+- Annotation trực tiếp trên ảnh/PDF thuộc scope restore; cần hoàn thiện UI/API chi tiết.
+- Reader poll/ranking thuộc scope restore; cần hoàn thiện UI và logic tổng hợp.
 
 ## 12. Tài liệu liên quan
 
@@ -417,4 +417,4 @@ Project hiện chia rõ thành các lớp:
 3. Backend service xử lý business flow demo.
 4. Repository/entity lưu dữ liệu runtime bằng H2 local hoặc PostgreSQL.
 
-Mục tiêu bản này là chứng minh luồng workflow end-to-end trước: từ proposal của Mangaka, Tantou review, Board vote, production task handoff, Assistant submit, đến Mangaka duyệt task. Các phần production security, cloud storage, annotation chuyên sâu, ranking/poll đầy đủ được để ở future work.
+Mục tiêu bản này là chứng minh luồng workflow end-to-end trước: từ proposal của Mangaka, Tantou review, Board vote, production task handoff theo region, Assistant submit, đến Mangaka duyệt task. Theo scope restore, annotation chuyên sâu và ranking/poll đầy đủ tiếp tục nằm trong kế hoạch triển khai thay vì bị cắt khỏi scope.

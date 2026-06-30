@@ -1,16 +1,16 @@
-# Deployment Guide — SWP391 Manga Workflow API
+# Deployment Guide â€” SWP391 Manga Workflow API
 
-## Trạng thái hiện tại
+## Tráº¡ng thÃ¡i hiá»‡n táº¡i
 
-| Thành phần | Trạng thái | URL / Host |
+| ThÃ nh pháº§n | Tráº¡ng thÃ¡i | URL / Host |
 |---|---|---|
-| **Database** | ✅ Live | Supabase PostgreSQL (cloud) |
-| **Backend API** | ✅ Live | `https://swp391-manga-api.onrender.com` |
-| **Frontend** | ⏳ Chưa deploy | — |
+| **Database** | âœ… Live | Supabase PostgreSQL (cloud) |
+| **Backend API** | âœ… Live | `https://swp391-manga-api.onrender.com` |
+| **Frontend** | â³ ChÆ°a deploy | â€” |
 
 ---
 
-## Thông tin cho Frontend Developer
+## ThÃ´ng tin cho Frontend Developer
 
 ### API Base URL
 
@@ -18,23 +18,23 @@
 https://swp391-manga-api.onrender.com
 ```
 
-### Cách cấu hình Frontend
+### CÃ¡ch cáº¥u hÃ¬nh Frontend
 
-Trong project frontend (Vite + React), tạo file `.env.production`:
+Trong project frontend (Vite + React), táº¡o file `.env.production`:
 
 ```env
 VITE_API_BASE_URL=https://swp391-manga-api.onrender.com
 ```
 
-Hoặc set biến môi trường trên hosting (Vercel/Netlify):
+Hoáº·c set biáº¿n mÃ´i trÆ°á»ng trÃªn hosting (Vercel/Netlify):
 
 | Key | Value |
 |---|---|
 | `VITE_API_BASE_URL` | `https://swp391-manga-api.onrender.com` |
 
-### API Endpoints hiện tại
+### API Endpoints hiá»‡n táº¡i
 
-> Lưu ý: Admin dùng prefix `/admin` (**không có `/api`**). Các nhóm còn lại dùng `/api/...`.
+> LÆ°u Ã½: Admin dÃ¹ng prefix `/admin` (**khÃ´ng cÃ³ `/api`**). CÃ¡c nhÃ³m cÃ²n láº¡i dÃ¹ng `/api/...`.
 
 ```text
 # Auth
@@ -76,15 +76,16 @@ PUT    /api/board/proposals/{id}/reject
 GET    /api/mangaka/proposals/{proposalId}/chapters
 POST   /api/mangaka/proposals/{proposalId}/chapters
 POST   /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages
-POST   /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks
-PUT    /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/approve
-PUT    /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/redo
+POST   /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions
+POST   /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks
+PUT    /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/approve
+PUT    /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/redo
 GET    /api/assistant/tasks?assistantEmail={email}
 PUT    /api/assistant/tasks/{taskId}/start
 PUT    /api/assistant/tasks/{taskId}/submit
 ```
 
-Chi tiết đầy đủ: xem `docs/API_LIST.md` và `docs/API_CONTRACT.md`.
+Chi tiáº¿t Ä‘áº§y Ä‘á»§: xem `docs/API_LIST.md` vÃ  `docs/API_CONTRACT.md`.
 
 ### Demo Accounts (seed data)
 
@@ -98,17 +99,17 @@ board2@manga.local / Board2@123
 board3@manga.local / Board3@123
 ```
 
-### Lưu ý quan trọng
+### LÆ°u Ã½ quan trá»ng
 
-1. **Cold start:** Backend dùng Render Free tier — nếu không ai truy cập 15 phút, server "ngủ". Lần request đầu sau đó sẽ chậm ~50 giây để server khởi động lại. Các request sau chạy bình thường.
+1. **Cold start:** Backend dÃ¹ng Render Free tier â€” náº¿u khÃ´ng ai truy cáº­p 15 phÃºt, server "ngá»§". Láº§n request Ä‘áº§u sau Ä‘Ã³ sáº½ cháº­m ~50 giÃ¢y Ä‘á»ƒ server khá»Ÿi Ä‘á»™ng láº¡i. CÃ¡c request sau cháº¡y bÃ¬nh thÆ°á»ng.
 
-2. **CORS:** Backend hiện cho phép origin `http://localhost:5173`. Khi frontend deploy lên Vercel/Netlify, **báo Backend team URL frontend** (ví dụ `https://swp391-frontend.vercel.app`) để cập nhật CORS.
+2. **CORS:** Backend hiá»‡n cho phÃ©p origin `http://localhost:5173`. Khi frontend deploy lÃªn Vercel/Netlify, **bÃ¡o Backend team URL frontend** (vÃ­ dá»¥ `https://swp391-frontend.vercel.app`) Ä‘á»ƒ cáº­p nháº­t CORS.
 
-3. **File upload:** Manuscript upload hoạt động nhưng file lưu trên Render ephemeral filesystem — sẽ mất khi server restart. Đủ cho demo, không phải production storage.
+3. **File upload:** Manuscript upload hoáº¡t Ä‘á»™ng nhÆ°ng file lÆ°u trÃªn Render ephemeral filesystem â€” sáº½ máº¥t khi server restart. Äá»§ cho demo, khÃ´ng pháº£i production storage.
 
 ---
 
-## Thông tin kỹ thuật Deploy
+## ThÃ´ng tin ká»¹ thuáº­t Deploy
 
 ### Hosting Stack
 
@@ -125,48 +126,50 @@ board3@manga.local / Board3@123
 - **Dockerfile:** `backend/Dockerfile`
 - **Port:** `8080` (Render maps to `PORT` env var)
 
-### Environment Variables (trên Render)
+### Environment Variables (trÃªn Render)
 
-| Key | Mô tả |
+| Key | MÃ´ táº£ |
 |---|---|
-| `DB_URL` | JDBC connection string tới Supabase PostgreSQL |
+| `DB_URL` | JDBC connection string tá»›i Supabase PostgreSQL |
 | `DB_USERNAME` | Database username |
-| `DB_PASSWORD` | Database password (KHÔNG commit vào code) |
-| `CORS_ORIGINS` | Danh sách origin cho phép gọi API (comma-separated) |
+| `DB_PASSWORD` | Database password (KHÃ”NG commit vÃ o code) |
+| `CORS_ORIGINS` | Danh sÃ¡ch origin cho phÃ©p gá»i API (comma-separated) |
 
-### Deploy Frontend lên Vercel (khi sẵn sàng)
+### Deploy Frontend lÃªn Vercel (khi sáºµn sÃ ng)
 
-1. Import GitHub repo vào Vercel
-2. Set **Root Directory** = `frontend` (hoặc `Build as requested` tùy thư mục)
+1. Import GitHub repo vÃ o Vercel
+2. Set **Root Directory** = `frontend` (hoáº·c `Build as requested` tÃ¹y thÆ° má»¥c)
 3. Set **Framework Preset** = Vite
-4. Thêm Environment Variable:
+4. ThÃªm Environment Variable:
    - `VITE_API_BASE_URL` = `https://swp391-manga-api.onrender.com`
-5. Deploy → lấy URL Vercel
-6. Báo Backend team URL đó để cập nhật `CORS_ORIGINS` trên Render
+5. Deploy â†’ láº¥y URL Vercel
+6. BÃ¡o Backend team URL Ä‘Ã³ Ä‘á»ƒ cáº­p nháº­t `CORS_ORIGINS` trÃªn Render
 
 ---
 
-## Cách build/test locally vẫn hoạt động
+## CÃ¡ch build/test locally váº«n hoáº¡t Ä‘á»™ng
 
 ```bash
-# Backend (local PostgreSQL hoặc H2)
+# Backend (local PostgreSQL hoáº·c H2)
 cd backend
 mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local
 
-# Frontend (trỏ về localhost)
+# Frontend (trá» vá» localhost)
 cd frontend
 npm run dev
 ```
 
-Mặc định frontend fallback `http://localhost:8080` nếu không set `VITE_API_BASE_URL`.
+Máº·c Ä‘á»‹nh frontend fallback `http://localhost:8080` náº¿u khÃ´ng set `VITE_API_BASE_URL`.
 
 ---
 
-## File deploy đã thêm vào repo
+## File deploy Ä‘Ã£ thÃªm vÃ o repo
 
 ```
-backend/Dockerfile          — Multi-stage Docker build cho Render
-backend/.dockerignore       — Exclude target/ và storage
-backend/Procfile            — Backup deploy option (non-Docker)
-frontend/vercel.json        — SPA rewrite config cho Vercel
+backend/Dockerfile          â€” Multi-stage Docker build cho Render
+backend/.dockerignore       â€” Exclude target/ vÃ  storage
+backend/Procfile            â€” Backup deploy option (non-Docker)
+frontend/vercel.json        â€” SPA rewrite config cho Vercel
 ```
+
+

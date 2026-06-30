@@ -38,6 +38,19 @@ Table user_skills {
   skill_id integer [ref: > skills.skill_id]
 }
 
+// --- FLOW 1: PROPOSALS ---
+Table proposals {
+  proposal_id integer [primary key]
+  mangaka_id integer [ref: > users.user_id]
+  tantou_editor_id integer [ref: > users.user_id]
+  title varchar
+  genre varchar
+  synopsis text
+  manuscript_file_name varchar
+  manuscript_summary text
+  status varchar // DRAFT, SUBMITTED_TO_EDITOR, REVISION_REQUESTED, UNDER_BOARD_REVIEW, APPROVED, REJECTED
+}
+
 // --- CONTENT & SERIALIZATION ---
 Table series {
   series_id integer [primary key]
@@ -52,7 +65,7 @@ Table series {
 
 Table chapters {
   chapter_id integer [primary key]
-  series_id integer [ref: > series.series_id]
+  proposal_id integer [ref: > proposals.proposal_id]
   chapter_number integer
   title varchar
   print_deadline timestamp
@@ -70,9 +83,6 @@ Table tasks {
   task_id integer [primary key]
   page_id integer [ref: > pages.page_id]
   assistant_id integer [ref: > users.user_id]
-  task_type integer [ref: > skills.skill_id]
-  region_coordinates jsonb // Stores bounding box data
-  payment decimal
   status varchar // New, In Progress, Submitted, Approved
 }
 
@@ -101,7 +111,8 @@ Table reader_metrics {
 
 Table board_votes {
   vote_id integer [primary key]
-  series_id integer [ref: > series.series_id]
+  proposal_id integer [ref: > proposals.proposal_id]
   board_member_id integer [ref: > users.user_id]
   decision varchar // Approve/Reject
 }
+

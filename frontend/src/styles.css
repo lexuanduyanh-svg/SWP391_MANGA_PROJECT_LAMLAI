@@ -4273,3 +4273,74 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   Annotations (PageAnnotations)
+   ============================================================ */
+.annotations-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+.annotation-item {
+  transition: border-color 0.15s ease;
+}
+.annotation-item:hover {
+  border-color: #475569;
+}
+
+/* ============================================================
+   Rankings Dashboard
+   ============================================================ */
+.rankings-dashboard {
+  min-height: 100vh;
+}
+.rankings-tab.active {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+.metrics-table th,
+.rankings-table th {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.metrics-table td,
+.rankings-table td {
+  font-size: 0.88rem;
+}
+.rank-highlight {
+  transition: background 0.15s ease;
+}
+.rank-highlight:hover {
+  filter: brightness(1.2);
+}
+
+/* ============================================================
+   Series Decisions
+   ============================================================ */
+.series-decision-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.series-decision-item {
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.series-decision-item:hover {
+  border-color: #475569;
+  transform: translateX(2px);
+}
+.decision-group {
+  transition: border-color 0.15s ease;
+}
+.decision-group:hover {
+  border-color: #475569;
+}
+.decision-dashboard {
+  min-height: 100vh;
+}
+.decision-form button[disabled] {
+  opacity: 0.6;
+}

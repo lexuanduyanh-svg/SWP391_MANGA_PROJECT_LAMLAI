@@ -11,21 +11,23 @@ import {
 import {
   createMangakaChapter,
   createMangakaPage,
-  createMangakaRegion,
   createMangakaTask,
   approveMangakaTask,
   redoMangakaTask,
   listMangakaChapters,
+  createMangakaRegion,
+  deleteMangakaRegion,
 } from "../services/mangakaProductionService";
 import type { LoginResponse } from "../types/auth";
 import type {
   MangaProductionChapter,
   MangaProductionPage,
-  MangaProductionRegion,
   MangaProductionTask,
+  MangaProductionRegion,
   MangaProposal,
   MangaProposalStatus,
 } from "../types/mangaka";
+import VisualCanvas, { type RegionRect } from "./VisualCanvas";
 
 interface MangakaDashboardProps {
   session: LoginResponse;
@@ -53,19 +55,15 @@ interface PageFormState {
   notes: string;
 }
 
-interface RegionFormState {
-  xPercent: string;
-  yPercent: string;
-  widthPercent: string;
-  heightPercent: string;
-  label: string;
-}
-
 interface TaskFormState {
   assistantEmail: string;
-  taskType: string;
   instructions: string;
-  referenceFileName: string;
+  deadline: string;
+}
+
+interface RegionFormState {
+  regionType: string;
+  note: string;
 }
 
 type ActiveView =
@@ -100,18 +98,15 @@ const EMPTY_PAGE_FORM: PageFormState = {
   fileName: "",
   notes: "",
 };
-const EMPTY_REGION_FORM: RegionFormState = {
-  xPercent: "",
-  yPercent: "",
-  widthPercent: "",
-  heightPercent: "",
-  label: "",
-};
 const EMPTY_TASK_FORM: TaskFormState = {
-  assistantEmail: "",
-  taskType: "Lettering",
+  assistantEmail: "assistant@manga.local",
   instructions: "",
-  referenceFileName: "",
+  deadline: "",
+};
+
+const EMPTY_REGION_FORM: RegionFormState = {
+  regionType: "panel",
+  note: "",
 };
 
 const DRAFT_LANES: Array<{
@@ -179,11 +174,12 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
   );
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
+  const [drawingMode, setDrawingMode] = useState(false);
+  const [regionForm, setRegionForm] = useState<RegionFormState>(EMPTY_REGION_FORM);
+  const [regions, setRegions] = useState<MangaProductionRegion[]>([]);
   const [chapterForm, setChapterForm] =
     useState<ChapterFormState>(EMPTY_CHAPTER_FORM);
   const [pageForm, setPageForm] = useState<PageFormState>(EMPTY_PAGE_FORM);
-  const [regionForm, setRegionForm] =
-    useState<RegionFormState>(EMPTY_REGION_FORM);
   const [taskForm, setTaskForm] = useState<TaskFormState>(EMPTY_TASK_FORM);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -196,7 +192,7 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
   );
   const [isProductionLoading, setIsProductionLoading] = useState(false);
   const [productionAction, setProductionAction] = useState<
-    "chapter" | "page" | "region" | "task" | null
+    "chapter" | "page" | "task" | null
   >(null);
   const [activeView, setActiveView] = useState<ActiveView>("overall");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -255,11 +251,6 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
     () => findPage(selectedChapter, selectedPageId),
     [selectedChapter, selectedPageId],
   );
-  const selectedRegion = useMemo(
-    () => findRegion(selectedPage, selectedRegionId),
-    [selectedPage, selectedRegionId],
-  );
-
   const visibleProposals = useMemo(() => {
     const query = proposalQuery.trim().toLowerCase();
     if (!query) return proposals;
@@ -369,7 +360,6 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
       setSelectedProductionProposalId(null);
       setSelectedChapterId(null);
       setSelectedPageId(null);
-      setSelectedRegionId(null);
       return;
     }
 
@@ -387,14 +377,15 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
     let mounted = true;
 
     async function loadProduction() {
-      if (!selectedProductionProposalId) return;
+      if (!selectedProductionProposalId || !activeProductionProposal) return;
 
+      const seriesId = activeProductionProposal.seriesId || selectedProductionProposalId;
       setIsProductionLoading(true);
       setErrorMessage(null);
 
       try {
         const loaded = await listMangakaChapters(
-          selectedProductionProposalId,
+          seriesId,
           session.user.email,
         );
         if (!mounted) return;
@@ -422,21 +413,11 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
   useEffect(() => {
     if (!selectedChapter) {
       setSelectedPageId(null);
-      setSelectedRegionId(null);
       return;
     }
 
     setSelectedPageId(selectedChapter.pages?.[0]?.id ?? null);
   }, [selectedChapter]);
-
-  useEffect(() => {
-    if (!selectedPage) {
-      setSelectedRegionId(null);
-      return;
-    }
-
-    setSelectedRegionId(selectedPage.regions?.[0]?.id ?? null);
-  }, [selectedPage]);
 
   async function handleSaveProposal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -537,40 +518,32 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
     action: "approve" | "redo",
     task: MangaProductionTask,
   ) {
-    if (
-      !activeProductionProposal ||
-      !selectedChapter ||
-      !selectedPage ||
-      !selectedRegion
-    )
-      return;
+    const seriesId = activeProductionProposal?.seriesId || activeProductionProposal?.id;
+    if (!seriesId || !selectedChapter || !selectedPage) return;
     setProductionAction(`${action}-${task.id}` as any);
     try {
       const updated =
         action === "approve"
           ? await approveMangakaTask(
-              activeProductionProposal.id,
+              seriesId,
               selectedChapter.id,
               selectedPage.id,
-              selectedRegion.id,
               task.id,
               session.user.email,
             )
           : await redoMangakaTask(
-              activeProductionProposal.id,
+              seriesId,
               selectedChapter.id,
               selectedPage.id,
-              selectedRegion.id,
               task.id,
               session.user.email,
             );
       setProductionByProposal((current) => ({
         ...current,
-        [activeProductionProposal.id]: updateTaskInTree(
-          current[activeProductionProposal.id] ?? [],
+        [seriesId]: updateTaskInTree(
+          current[seriesId] ?? [],
           selectedChapter.id,
           selectedPage.id,
-          selectedRegion.id,
           updated,
         ),
       }));
@@ -725,72 +698,12 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
     }
   }
 
-  async function handleCreateRegion(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!activeProductionProposal || !selectedChapter || !selectedPage) return;
-    if (!validateRectangle(regionForm)) {
-      setErrorMessage(
-        "Enter x, y, width, and height percentages for the region.",
-      );
-      return;
-    }
-
-    setProductionAction("region");
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
-    try {
-      const created = await createMangakaRegion(
-        activeProductionProposal.id,
-        selectedChapter.id,
-        selectedPage.id,
-        session.user.email,
-        {
-          regionType: regionForm.label.trim() || "panel",
-          x: Number(regionForm.xPercent),
-          y: Number(regionForm.yPercent),
-          widthPct: Number(regionForm.widthPercent),
-          heightPct: Number(regionForm.heightPercent),
-          note: regionForm.label.trim() || undefined,
-        },
-      );
-      setProductionByProposal((current) => ({
-        ...current,
-        [activeProductionProposal.id]: appendRegion(
-          current[activeProductionProposal.id] ?? [],
-          selectedChapter.id,
-          selectedPage.id,
-          created,
-        ),
-      }));
-      setSelectedRegionId(created.id);
-      setRegionForm(EMPTY_REGION_FORM);
-      notifySuccess("Region created successfully.");
-    } catch (error) {
-      setErrorMessage(getErrorMessage(error));
-    } finally {
-      setProductionAction(null);
-    }
-  }
-
   async function handleCreateTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (
-      !activeProductionProposal ||
-      !selectedChapter ||
-      !selectedPage ||
-      !selectedRegion
-    )
-      return;
-    if (
-      !taskForm.assistantEmail.trim() ||
-      !taskForm.taskType.trim() ||
-      !taskForm.instructions.trim() ||
-      !taskForm.referenceFileName.trim()
-    ) {
-      setErrorMessage(
-        "Assistant email, task type, instructions, and reference file name are required.",
-      );
+    const seriesId = activeProductionProposal?.seriesId || activeProductionProposal?.id;
+    if (!seriesId || !selectedChapter || !selectedPage) return;
+    if (!taskForm.assistantEmail.trim() || !taskForm.instructions.trim()) {
+      setErrorMessage("Assistant email and instructions are required.");
       return;
     }
 
@@ -800,35 +713,83 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
 
     try {
       const created = await createMangakaTask(
-        activeProductionProposal.id,
+        seriesId,
         selectedChapter.id,
         selectedPage.id,
-        selectedRegion.id,
         session.user.email,
         {
           assistantEmail: taskForm.assistantEmail.trim(),
-          taskType: taskForm.taskType.trim(),
           instructions: taskForm.instructions.trim(),
-          referenceFileName: taskForm.referenceFileName.trim(),
+          deadline: taskForm.deadline.trim() || undefined,
         },
       );
       setProductionByProposal((current) => ({
         ...current,
-        [activeProductionProposal.id]: appendTask(
-          current[activeProductionProposal.id] ?? [],
+        [seriesId]: appendTask(
+          current[seriesId] ?? [],
           selectedChapter.id,
           selectedPage.id,
-          selectedRegion.id,
           created,
         ),
       }));
       setTaskForm(EMPTY_TASK_FORM);
+      setActiveView("page");
       notifySuccess("Assistant task created successfully.");
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
       setProductionAction(null);
     }
+  }
+
+  async function handleCreateRegion(rect: { x: number; y: number; widthPct: number; heightPct: number }) {
+    const seriesId = activeProductionProposal?.seriesId || activeProductionProposal?.id;
+    if (!seriesId || !selectedChapter || !selectedPage) return;
+    setErrorMessage(null);
+    try {
+      const created = await createMangakaRegion(
+        seriesId,
+        selectedChapter.id,
+        selectedPage.id,
+        session.user.email,
+        {
+          regionType: regionForm.regionType || "panel",
+          x: rect.x,
+          y: rect.y,
+          widthPct: rect.widthPct,
+          heightPct: rect.heightPct,
+          note: regionForm.note || undefined,
+        },
+      );
+      setRegions((prev) => [...prev, created]);
+      setRegionForm({ regionType: "panel", note: "" });
+      notifySuccess("Region created.");
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error));
+    }
+  }
+
+  async function handleDeleteRegion(regionId: string) {
+    const seriesId = activeProductionProposal?.seriesId || activeProductionProposal?.id;
+    if (!seriesId || !selectedChapter || !selectedPage) return;
+    try {
+      await deleteMangakaRegion(
+        seriesId,
+        selectedChapter.id,
+        selectedPage.id,
+        regionId,
+        session.user.email,
+      );
+      setRegions((prev) => prev.filter((r) => r.id !== regionId));
+      notifySuccess("Region deleted.");
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error));
+    }
+  }
+
+  function handleRegionClick(region: RegionRect) {
+    setSelectedRegionId(region.id);
+    setTaskForm((prev) => ({ ...prev, assistantEmail: "assistant@manga.local" }));
   }
 
   function beginEdit(proposal: MangaProposal) {
@@ -884,7 +845,7 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
   }
 
   function openProductionWorkspace(
-    view: "chapter" | "page" | "region" | "task" | "inspect",
+    view: "chapter" | "page" | "task" | "inspect",
   ) {
     setActiveView(view);
     setErrorMessage(null);
@@ -907,7 +868,6 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
     setSelectedProductionProposalId(proposalId || null);
     setSelectedChapterId(null);
     setSelectedPageId(null);
-    setSelectedRegionId(null);
     setActiveView(
       proposalId
         ? activeView === "inspect"
@@ -1011,15 +971,6 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
               >
                 <span>Create</span>
                 <strong>Page</strong>
-              </button>
-              <button
-                type="button"
-                className={`mangaka-rail-action ${activeView === "region" ? "is-active" : ""}`}
-                onClick={() => openProductionWorkspace("region")}
-                disabled={eligibleProductionProposals.length === 0}
-              >
-                <span>Create</span>
-                <strong>Region</strong>
               </button>
               <button
                 type="button"
@@ -1235,7 +1186,7 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
                     <span>5</span>
                     <strong>View Structure</strong>
                     <small>
-                      Review chapter, page, region, and task hierarchy.
+                      Review chapter, page, and task hierarchy.
                     </small>
                   </button>
                 </div>
@@ -1996,15 +1947,6 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
                     <button
                       type="button"
                       className="module-card"
-                      onClick={() => openProductionWorkspace("region")}
-                      disabled={productionChapters.length === 0}
-                    >
-                      <strong>Region</strong>
-                      <span>Mark text or panel regions.</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="module-card"
                       onClick={() => openProductionWorkspace("task")}
                       disabled={productionChapters.length === 0}
                     >
@@ -2027,7 +1969,6 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
 
           {(activeView === "chapter" ||
             activeView === "page" ||
-            activeView === "region" ||
             activeView === "task") && (
             <section className="mangaka-view-shell mangaka-view-shell--split">
               <div className="panel-card mangaka-module-panel">
@@ -2133,288 +2074,268 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
                 )}
 
                 {activeView === "page" && (
-                  <form
-                    className="mangaka-form panel-card panel-card--inner"
-                    onSubmit={handleCreatePage}
-                  >
-                    <label className="admin-field">
-                      <span>Chapter</span>
-                      <select
-                        value={selectedChapterId ?? ""}
-                        onChange={(event) =>
-                          setSelectedChapterId(event.target.value || null)
-                        }
-                      >
-                        <option value="">Choose a chapter</option>
-                        {productionChapters.map((chapter) => (
-                          <option key={chapter.id} value={chapter.id}>
-                            {chapter.chapterNumber
-                              ? `Chapter ${chapter.chapterNumber}`
-                              : chapter.title}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                  <div className="mangaka-form panel-card panel-card--inner">
                     <div className="form-grid form-grid--two">
-                      <label className="admin-field">
-                        <span>Page</span>
-                        <input
-                          placeholder="1"
-                          inputMode="numeric"
-                          value={pageForm.pageNumber}
-                          onChange={(event) =>
-                            setPageForm({
-                              ...pageForm,
-                              pageNumber: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                      <label className="admin-field">
-                        <span>File</span>
-                        <input
-                          placeholder="chapter-01-page-01.png"
-                          value={pageForm.fileName}
-                          onChange={(event) =>
-                            setPageForm({
-                              ...pageForm,
-                              fileName: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                    </div>
-                    <label className="admin-field">
-                      <span>Notes</span>
-                      <input
-                        placeholder="Metadata only"
-                        value={pageForm.notes}
-                        onChange={(event) =>
-                          setPageForm({
-                            ...pageForm,
-                            notes: event.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                    <div className="admin-form__actions">
-                      <button
-                        className="primary-button"
-                        type="submit"
-                        disabled={
-                          productionAction === "page" || !selectedChapterId
-                        }
-                      >
-                        {productionAction === "page" ? "Creating..." : "Add"}
-                      </button>
-                    </div>
-                  </form>
-                )}
+                      <div>
+                        <h4>Add Page</h4>
+                        <form onSubmit={handleCreatePage}>
+                          <label className="admin-field">
+                            <span>Chapter</span>
+                            <select
+                              value={selectedChapterId ?? ""}
+                              onChange={(event) =>
+                                setSelectedChapterId(event.target.value || null)
+                              }
+                            >
+                              <option value="">Choose a chapter</option>
+                              {productionChapters.map((chapter) => (
+                                <option key={chapter.id} value={chapter.id}>
+                                  {chapter.chapterNumber
+                                    ? `Chapter ${chapter.chapterNumber}`
+                                    : chapter.title}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <div className="form-grid form-grid--two">
+                            <label className="admin-field">
+                              <span>Page</span>
+                              <input
+                                placeholder="1"
+                                inputMode="numeric"
+                                value={pageForm.pageNumber}
+                                onChange={(event) =>
+                                  setPageForm({
+                                    ...pageForm,
+                                    pageNumber: event.target.value,
+                                  })
+                                }
+                              />
+                            </label>
+                            <label className="admin-field">
+                              <span>File</span>
+                              <input
+                                placeholder="chapter-01-page-01.png"
+                                value={pageForm.fileName}
+                                onChange={(event) =>
+                                  setPageForm({
+                                    ...pageForm,
+                                    fileName: event.target.value,
+                                  })
+                                }
+                              />
+                            </label>
+                          </div>
+                          <label className="admin-field">
+                            <span>Notes</span>
+                            <input
+                              placeholder="Metadata only"
+                              value={pageForm.notes}
+                              onChange={(event) =>
+                                setPageForm({
+                                  ...pageForm,
+                                  notes: event.target.value,
+                                })
+                              }
+                            />
+                          </label>
+                          <div className="admin-form__actions">
+                            <button
+                              className="primary-button"
+                              type="submit"
+                              disabled={
+                                productionAction === "page" || !selectedChapterId
+                              }
+                            >
+                              {productionAction === "page" ? "Creating..." : "Add"}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
 
-                {activeView === "region" && (
-                  <form
-                    className="mangaka-form panel-card panel-card--inner"
-                    onSubmit={handleCreateRegion}
-                  >
-                    <label className="admin-field">
-                      <span>Page</span>
-                      <select
-                        value={selectedPageId ?? ""}
-                        onChange={(event) =>
-                          setSelectedPageId(event.target.value || null)
-                        }
-                      >
-                        <option value="">Choose a page</option>
-                        {selectedChapter?.pages?.map((page) => (
-                          <option key={page.id} value={page.id}>
-                            Page {page.pageNumber} · {page.fileName}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <div className="form-grid form-grid--two">
-                      <label className="admin-field">
-                        <span>X %</span>
-                        <input
-                          placeholder="10"
-                          inputMode="decimal"
-                          value={regionForm.xPercent}
-                          onChange={(event) =>
-                            setRegionForm({
-                              ...regionForm,
-                              xPercent: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                      <label className="admin-field">
-                        <span>Y %</span>
-                        <input
-                          placeholder="12"
-                          inputMode="decimal"
-                          value={regionForm.yPercent}
-                          onChange={(event) =>
-                            setRegionForm({
-                              ...regionForm,
-                              yPercent: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                    </div>
-                    <div className="form-grid form-grid--two">
-                      <label className="admin-field">
-                        <span>W %</span>
-                        <input
-                          placeholder="36"
-                          inputMode="decimal"
-                          value={regionForm.widthPercent}
-                          onChange={(event) =>
-                            setRegionForm({
-                              ...regionForm,
-                              widthPercent: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                      <label className="admin-field">
-                        <span>H %</span>
-                        <input
-                          placeholder="22"
-                          inputMode="decimal"
-                          value={regionForm.heightPercent}
-                          onChange={(event) =>
-                            setRegionForm({
-                              ...regionForm,
-                              heightPercent: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                    </div>
-                    <label className="admin-field">
-                      <span>Label</span>
-                      <input
-                        placeholder="Dialogue zone"
-                        value={regionForm.label}
-                        onChange={(event) =>
-                          setRegionForm({
-                            ...regionForm,
-                            label: event.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                    <div className="admin-form__actions">
-                      <button
-                        className="primary-button"
-                        type="submit"
-                        disabled={
-                          productionAction === "region" || !selectedPageId
-                        }
-                      >
-                        {productionAction === "region"
-                          ? "Creating..."
-                          : "Create"}
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {activeView === "task" && (
-                  <form
-                    className="mangaka-form panel-card panel-card--inner"
-                    onSubmit={handleCreateTask}
-                  >
-                    <label className="admin-field">
-                      <span>Region</span>
-                      <select
-                        value={selectedRegionId ?? ""}
-                        onChange={(event) =>
-                          setSelectedRegionId(event.target.value || null)
-                        }
-                      >
-                        <option value="">Choose a region</option>
-                        {selectedPage?.regions?.map((region) => (
-                          <option key={region.id} value={region.id}>
-                            Region {region.regionType || region.id.slice(0, 6)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <div className="form-grid form-grid--two">
-                      <label className="admin-field">
-                        <span>Assistant</span>
-                        <input
-                          placeholder="assistant@studio.com"
-                          value={taskForm.assistantEmail}
-                          onChange={(event) =>
-                            setTaskForm({
-                              ...taskForm,
-                              assistantEmail: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                      <label className="admin-field">
-                        <span>Type</span>
-                        <input
-                          placeholder="Lettering"
-                          value={taskForm.taskType}
-                          onChange={(event) =>
-                            setTaskForm({
-                              ...taskForm,
-                              taskType: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                    </div>
-                    <label className="admin-field">
-                      <span>Instructions</span>
-                      <textarea
-                        rows={3}
-                        placeholder="Short instruction."
-                        value={taskForm.instructions}
-                        onChange={(event) =>
-                          setTaskForm({
-                            ...taskForm,
-                            instructions: event.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                    <div className="form-grid form-grid--two">
-                      <label className="admin-field">
-                        <span>Reference file</span>
-                        <input
-                          placeholder="reference-01.pdf"
-                          value={taskForm.referenceFileName}
-                          onChange={(event) =>
-                            setTaskForm({
-                              ...taskForm,
-                              referenceFileName: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                      <div className="production-hint">
-                        <span className="eyebrow">Rule</span>
-                        <p>Metadata only.</p>
+                      <div>
+                        <h4>Region Drawing</h4>
+                        {selectedPage && (
+                          <div>
+                            <VisualCanvas
+                              imageUrl={`/api/pages/${selectedPage.id}/image`}
+                              regions={regions.map(r => ({
+                                id: r.id,
+                                x: r.x,
+                                y: r.y,
+                                widthPct: r.widthPct,
+                                heightPct: r.heightPct,
+                                regionType: r.regionType,
+                                note: r.note,
+                              }))}
+                              onRegionCreate={handleCreateRegion}
+                              onRegionClick={handleRegionClick}
+                              drawingMode={drawingMode}
+                              onToggleDrawing={() => setDrawingMode(!drawingMode)}
+                            />
+                            {/* Region type form */}
+                            {drawingMode && (
+                              <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                <select
+                                  value={regionForm.regionType}
+                                  onChange={(e) => setRegionForm({ ...regionForm, regionType: e.target.value })}
+                                  style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db" }}
+                                >
+                                  <option value="panel">Panel</option>
+                                  <option value="speech_bubble">Speech Bubble</option>
+                                  <option value="character">Character</option>
+                                  <option value="background">Background</option>
+                                  <option value="effect">Effect</option>
+                                </select>
+                                <input
+                                  placeholder="Region note..."
+                                  value={regionForm.note}
+                                  onChange={(e) => setRegionForm({ ...regionForm, note: e.target.value })}
+                                  style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", flex: 1 }}
+                                />
+                              </div>
+                            )}
+                            {/* Region list */}
+                            {regions.length > 0 && (
+                              <div style={{ marginTop: 12 }}>
+                                <h5 style={{ margin: "0 0 8px", fontSize: 14, color: "#374151" }}>Regions</h5>
+                                {regions.map((r) => (
+                                  <div
+                                    key={r.id}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "space-between",
+                                      padding: "6px 10px",
+                                      background: r.id === selectedRegionId ? "#eff6ff" : "#f9fafb",
+                                      borderRadius: 6,
+                                      marginBottom: 4,
+                                      fontSize: 13,
+                                      cursor: "pointer",
+                                      border: r.id === selectedRegionId ? "1px solid #3b82f6" : "1px solid transparent",
+                                    }}
+                                    onClick={() => setSelectedRegionId(r.id)}
+                                  >
+                                    <span>{r.regionType}: {r.note || "No note"} ({Math.round(r.x)},{Math.round(r.y)})</span>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleDeleteRegion(r.id); }}
+                                      style={{
+                                        background: "none",
+                                        border: "none",
+                                        color: "#ef4444",
+                                        cursor: "pointer",
+                                        fontSize: 13,
+                                      }}
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {!selectedPage && (
+                          <p style={{ color: "#6b7280", fontSize: 14 }}>Select a page from the chapter tree to draw regions.</p>
+                        )}
                       </div>
                     </div>
-                    <div className="admin-form__actions">
-                      <button
-                        className="primary-button"
-                        type="submit"
-                        disabled={
-                          productionAction === "task" || !selectedRegionId
-                        }
-                      >
-                        {productionAction === "task" ? "Creating..." : "Create"}
-                      </button>
+                  </div>
+                )}
+
+                {activeView === "task" && selectedPage && (
+                  <div className="mangaka-form panel-card panel-card--inner">
+                    <div className="form-grid form-grid--two" style={{gap: '24px'}}>
+                      <div>
+                        <h4>Page Preview</h4>
+                        <div
+                          style={{
+                            border: '1px solid #ddd',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            background: '#fafafa',
+                            minHeight: '300px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <img
+                            src={`/api/pages/${selectedPage.id}/image`}
+                            alt={`Page ${selectedPage.pageNumber}`}
+                            style={{
+                              maxWidth: '100%',
+                              maxHeight: '400px',
+                              objectFit: 'contain',
+                            }}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                        <p className="production-copy" style={{marginTop: '8px'}}>
+                          Page {selectedPage.pageNumber} · {selectedPage.fileName}
+                        </p>
+                      </div>
+                      <form onSubmit={handleCreateTask}>
+                        <h4>Assign Task</h4>
+                        {selectedRegionId && (
+                          <p style={{ fontSize: 13, color: "#3b82f6", marginBottom: 8 }}>
+                            Assigning task to selected region
+                          </p>
+                        )}
+                        <label className="admin-field">
+                          <span>Assistant email</span>
+                          <input
+                            placeholder="assistant@manga.local"
+                            value={taskForm.assistantEmail}
+                            onChange={(event) =>
+                              setTaskForm({
+                                ...taskForm,
+                                assistantEmail: event.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                        <label className="admin-field">
+                          <span>Deadline</span>
+                          <input
+                            type="date"
+                            value={taskForm.deadline}
+                            onChange={(event) =>
+                              setTaskForm({
+                                ...taskForm,
+                                deadline: event.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                        <label className="admin-field">
+                          <span>Instructions</span>
+                          <textarea
+                            rows={3}
+                            placeholder="Describe the task..."
+                            value={taskForm.instructions}
+                            onChange={(event) =>
+                              setTaskForm({
+                                ...taskForm,
+                                instructions: event.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                        <div className="admin-form__actions">
+                          <button
+                            className="primary-button"
+                            type="submit"
+                            disabled={productionAction === "task"}
+                          >
+                            {productionAction === "task" ? "Creating..." : "Giao Task"}
+                          </button>
+                        </div>
+                      </form>
                     </div>
-                  </form>
+                  </div>
                 )}
               </div>
             </section>
@@ -2519,127 +2440,92 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
                                   {page.notes && <span>{page.notes}</span>}
                                 </div>
 
-                                {page.regions?.length ? (
-                                  <div className="production-region-list">
-                                    {page.regions.map((region) => (
+                                {page.tasks?.length ? (
+                                  <div className="production-task-list">
+                                    {page.tasks.map((task) => (
                                       <article
-                                        className={`production-region-card ${selectedRegionId === region.id ? "is-selected" : ""}`}
-                                        key={region.id}
+                                        className="production-task-card"
+                                        key={task.id}
                                       >
-                                        <div className="production-region-card__header">
-                                          <div>
-                                            <strong>
-                                              {region.regionType || "Region"}
-                                            </strong>
-                                            <p>{region.note || "No label"}</p>
-                                          </div>
-                                          <button
-                                            type="button"
-                                            className="button button-secondary production-mini-button"
-                                            onClick={() =>
-                                              setSelectedRegionId(region.id)
-                                            }
-                                          >
-                                            Select
-                                          </button>
+                                        <strong>Task</strong>
+                                        <p>{task.instructions}</p>
+                                        <div className="production-meta-row">
+                                          <span>
+                                            {task.assistantEmail}
+                                          </span>
+                                          <span>
+                                            {task.status ?? "Pending"}
+                                          </span>
+                                          <span>
+                                            {formatDate(task.createdAt)}
+                                          </span>
+                                          {task.deadline && (
+                                            <span className="task-deadline">
+                                              Due: {formatDate(task.deadline)}
+                                            </span>
+                                          )}
                                         </div>
-
-                                        {region.tasks?.length ? (
-                                          <div className="production-task-list">
-                                            {region.tasks.map((task) => (
-                                              <article
-                                                className="production-task-card"
-                                                key={task.id}
-                                              >
-                                                <strong>{task.taskType}</strong>
-                                                <p>{task.instructions}</p>
-                                                <div className="production-meta-row">
-                                                  <span>
-                                                    {task.assistantEmail}
-                                                  </span>
-                                                  <span>
-                                                    {task.status ?? "Pending"}
-                                                  </span>
-                                                  <span>
-                                                    {formatDate(task.createdAt)}
-                                                  </span>
-                                                </div>
-                                                {(task.submittedFileName ||
-                                                  task.submissionNote ||
-                                                  task.submittedAt) && (
-                                                  <div className="production-submission-note">
-                                                    <span className="eyebrow">
-                                                      Assistant submission
-                                                    </span>
-                                                    <strong>
-                                                      {task.submittedFileName ??
-                                                        "Submitted work"}
-                                                    </strong>
-                                                    {task.submissionNote && (
-                                                      <p>
-                                                        {task.submissionNote}
-                                                      </p>
-                                                    )}
-                                                    <small>
-                                                      {formatDate(
-                                                        task.submittedAt,
-                                                      )}
-                                                    </small>
-                                                  </div>
-                                                )}
-                                                {normalizeTaskStatus(
-                                                  task.status,
-                                                ) === "Submitted" && (
-                                                  <div className="production-task-actions">
-                                                    <button
-                                                      type="button"
-                                                      className="button button-secondary production-mini-button"
-                                                      onClick={() =>
-                                                        void handleReviewTask(
-                                                          "approve",
-                                                          task,
-                                                        )
-                                                      }
-                                                      disabled={
-                                                        productionAction ===
-                                                        `approve-${task.id}`
-                                                      }
-                                                    >
-                                                      {productionAction ===
-                                                      `approve-${task.id}`
-                                                        ? "Approving…"
-                                                        : "Approve"}
-                                                    </button>
-                                                    <button
-                                                      type="button"
-                                                      className="button button-secondary production-mini-button"
-                                                      onClick={() =>
-                                                        void handleReviewTask(
-                                                          "redo",
-                                                          task,
-                                                        )
-                                                      }
-                                                      disabled={
-                                                        productionAction ===
-                                                        `redo-${task.id}`
-                                                      }
-                                                    >
-                                                      {productionAction ===
-                                                      `redo-${task.id}`
-                                                        ? "Sending…"
-                                                        : "Request redo"}
-                                                    </button>
-                                                  </div>
-                                                )}
-                                              </article>
-                                            ))}
+                                        {(task.submittedFileName ||
+                                          task.submissionNote ||
+                                          task.submittedAt) && (
+                                          <div className="production-submission-note">
+                                            <span className="eyebrow">
+                                              Assistant submission
+                                            </span>
+                                            <strong>
+                                              {task.submittedFileName ??
+                                                "Submitted work"}
+                                            </strong>
+                                            {task.submissionNote && (
+                                              <p>{task.submissionNote}</p>
+                                            )}
+                                            <small>
+                                              {formatDate(task.submittedAt)}
+                                            </small>
                                           </div>
-                                        ) : (
-                                          <div className="admin-empty-state admin-empty-state--compact">
-                                            <strong>No tasks</strong>
-                                            <p>
-                                              Create a task in the task view.
-                                            </p>
+                                        )}
+                                        {normalizeTaskStatus(
+                                          task.status,
+                                        ) === "Submitted" && (
+                                          <div className="production-task-actions">
+                                            <button
+                                              type="button"
+                                              className="button button-secondary production-mini-button"
+                                              onClick={() =>
+                                                void handleReviewTask(
+                                                  "approve",
+                                                  task,
+                                                )
+                                              }
+                                              disabled={
+                                                productionAction ===
+                                                `approve-${task.id}`
+                                              }
+                                            >
+                                              {productionAction ===
+                                              `approve-${task.id}`
+                                                ? "Approving…"
+                                                : "Approve"}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className="button button-secondary production-mini-button"
+                                              onClick={() =>
+                                                void handleReviewTask(
+                                                  "redo",
+                                                  task,
+                                                )
+                                              }
+                                              disabled={
+                                                productionAction ===
+                                                `redo-${task.id}`
+                                              }
+                                            >
+                                              {productionAction ===
+                                              `redo-${task.id}`
+                                                ? "Sending…"
+                                                : "Request redo"}
+                                            </button>
                                           </div>
                                         )}
                                       </article>
@@ -2647,8 +2533,8 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
                                   </div>
                                 ) : (
                                   <div className="admin-empty-state admin-empty-state--compact">
-                                    <strong>No regions</strong>
-                                    <p>Add the first region.</p>
+                                    <strong>No tasks</strong>
+                                    <p>Create a task in the task view.</p>
                                   </div>
                                 )}
                               </article>
@@ -2812,15 +2698,6 @@ function validateProposalForm(
     ) &&
     (form.manuscriptFileName.trim().length > 0 || pendingFile !== null)
   );
-}
-
-function validateRectangle(form: RegionFormState) {
-  return [
-    form.xPercent,
-    form.yPercent,
-    form.widthPercent,
-    form.heightPercent,
-  ].every((value) => value.trim().length > 0);
 }
 
 function parseOptionalNumber(value: string) {
@@ -3030,28 +2907,6 @@ function mergePage(
   return {
     ...existing,
     ...incoming,
-    regions: mergeRegions(existing?.regions ?? [], incoming.regions ?? []),
-  };
-}
-
-function mergeRegions(
-  existing: MangaProductionRegion[],
-  incoming: MangaProductionRegion[],
-) {
-  const map = new Map(existing.map((region) => [region.id, region]));
-  return incoming.length > 0
-    ? incoming.map((region) => mergeRegion(map.get(region.id), region))
-    : existing.map((region) => mergeRegion(map.get(region.id), region));
-}
-
-function mergeRegion(
-  existing: MangaProductionRegion | undefined,
-  incoming: MangaProductionRegion,
-): MangaProductionRegion {
-  return {
-    ...existing,
-    ...incoming,
-    tasks: mergeTasks(existing?.tasks ?? [], incoming.tasks ?? []),
   };
 }
 
@@ -3082,32 +2937,10 @@ function appendPage(
   });
 }
 
-function appendRegion(
-  chapters: MangaProductionChapter[],
-  chapterId: string,
-  pageId: string,
-  region: MangaProductionRegion,
-) {
-  return chapters.map((chapter) => {
-    if (chapter.id !== chapterId || !chapter.pages) return chapter;
-    return {
-      ...chapter,
-      pages: chapter.pages.map((page) => {
-        if (page.id !== pageId) return page;
-        const regions = page.regions
-          ? [...page.regions.filter((item) => item.id !== region.id), region]
-          : [region];
-        return { ...page, regions };
-      }),
-    };
-  });
-}
-
 function appendTask(
   chapters: MangaProductionChapter[],
   chapterId: string,
   pageId: string,
-  regionId: string,
   task: MangaProductionTask,
 ) {
   return chapters.map((chapter) => {
@@ -3115,17 +2948,11 @@ function appendTask(
     return {
       ...chapter,
       pages: chapter.pages.map((page) => {
-        if (page.id !== pageId || !page.regions) return page;
-        return {
-          ...page,
-          regions: page.regions.map((region) => {
-            if (region.id !== regionId) return region;
-            const tasks = region.tasks
-              ? [...region.tasks.filter((item) => item.id !== task.id), task]
-              : [task];
-            return { ...region, tasks };
-          }),
-        };
+        if (page.id !== pageId) return page;
+        const tasks = page.tasks
+          ? [...page.tasks.filter((t) => t.id !== task.id), task]
+          : [task];
+        return { ...page, tasks };
       }),
     };
   });
@@ -3135,7 +2962,6 @@ function updateTaskInTree(
   chapters: MangaProductionChapter[],
   chapterId: string,
   pageId: string,
-  regionId: string,
   task: MangaProductionTask,
 ) {
   return chapters.map((chapter) => {
@@ -3143,18 +2969,10 @@ function updateTaskInTree(
     return {
       ...chapter,
       pages: chapter.pages.map((page) => {
-        if (page.id !== pageId || !page.regions) return page;
+        if (page.id !== pageId || !page.tasks) return page;
         return {
           ...page,
-          regions: page.regions.map((region) => {
-            if (region.id !== regionId || !region.tasks) return region;
-            return {
-              ...region,
-              tasks: region.tasks.map((item) =>
-                item.id === task.id ? task : item,
-              ),
-            };
-          }),
+          tasks: page.tasks.map((t) => (t.id === task.id ? task : t)),
         };
       }),
     };
@@ -3173,12 +2991,7 @@ function countTasks(chapters: MangaProductionChapter[]) {
     (chapterTotal, chapter) =>
       chapterTotal +
       (chapter.pages?.reduce(
-        (pageTotal, page) =>
-          pageTotal +
-          (page.regions?.reduce(
-            (regionTotal, region) => regionTotal + (region.tasks?.length ?? 0),
-            0,
-          ) ?? 0),
+        (pageTotal, page) => pageTotal + (page.tasks?.length ?? 0),
         0,
       ) ?? 0),
     0,
@@ -3193,7 +3006,4 @@ function findPage(
   return chapter.pages?.find((page) => page.id === pageId) ?? null;
 }
 
-function findRegion(page: MangaProductionPage | null, regionId: string | null) {
-  if (!page || !regionId) return null;
-  return page.regions?.find((region) => region.id === regionId) ?? null;
-}
+

@@ -456,3 +456,5 @@ Các phần chưa làm đã được ghi trong tài liệu MVP để triển kha
 Khi trình bày với giáo viên, có thể nói:
 
 > Nhóm em chia project thành backend Spring Boot và frontend React. Phiên bản hiện tại demo được một vòng workflow chính: Mangaka tạo và submit proposal, Tantou Editor review và forward, Editorial Board approve, Mangaka mở production để tạo chapter/page/region/task, Assistant nhận task và submit work. Backend hiện đã kết nối PostgreSQL để lưu dữ liệu chính theo schema hiện tại như users, roles, skills, series, board votes, chapters, pages, tasks và submissions. Unit test vẫn giữ fallback in-memory để kiểm thử nhanh.
+
+

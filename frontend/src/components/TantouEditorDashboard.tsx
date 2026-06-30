@@ -8,11 +8,14 @@ import {
 } from "../services/tantouEditorProposalService";
 import type { LoginResponse } from "../types/auth";
 import type { MangaProposal, MangaProposalStatus } from "../types/mangaka";
+import PageAnnotations from "./PageAnnotations";
 
 interface TantouEditorDashboardProps {
   session: LoginResponse;
   onLogout?: () => void;
 }
+
+type EditorSection = "proposals" | "production";
 
 type ProposalBucket = "submitted" | "board" | "needsWork";
 
@@ -132,6 +135,7 @@ export function TantouEditorDashboard({
   );
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState<EditorSection>("proposals");
   const [activeAction, setActiveAction] = useState<
     "forward" | "revision" | null
   >(null);
@@ -332,6 +336,64 @@ export function TantouEditorDashboard({
           </article>
         </section>
 
+        {/* Section tabs */}
+        <div
+          style={{
+            display: "flex",
+            gap: "4px",
+            marginBottom: "16px",
+            background: "rgba(255,255,255,0.04)",
+            borderRadius: "12px",
+            padding: "4px",
+            border: "1px solid rgba(148,163,184,0.16)",
+          }}
+        >
+          {(["proposals", "production"] as EditorSection[]).map(
+            (section) => (
+              <button
+                key={section}
+                type="button"
+                onClick={() => setActiveSection(section)}
+                style={{
+                  flex: 1,
+                  padding: "8px 16px",
+                  border: "none",
+                  borderRadius: "8px",
+                  background:
+                    activeSection === section
+                      ? "rgba(59,130,246,0.2)"
+                      : "transparent",
+                  color:
+                    activeSection === section ? "#60a5fa" : "#94a3b8",
+                  fontWeight: activeSection === section ? 600 : 400,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {section === "proposals" ? "Proposals" : "Production Review"}
+              </button>
+            ),
+          )}
+        </div>
+
+        {activeSection === "production" && (
+          <section className="panel-card" style={{ padding: "20px" }}>
+            <div className="panel-card__header panel-card__header--stacked" style={{ marginBottom: "16px" }}>
+              <div>
+                <span className="eyebrow">Page Annotations</span>
+                <h3>Review production pages</h3>
+                <p>View pages from approved series and add markup annotations for the mangaka.</p>
+              </div>
+            </div>
+            <PageAnnotations
+              pageId="601"
+              pageImageUrl="/api/pages/601/image"
+              editorEmail={session.user.email}
+            />
+          </section>
+        )}
+
         {errorMessage && (
           <div className="board-alert board-alert--error" role="alert">
             {errorMessage}
@@ -343,6 +405,7 @@ export function TantouEditorDashboard({
           </div>
         )}
 
+        {activeSection === "proposals" && (
         <section className="editor-workflow">
           <div className="editor-queue panel-card">
             <div className="panel-card__header panel-card__header--stacked">
@@ -559,6 +622,7 @@ export function TantouEditorDashboard({
             )}
           </article>
         </section>
+        )}
       </div>
     </main>
   );

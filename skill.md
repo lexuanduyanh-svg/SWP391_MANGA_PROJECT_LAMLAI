@@ -255,3 +255,5 @@ Before starting any work:
 ---
 
 **Golden rule:** Bám target docs mới, sửa ít nhưng đúng, verify trước khi báo done, và giữ project dễ tiếp tục cho session sau.
+
+

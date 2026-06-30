@@ -1,51 +1,56 @@
-﻿# Team Task Assignment - SWP391 Manga Project Lam Lai
+# Team Task Assignment - SWP391 Manga Project Lam Lai
 
-> Cap nhat 2026-06-27: Nhom con lai 3 nguoi (2 member dropped out).
-> Scope da duoc giam de phu hop voi 3 nguoi / 3 tuan con lai.
+> Cap nhat 2026-06-27: Scope restored: quay lai ke hoach nhom 5 nguoi, truoc khi giam scope.
+> Giu full Flow 2: AI summary preview, region drawing / VisualCanvas, annotations, rankings/reader metrics.
 
-## 1. Thay doi team
+## 1. Team theo scope restore
 
-Nhom ban dau 5 nguoi, hien tai con 3 nguoi:
+Nhom quay lai layout ban dau 5 nguoi:
 
 | Vi tri | So luong |
 |--------|---------|
 | Backend developer | 2 |
 | Frontend developer | 1 |
-| PM/BA/QA | 0 (be dam nhiem boi backend/frontend) |
+| Database / persistence | 1 |
+| PM/BA/QA/Docs/Integration | 1 |
 
 **Flow 1 (Proposal workflow) da hoan thanh** ✅
 
-Con lai: Flow 2 (Production workflow) — 3 tuan.
+Con lai: Flow 2 (Production workflow) theo ban full truoc khi giam scope.
 
-## 2. Scope giam (so voi ke hoach ban dau)
+## 2. Scope full theo ke hoach ban dau
 
-### Cat bo hoan toan
+### Giu lai trong scope
 
-| Tinh nang | Ly do cat |
+| Tinh nang | Ly do giu |
 |-----------|-----------|
-| ❌ AI Summary preview (`/preview-upload` endpoint, `api_bridge.py`) | Can Python service + AI model rieng, khong kha thi trong 3 tuan |
-| ❌ Region drawing (VisualCanvas, pixel-level selection) | Canvas UI phuc tap, khong bat buoc demo |
-| ❌ Annotations (Editor markup pins tren anh page) | Khong co trong demo script bat buoc |
-| ❌ Rankings screen (`reader_metrics` UI + logic) | Stretch goal, khong core workflow |
+| AI Summary preview (`/preview-upload` endpoint, `api_bridge.py`) | Thuoc V1 change request va huong AI/RBL cua de tai |
+| Region drawing (VisualCanvas, pixel-level selection) | La diem chinh cua Flow 2: task gan theo region tren page |
+| Annotations (Editor markup pins tren manuscript/page) | Ho tro Tantou review va feedback truc tiep |
+| Rankings screen (`reader_metrics` UI + logic) | Ho tro Flow 3 va quyet dinh serialization |
 
-### Don gian hoa
+### Khong con ap dung ban giam scope 3 nguoi
 
-| Tinh nang | Truoc | Sau |
-|-----------|-------|-----|
-| Region | Ve vung pixel tren anh, luu JSONB toa do | Task gan thang vao page, `region_coordinates = null` |
-| File validation | AI summary preview truoc upload | Chi JS validation type/size o frontend |
-| Earnings | Tinh dong tu tasks approved | Hien thi so seed static tu DB |
-| Submission | Upload file + AI annotation | Upload file + text note |
+| Noi dung cua ban giam scope | Trang thai hien tai |
+|---------------------------|----------------|
+| Task gan thang vao page, khong co region | Bo, quay lai chapter -> page -> region -> task |
+| `region_coordinates = null` / full-page only | Bo, luu toa do region JSON |
+| Chi JS validation type/size, bo AI preview | Bo, giu AI summary preview trong scope |
+| Bo annotations/rankings | Bo, giu annotations/rankings trong scope |
 
-### Giu nguyen
+### Flow 2 bat buoc
 
-- ✅ Manuscript upload (Mangaka upload file proposal)
-- ✅ Submission file upload (Assistant submit file hoan thanh)
-- ✅ Chapter → Page → Task flow
-- ✅ Assistant start/submit task
-- ✅ Mangaka approve/redo task
+- Manuscript upload (Mangaka upload file proposal)
+- AI summary preview truoc upload/submission
+- Chapter -> Page -> Region -> Task flow
+- Region drawing / VisualCanvas
+- Assistant start/submit task
+- Mangaka approve/redo task
+- Editor annotations
+- Reader metrics / rankings
+- Earnings estimate tu approved tasks
 
-## 3. Phan cong 3 nguoi — Flow 2
+## 3. Phan cong 5 nguoi — Flow 2
 
 ### Backend Dev 1 — Production Service (Mangaka side)
 
@@ -53,8 +58,8 @@ Con lai: Flow 2 (Production workflow) — 3 tuan.
 - `InMemoryMangakaProductionService.java` — hoan thien CRUD:
   - Tao chapter (title, chapter_number)
   - Tao page (page_number, manuscript_file_path optional)
-  - Tao task tren page (description, payment, assign assistant_id)
-  - Khong can region logic — task gan thang vao page
+  - Tao task tren page (description, deadline, assign assistant_id)
+  - Can region logic - task gan theo vung tren page
 - Unit tests cho production service
 - Ket noi PostgreSQL cho production data
 
@@ -64,9 +69,10 @@ Con lai: Flow 2 (Production workflow) — 3 tuan.
 GET  /api/mangaka/proposals/{proposalId}/chapters
 POST /api/mangaka/proposals/{proposalId}/chapters
 POST /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages
-POST /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks
-PUT  /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/approve
-PUT  /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/redo
+POST /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions
+POST /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks
+PUT  /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/approve
+PUT  /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/redo
 ```
 
 **Deliverable:**
@@ -141,15 +147,15 @@ feature/frontend-production-ui
 
 ---
 
-## 4. Lich 3 tuan
+## 4. Lich lam viec
 
-| Tuan | Backend Dev 1 | Backend Dev 2 | Frontend Dev |
-|------|--------------|---------------|-------------|
-| **Tuan 1** | Complete `MangakaProductionService` (chapter/page/task CRUD, khong region) | Complete `AssistantTaskController` (start/submit voi file+note) | `ProductionDashboard`: Mangaka tao chapter/page/task, assign assistant |
-| **Tuan 2** | Unit tests production + PostgreSQL integration | Task approve/redo + tests + seed data | `AssistantTaskBoard`: start/submit UI, polish kanban |
-| **Tuan 3** | Fix bugs, Newman API test Flow 2 | Fix bugs, endpoint polish | FE-BE integration, polish, demo prep |
+| Tuan | Backend Dev 1 | Backend Dev 2 | Database/QA | Frontend Dev | PM/BA/Docs |
+|------|--------------|---------------|-------------|--------------|------------|
+| **Tuan 1** | Chapter/page/region/task CRUD | Assistant task start/submit | Schema + seed Flow 2 | Production UI + VisualCanvas base | Update scope/API docs |
+| **Tuan 2** | Task review + earnings rules | Submission/version flow | Integration tests + data checks | Assistant board + annotations UI | Test cases + demo checklist |
+| **Tuan 3** | Bug fix + API polish | Newman/API smoke tests | Regression test + DB review | Ranking/reader metrics UI polish | Demo script + teacher checkpoint |
 
-## 5. Flow demo sau khi giam scope
+## 5. Flow demo sau khi restore scope
 
 ```text
 Flow 1 (DONE ✅):
@@ -159,15 +165,16 @@ Mangaka tao proposal + upload manuscript
 -> 3 Board members vote
 -> He thong auto Approved/Rejected
 
-Flow 2 (Can implement trong 3 tuan):
+Flow 2 (scope full):
 Proposal APPROVED
 -> Mangaka tao chapter (title, so chuong)
--> Mangaka tao page (so trang)
--> Mangaka tao task tren page + assign cho Assistant
-   (Khong ve region, task = toan bo trang)
+-> Mangaka tao page (so trang, upload anh page neu co)
+-> Mangaka ve/chon region tren page bang VisualCanvas
+-> Mangaka tao task tren region + assign cho Assistant
 -> Assistant start task
 -> Assistant submit (upload file + note)
 -> Mangaka approve (APPROVED) hoac request redo (REVISION_REQUESTED)
+-> Editor/Board xem reader metrics, rankings neu demo Flow 3
 ```
 
 ## 6. Ai chiu trach nhiem khi co loi

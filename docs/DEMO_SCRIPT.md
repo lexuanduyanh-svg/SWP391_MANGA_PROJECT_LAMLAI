@@ -1,6 +1,6 @@
-# Demo Script
+﻿# Demo Script
 
-> Cap nhat 2026-06-27: Da cat AI summary preview va region drawing. Task gan vao page (khong ve vung pixel).
+> Cap nhat 2026-06-27: Restore scope truoc khi cat: giu AI summary preview, region drawing / VisualCanvas, annotations, rankings/reader metrics.
 
 ## 1. Muc tieu demo
 
@@ -11,12 +11,12 @@ Flow 1 (DONE): Mangaka -> Tantou Editor -> Editorial Board -> Approved/Rejected
 Flow 2 (IN PROGRESS): Mangaka -> Production (chapter/page/task) -> Assistant -> Mangaka review
 ```
 
-**Nhung gi DA CAT khoi demo:**
+**Nhung gi GIU LAI trong demo/scope:**
 
-- ~~AI summary preview truoc khi upload~~
-- ~~Region drawing / VisualCanvas~~
-- ~~Annotations (editor markup pins tren anh)~~
-- ~~Rankings / reader metrics screen~~
+- AI summary preview truoc khi upload
+- Region drawing / VisualCanvas
+- Annotations (editor markup pins tren anh)
+- Rankings / reader metrics screen
 
 ## 2. Chuan bi
 
@@ -57,7 +57,7 @@ board3@manga.local / Board3@123
 DB roles: `Admin`, `Mangaka`, `Assistant`, `Editor`, `Board`.
 UI map: `Editor` -> Tantou Editor; `Board` -> Editorial Board Member.
 
-## 4. Flow 1 — Proposal/Approval (DA HOAN THANH)
+## 4. Flow 1 â€” Proposal/Approval (DA HOAN THANH)
 
 1. Login Mangaka (`mangaka@manga.local`).
 2. Tao series/proposal moi: title, genre, synopsis. Status: `DRAFT` / `Draft`.
@@ -76,18 +76,18 @@ UI map: `Editor` -> Tantou Editor; `Board` -> Editorial Board Member.
 10. Sau khi du 3 phieu, he thong tu quyet dinh theo da so.
 11. Approved -> `series` duoc tao/update tu proposal, dung title proposal lam series title.
 
-## 5. Flow 2 — Production (DANG IMPLEMENT)
+## 5. Flow 2 â€” Production (DANG IMPLEMENT)
 
-> Task gan vao PAGE, khong can ve vung (no region drawing).
+> Task gan theo REGION tren page; co region drawing / VisualCanvas.
 
 12. Login lai Mangaka. Proposal da chuyen sang `APPROVED`.
 13. Vao Production: tao Chapter moi (title, so chuong).
 14. Them Page vao chapter (so trang, tuy chon upload anh trang).
-15. Tao Task tren page:
+15. Tao Region tren page, sau do tao Task cho region:
     - Mo ta cong viec
     - Payment amount
     - Chon assistant de assign
-    - `region_coordinates` = null (khong can ve)
+    - `region_coordinates` luu vung da chon tren page
 16. Login Assistant (`assistant@manga.local`).
 17. Xem task duoc giao kem chapter/page context.
 18. Bam `Start` de nhan task. Status: `ASSIGNED`.
@@ -110,3 +110,6 @@ UI map: `Editor` -> Tantou Editor; `Board` -> Editorial Board Member.
 - Task status: `ASSIGNED` -> `PENDING_REVIEW` -> `APPROVED` hoac `REVISION_REQUESTED`.
 - File submission luu vao `storage-server/submissions/`.
 - UI khong bao loi, backend khong crash.
+
+
+

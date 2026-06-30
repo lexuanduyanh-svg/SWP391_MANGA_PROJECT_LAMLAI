@@ -95,3 +95,5 @@ Manual smoke test:
 ```text
 Login -> Mangaka submit proposal -> Tantou review -> Board vote -> Assistant task flow
 ```
+
+

@@ -30,6 +30,8 @@ export interface MangaProposal {
   boardPendingVotes?: number | null;
   boardTotalVotes?: number | null;
   currentMemberVote?: "APPROVE" | "REJECT" | null;
+  /** Series ID created after board approval — used for production endpoints. */
+  seriesId?: string | null;
 }
 
 export interface MangaProposalCreateRequest {
@@ -67,16 +69,6 @@ export interface MangaProductionChapter {
   pages?: MangaProductionPage[] | null;
 }
 
-export interface MangaProductionPage {
-  id: string;
-  chapterId: string;
-  pageNumber: number;
-  fileName: string;
-  notes?: string | null;
-  uploadedAt?: string | null;
-  regions?: MangaProductionRegion[] | null;
-}
-
 export interface MangaProductionRegion {
   id: string;
   pageId: string;
@@ -85,23 +77,41 @@ export interface MangaProductionRegion {
   y: number;
   widthPct: number;
   heightPct: number;
-  note?: string | null;
+  note: string;
+  tasks?: MangaProductionTask[];
+}
+
+export interface MangaProductionPage {
+  id: string;
+  chapterId: string;
+  pageNumber: number;
+  fileName: string;
+  status?: string;
+  notes?: string | null;
+  uploadedAt?: string | null;
+  /** Regions on this page (restored to full scope). */
+  regions?: MangaProductionRegion[] | null;
+  /** Tasks attached to this page in the production tree (frontend-only). */
   tasks?: MangaProductionTask[] | null;
 }
 
 export interface MangaProductionTask {
   id: string;
-  regionId: string;
+  pageId: string;
   assistantEmail: string;
-  taskType: string;
   instructions: string;
-  referenceFileName: string;
+  deadline?: string | null;
+  pageFileName?: string | null;
   status?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
   submittedFileName?: string | null;
   submissionNote?: string | null;
   submittedAt?: string | null;
+  referenceFileName?: string | null;
+  regionCoordinates?: string | null;
+  payment?: number | null;
+  regionId?: string | null;
 }
 
 export interface MangaProductionChapterCreateRequest {
@@ -116,18 +126,16 @@ export interface MangaProductionPageCreateRequest {
   notes?: string;
 }
 
-export interface MangaProductionRegionCreateRequest {
-  regionType: string;
-  x: number;
-  y: number;
-  widthPct: number;
-  heightPct: number;
-  note?: string;
-}
-
 export interface MangaProductionTaskCreateRequest {
   assistantEmail: string;
-  taskType: string;
   instructions: string;
-  referenceFileName: string;
+  deadline?: string;
 }
+
+export type MangakaPageStatus =
+  | "Uploaded"
+  | "Segmented"
+  | "TasksAssigned"
+  | "TasksInProgress"
+  | "AllTasksApproved"
+  | "Finalized";

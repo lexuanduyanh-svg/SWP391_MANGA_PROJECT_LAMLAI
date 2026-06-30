@@ -2,9 +2,8 @@ package com.mangastudio.workflow.dtos;
 
 public class MangakaProductionTaskCreateRequest {
   private String assistantEmail;
-  private String taskType;
   private String instructions;
-  private String referenceFileName;
+  private String deadline;
 
   public String getAssistantEmail() {
     return assistantEmail;
@@ -12,14 +11,6 @@ public class MangakaProductionTaskCreateRequest {
 
   public void setAssistantEmail(String assistantEmail) {
     this.assistantEmail = assistantEmail;
-  }
-
-  public String getTaskType() {
-    return taskType;
-  }
-
-  public void setTaskType(String taskType) {
-    this.taskType = taskType;
   }
 
   public String getInstructions() {
@@ -30,11 +21,11 @@ public class MangakaProductionTaskCreateRequest {
     this.instructions = instructions;
   }
 
-  public String getReferenceFileName() {
-    return referenceFileName;
+  public String getDeadline() {
+    return deadline;
   }
 
-  public void setReferenceFileName(String referenceFileName) {
-    this.referenceFileName = referenceFileName;
+  public void setDeadline(String deadline) {
+    this.deadline = deadline;
   }
 }

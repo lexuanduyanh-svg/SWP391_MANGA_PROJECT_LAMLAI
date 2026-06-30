@@ -1,34 +1,34 @@
-# SWP391 Manga API — Danh sách API cho thành viên
+# SWP391 Manga API â€” Danh sÃ¡ch API cho thÃ nh viÃªn
 
-> Tài liệu này liệt kê **toàn bộ API thật đang chạy** theo đúng code backend (`com.mangastudio.workflow.controllers`).
-> Dùng bản này để gọi API, KHÔNG truy cập thẳng link gốc.
+> TÃ i liá»‡u nÃ y liá»‡t kÃª **toÃ n bá»™ API tháº­t Ä‘ang cháº¡y** theo Ä‘Ãºng code backend (`com.mangastudio.workflow.controllers`).
+> DÃ¹ng báº£n nÃ y Ä‘á»ƒ gá»i API, KHÃ”NG truy cáº­p tháº³ng link gá»‘c.
 
-## 0. Thông tin chung
+## 0. ThÃ´ng tin chung
 
-| Mục | Giá trị |
+| Má»¥c | GiÃ¡ trá»‹ |
 |---|---|
 | **Base URL (deploy)** | `https://swp391-manga-api.onrender.com` |
 | **Base URL (local)** | `http://localhost:8080` |
 | Server port | `8080` |
-| Context path | (không có) |
-| CORS cho phép | `http://localhost:5173` (đổi qua env `CORS_ORIGINS`), áp dụng cho `/api/**` |
+| Context path | (khÃ´ng cÃ³) |
+| CORS cho phÃ©p | `http://localhost:5173` (Ä‘á»•i qua env `CORS_ORIGINS`), Ã¡p dá»¥ng cho `/api/**` |
 
-> ⚠️ Truy cập thẳng `https://swp391-manga-api.onrender.com/` sẽ ra **Whitelabel Error Page 404**.
-> Đây là **bình thường** — server vẫn chạy, chỉ là không có trang ở path gốc `/`.
-> Phải gọi đúng endpoint bên dưới mới có dữ liệu.
+> âš ï¸ Truy cáº­p tháº³ng `https://swp391-manga-api.onrender.com/` sáº½ ra **Whitelabel Error Page 404**.
+> ÄÃ¢y lÃ  **bÃ¬nh thÆ°á»ng** â€” server váº«n cháº¡y, chá»‰ lÃ  khÃ´ng cÃ³ trang á»Ÿ path gá»‘c `/`.
+> Pháº£i gá»i Ä‘Ãºng endpoint bÃªn dÆ°á»›i má»›i cÃ³ dá»¯ liá»‡u.
 
-### Cách test nhanh
+### CÃ¡ch test nhanh
 ```bash
-# Đăng nhập (POST)
+# ÄÄƒng nháº­p (POST)
 curl -X POST https://swp391-manga-api.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@manga.local","password":"Admin@123"}'
 
-# Lấy danh sách tài khoản (GET) — mở thẳng trên trình duyệt được
+# Láº¥y danh sÃ¡ch tÃ i khoáº£n (GET) â€” má»Ÿ tháº³ng trÃªn trÃ¬nh duyá»‡t Ä‘Æ°á»£c
 https://swp391-manga-api.onrender.com/admin/accounts
 ```
 
-### Tài khoản demo
+### TÃ i khoáº£n demo
 ```text
 admin@manga.local     / Admin@123
 mangaka@manga.local   / Mangaka@123
@@ -39,110 +39,113 @@ board@manga.local     / Board@123
 
 ---
 
-## 1. 🔐 Auth — `AuthController`
+## 1. ðŸ” Auth â€” `AuthController`
 
-| Method | Endpoint | Mô tả |
+| Method | Endpoint | MÃ´ táº£ |
 |---|---|---|
-| POST | `/api/auth/login` | Đăng nhập, trả về thông tin user/role |
+| POST | `/api/auth/login` | ÄÄƒng nháº­p, tráº£ vá» thÃ´ng tin user/role |
 
 ---
 
-## 2. 👤 Admin — `AdminController` (lưu ý: prefix là `/admin`, KHÔNG có `/api`)
+## 2. ðŸ‘¤ Admin â€” `AdminController` (lÆ°u Ã½: prefix lÃ  `/admin`, KHÃ”NG cÃ³ `/api`)
 
-### Quản lý tài khoản
-| Method | Endpoint | Mô tả |
+### Quáº£n lÃ½ tÃ i khoáº£n
+| Method | Endpoint | MÃ´ táº£ |
 |---|---|---|
-| GET | `/admin/accounts` | Lấy danh sách tài khoản |
-| POST | `/admin/accounts` | Tạo tài khoản mới |
-| PUT | `/admin/accounts/{id}` | Cập nhật tài khoản |
-| PUT | `/admin/accounts/{id}/status` | Đổi trạng thái (ACTIVE / INACTIVE) |
-| PUT | `/admin/accounts/{id}/skills` | Cập nhật kỹ năng cho tài khoản |
-| DELETE | `/admin/accounts/{id}` | Xóa tài khoản |
+| GET | `/admin/accounts` | Láº¥y danh sÃ¡ch tÃ i khoáº£n |
+| POST | `/admin/accounts` | Táº¡o tÃ i khoáº£n má»›i |
+| PUT | `/admin/accounts/{id}` | Cáº­p nháº­t tÃ i khoáº£n |
+| PUT | `/admin/accounts/{id}/status` | Äá»•i tráº¡ng thÃ¡i (ACTIVE / INACTIVE) |
+| PUT | `/admin/accounts/{id}/skills` | Cáº­p nháº­t ká»¹ nÄƒng cho tÃ i khoáº£n |
+| DELETE | `/admin/accounts/{id}` | XÃ³a tÃ i khoáº£n |
 
-### Quản lý kỹ năng (skills)
-| Method | Endpoint | Mô tả |
+### Quáº£n lÃ½ ká»¹ nÄƒng (skills)
+| Method | Endpoint | MÃ´ táº£ |
 |---|---|---|
-| GET | `/admin/skills` | Lấy danh sách kỹ năng |
-| POST | `/admin/skills` | Tạo kỹ năng mới |
-| PUT | `/admin/skills/{id}` | Cập nhật kỹ năng |
-| PUT | `/admin/skills/{id}/status` | Đổi trạng thái kỹ năng |
-| DELETE | `/admin/skills/{id}` | Xóa kỹ năng |
+| GET | `/admin/skills` | Láº¥y danh sÃ¡ch ká»¹ nÄƒng |
+| POST | `/admin/skills` | Táº¡o ká»¹ nÄƒng má»›i |
+| PUT | `/admin/skills/{id}` | Cáº­p nháº­t ká»¹ nÄƒng |
+| PUT | `/admin/skills/{id}/status` | Äá»•i tráº¡ng thÃ¡i ká»¹ nÄƒng |
+| DELETE | `/admin/skills/{id}` | XÃ³a ká»¹ nÄƒng |
 
 ---
 
-## 3. 🖊️ Mangaka — Proposal — `MangakaController` (`/api/mangaka/proposals`)
+## 3. ðŸ–Šï¸ Mangaka â€” Proposal â€” `MangakaController` (`/api/mangaka/proposals`)
 
-| Method | Endpoint | Mô tả |
+| Method | Endpoint | MÃ´ táº£ |
 |---|---|---|
-| GET | `/api/mangaka/proposals?authorEmail={email}` | Danh sách proposal của mangaka |
-| POST | `/api/mangaka/proposals` | Tạo proposal mới |
-| PUT | `/api/mangaka/proposals/{id}` | Cập nhật proposal |
-| PUT | `/api/mangaka/proposals/{id}/submit` | Nộp proposal cho Editor |
-| DELETE | `/api/mangaka/proposals/{id}?authorEmail={email}` | Xóa proposal |
-| POST | `/api/mangaka/proposals/preview-upload` | Upload + validate + AI summary bản thảo |
+| GET | `/api/mangaka/proposals?authorEmail={email}` | Danh sÃ¡ch proposal cá»§a mangaka |
+| POST | `/api/mangaka/proposals` | Táº¡o proposal má»›i |
+| PUT | `/api/mangaka/proposals/{id}` | Cáº­p nháº­t proposal |
+| PUT | `/api/mangaka/proposals/{id}/submit` | Ná»™p proposal cho Editor |
+| DELETE | `/api/mangaka/proposals/{id}?authorEmail={email}` | XÃ³a proposal |
+| POST | `/api/mangaka/proposals/preview-upload` | Upload + validate + AI summary báº£n tháº£o |
 | POST | `/api/mangaka/proposals/upload` | Upload file proposal |
-| GET | `/api/mangaka/proposals/files/{fileName}` | Tải/xem file đã upload |
+| GET | `/api/mangaka/proposals/files/{fileName}` | Táº£i/xem file Ä‘Ã£ upload |
 
 ---
 
-## 4. 📖 Mangaka — Sản xuất (Chapter / Page / Task) — `MangakaProductionController`
+## 4. ðŸ“– Mangaka â€” Sáº£n xuáº¥t (Chapter / Page / Task) â€” `MangakaProductionController`
 
-| Method | Endpoint | Mô tả |
+| Method | Endpoint | MÃ´ táº£ |
 |---|---|---|
-| GET | `/api/mangaka/proposals/{proposalId}/chapters` | Danh sách chapter |
-| POST | `/api/mangaka/proposals/{proposalId}/chapters` | Tạo chapter mới |
-| POST | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages` | Tạo page trong chapter |
-| POST | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks` | Giao task cho page |
-| PUT | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/approve` | Duyệt task |
-| PUT | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/redo` | Yêu cầu làm lại task |
+| GET | `/api/mangaka/proposals/{proposalId}/chapters` | Danh sÃ¡ch chapter |
+| POST | `/api/mangaka/proposals/{proposalId}/chapters` | Táº¡o chapter má»›i |
+| POST | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages` | Táº¡o page trong chapter |
+| POST | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions` | Tao region tren page |
+| POST | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks` | Giao task cho region |
+| PUT | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/approve` | Duyá»‡t task |
+| PUT | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/redo` | YÃªu cáº§u lÃ m láº¡i task |
 
 ---
 
-## 5. ✏️ Editor (Tantou) — `EditorController` (`/api/editor/proposals`)
+## 5. âœï¸ Editor (Tantou) â€” `EditorController` (`/api/editor/proposals`)
 
-| Method | Endpoint | Mô tả |
+| Method | Endpoint | MÃ´ táº£ |
 |---|---|---|
-| GET | `/api/editor/proposals?editorEmail={email}` | Danh sách proposal cần duyệt |
-| PUT | `/api/editor/proposals/{id}/forward-board` | Chuyển lên Ban giám đốc |
-| PUT | `/api/editor/proposals/{id}/request-revision` | Yêu cầu mangaka chỉnh sửa |
-| PUT | `/api/editor/proposals/{id}/reject` | Từ chối proposal |
+| GET | `/api/editor/proposals?editorEmail={email}` | Danh sÃ¡ch proposal cáº§n duyá»‡t |
+| PUT | `/api/editor/proposals/{id}/forward-board` | Chuyá»ƒn lÃªn Ban giÃ¡m Ä‘á»‘c |
+| PUT | `/api/editor/proposals/{id}/request-revision` | YÃªu cáº§u mangaka chá»‰nh sá»­a |
+| PUT | `/api/editor/proposals/{id}/reject` | Tá»« chá»‘i proposal |
 
 ---
 
-## 6. 🏛️ Board (Ban giám đốc) — `BoardController` (`/api/board/proposals`)
+## 6. ðŸ›ï¸ Board (Ban giÃ¡m Ä‘á»‘c) â€” `BoardController` (`/api/board/proposals`)
 
-| Method | Endpoint | Mô tả |
+| Method | Endpoint | MÃ´ táº£ |
 |---|---|---|
-| GET | `/api/board/proposals?memberEmail={email}` | Danh sách proposal chờ duyệt |
-| PUT | `/api/board/proposals/{id}/approve` | Phê duyệt proposal |
-| PUT | `/api/board/proposals/{id}/reject` | Từ chối proposal |
+| GET | `/api/board/proposals?memberEmail={email}` | Danh sÃ¡ch proposal chá» duyá»‡t |
+| PUT | `/api/board/proposals/{id}/approve` | PhÃª duyá»‡t proposal |
+| PUT | `/api/board/proposals/{id}/reject` | Tá»« chá»‘i proposal |
 
 ---
 
-## 7. 🤝 Assistant — `AssistantTaskController` (`/api/assistant/tasks`)
+## 7. ðŸ¤ Assistant â€” `AssistantTaskController` (`/api/assistant/tasks`)
 
-| Method | Endpoint | Mô tả |
+| Method | Endpoint | MÃ´ táº£ |
 |---|---|---|
-| GET | `/api/assistant/tasks?assistantEmail={email}` | Danh sách task được giao |
-| PUT | `/api/assistant/tasks/{taskId}/start` | Bắt đầu làm task |
-| PUT | `/api/assistant/tasks/{taskId}/submit` | Nộp task hoàn thành |
+| GET | `/api/assistant/tasks?assistantEmail={email}` | Danh sÃ¡ch task Ä‘Æ°á»£c giao |
+| PUT | `/api/assistant/tasks/{taskId}/start` | Báº¯t Ä‘áº§u lÃ m task |
+| PUT | `/api/assistant/tasks/{taskId}/submit` | Ná»™p task hoÃ n thÃ nh |
 
 ---
 
-## 8. Trạng thái (status) dùng trong hệ thống
+## 8. Tráº¡ng thÃ¡i (status) dÃ¹ng trong há»‡ thá»‘ng
 
 ### Proposal / Series status
-`DRAFT` → `SUBMITTED_TO_EDITOR` → `REVISION_REQUESTED` / `UNDER_BOARD_REVIEW` → `APPROVED` / `REJECTED`
+`DRAFT` â†’ `SUBMITTED_TO_EDITOR` â†’ `REVISION_REQUESTED` / `UNDER_BOARD_REVIEW` â†’ `APPROVED` / `REJECTED`
 
 ### Task status
-`ASSIGNED` → `PENDING_REVIEW` → `APPROVED` / `REVISION_REQUESTED`
+`ASSIGNED` â†’ `PENDING_REVIEW` â†’ `APPROVED` / `REVISION_REQUESTED`
 
 ### User status
 `ACTIVE`, `INACTIVE`
 
 ---
 
-> 📌 **Lưu ý chênh lệch path:**
-> - Nhóm Admin dùng prefix `/admin` (**không** có `/api`).
-> - Các nhóm còn lại dùng `/api/...`.
-> - Task nằm trực tiếp dưới `pages` (`.../pages/{pageId}/tasks`), **không** có cấp `regions`.
+> ðŸ“Œ **LÆ°u Ã½ chÃªnh lá»‡ch path:**
+> - NhÃ³m Admin dÃ¹ng prefix `/admin` (**khÃ´ng** cÃ³ `/api`).
+> - CÃ¡c nhÃ³m cÃ²n láº¡i dÃ¹ng `/api/...`.
+> - Flow 2 dùng cấp `regions`: `.../pages/{pageId}/regions/{regionId}/tasks`. Region được lưu bằng `tasks.region_coordinates` JSONB.
+
+

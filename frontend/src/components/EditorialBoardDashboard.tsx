@@ -8,11 +8,15 @@ import {
 } from "../services/editorialBoardProposalService";
 import type { LoginResponse } from "../types/auth";
 import type { MangaProposal, MangaProposalStatus } from "../types/mangaka";
+import RankingsDashboard from "./RankingsDashboard";
+import SeriesDecisionsDashboard from "./SeriesDecisionsDashboard";
 
 interface EditorialBoardDashboardProps {
   session: LoginResponse;
   onLogout?: () => void;
 }
+
+type BoardSection = "proposals" | "rankings" | "decisions";
 
 type BoardBucket = "review" | "approved" | "rejected";
 
@@ -143,6 +147,7 @@ export function EditorialBoardDashboard({
   const [activeAction, setActiveAction] = useState<"approve" | "reject" | null>(
     null,
   );
+  const [activeSection, setActiveSection] = useState<BoardSection>("proposals");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -348,6 +353,51 @@ export function EditorialBoardDashboard({
           </div>
         </section>
 
+        {/* Section tabs */}
+        <div
+          style={{
+            display: "flex",
+            gap: "4px",
+            marginBottom: "16px",
+            background: "rgba(255,255,255,0.04)",
+            borderRadius: "12px",
+            padding: "4px",
+            border: "1px solid rgba(148,163,184,0.16)",
+          }}
+        >
+          {(["proposals", "rankings", "decisions"] as BoardSection[]).map(
+            (section) => (
+              <button
+                key={section}
+                type="button"
+                onClick={() => setActiveSection(section)}
+                style={{
+                  flex: 1,
+                  padding: "8px 16px",
+                  border: "none",
+                  borderRadius: "8px",
+                  background:
+                    activeSection === section
+                      ? "rgba(59,130,246,0.2)"
+                      : "transparent",
+                  color:
+                    activeSection === section ? "#60a5fa" : "#94a3b8",
+                  fontWeight: activeSection === section ? 600 : 400,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {section === "proposals"
+                  ? "Proposals"
+                  : section === "rankings"
+                    ? "Rankings"
+                    : "Decisions"}
+              </button>
+            ),
+          )}
+        </div>
+
         {errorMessage && (
           <div className="board-alert board-alert--error" role="alert">
             {errorMessage}
@@ -359,6 +409,14 @@ export function EditorialBoardDashboard({
           </div>
         )}
 
+        {activeSection === "rankings" && (
+          <RankingsDashboard session={session.user} onLogout={onLogout} />
+        )}
+        {activeSection === "decisions" && (
+          <SeriesDecisionsDashboard session={session.user} onLogout={onLogout} />
+        )}
+
+        {activeSection === "proposals" && (
         <section className="editor-workflow editorial-workflow">
           <div className="editor-queue panel-card">
             <div className="panel-card__header panel-card__header--stacked">
@@ -600,6 +658,7 @@ export function EditorialBoardDashboard({
             )}
           </article>
         </section>
+        )}
       </div>
     </main>
   );

@@ -78,3 +78,5 @@ refactor: split mangaka proposal form
 - Doc conflict ky, khong bam accept all neu chua hieu.
 - Neu conflict o file shared/API/status, hoi owner module lien quan.
 - Sau khi resolve conflict phai build/test lai.
+
+

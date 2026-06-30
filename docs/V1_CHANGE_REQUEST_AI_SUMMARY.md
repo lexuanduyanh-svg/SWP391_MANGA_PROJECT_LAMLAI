@@ -1,4 +1,4 @@
-# V1 Change Request - Manuscript Validation and AI Summary
+﻿# V1 Change Request - Manuscript Validation and AI Summary
 
 ## 1. Source request
 
@@ -158,3 +158,5 @@ Upload/submit button enabled only after valid preview
 - Mangaka can confirm and continue submit.
 - Summary behavior can be explained to teacher in under 2 minutes.
 - Docs/API/test cases are updated.
+
+

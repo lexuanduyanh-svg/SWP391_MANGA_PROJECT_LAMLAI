@@ -1,4 +1,4 @@
-manga-workflow-system/
+﻿manga-workflow-system/
 |
 +-- backend/                       # The server-side code (Node.js/Java/Python)
 |   +-- src/
@@ -62,3 +62,5 @@ manga-workflow-system/
 +-- .env                           # Environment variables (DB credentials)
 +-- docker-compose.yml             # Orchestration for the On-Premise deploy
 +-- README.md
+
+

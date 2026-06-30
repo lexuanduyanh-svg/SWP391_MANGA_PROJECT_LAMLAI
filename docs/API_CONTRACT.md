@@ -4,7 +4,7 @@
 
 ## 1. Local seed accounts
 
-Các account dưới đây là seed/bootstrap data local để demo, không phải nguồn định nghĩa nghiệp vụ thay cho `database/schema.sql`.
+CÃ¡c account dÆ°á»›i Ä‘Ã¢y lÃ  seed/bootstrap data local Ä‘á»ƒ demo, khÃ´ng pháº£i nguá»“n Ä‘á»‹nh nghÄ©a nghiá»‡p vá»¥ thay cho `database/schema.sql`.
 
 ```text
 admin@manga.local / Admin@123
@@ -18,18 +18,18 @@ board3@manga.local / Board3@123
 
 ## 2. Canonical tables, roles, statuses
 
-Persistence tables chính trong `database/schema.sql`:
+Persistence tables chÃ­nh trong `database/schema.sql`:
 
 ```text
 users, roles, permissions, role_permissions, skills, user_skills, assistant_profiles
-series, board_votes, chapters, pages, tasks, submissions, annotations, reader_metrics
+proposals, series, board_votes, chapters, pages, tasks, submissions, annotations, reader_metrics
 ```
 
-- Unified proposal/series table is `series`; không có proposal table riêng. Trường chính: `series_id`, `mangaka_id`, `tantou_editor_id`, `title`, `synopsis`, `genre`, `status`, `publishing_frequency`, `editor_notes`, timestamps.
-- `chapters` và `pages` không có status column trong DB.
-- Không có table `regions`; region data nằm trong `tasks.region_coordinates` JSONB.
-- `submissions` lưu output asset của Assistant. `annotations` lưu editor page markup. `reader_metrics` dùng cho metrics/ranking.
-- API workflow filters hiện dùng email (`authorEmail`, `editorEmail`, `memberEmail`, `assistantEmail`) dù DB ownership dùng user id FKs.
+- Flow 1 proposal table is `proposals`; Flow 2 production table is `series`, linked by `series.proposal_id`. `database/schema.sql` is canonical for these fields.
+- `chapters` vÃ  `pages` khÃ´ng cÃ³ status column trong DB.
+- KhÃ´ng cÃ³ table `regions`; region data náº±m trong `tasks.region_coordinates` JSONB.
+- `submissions` lÆ°u output asset cá»§a Assistant. `annotations` lÆ°u editor page markup. `reader_metrics` dÃ¹ng cho metrics/ranking.
+- API workflow filters hiá»‡n dÃ¹ng email (`authorEmail`, `editorEmail`, `memberEmail`, `assistantEmail`) dÃ¹ DB ownership dÃ¹ng user id FKs.
 
 ### Roles
 
@@ -69,7 +69,7 @@ Do not use old `Completed` as task status.
 
 ### Board votes
 
-`board_votes.decision`: `APPROVE`, `REJECT`. DB enforces one vote per board member per series.
+`board_votes.decision`: `APPROVE`, `REJECT`. DB enforces one vote per board member per proposal.
 
 ## 3. Manuscript validation and AI summary - Owner: Member 1
 
@@ -110,7 +110,7 @@ GET /api/mangaka/proposals/files/{fileName}
 PUT /api/mangaka/proposals/{id}/submit
 ```
 
-> ⚠️ Admin prefix là `/admin`, KHÔNG có `/api` trước. Các nhóm còn lại đều có `/api/`.
+> âš ï¸ Admin prefix lÃ  `/admin`, KHÃ”NG cÃ³ `/api` trÆ°á»›c. CÃ¡c nhÃ³m cÃ²n láº¡i Ä‘á»u cÃ³ `/api/`.
 
 ## 5. Review/Board - Owner: Member 2
 
@@ -143,9 +143,9 @@ PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regi
 
 ## 7. Backend runtime profiles
 
-- `application.properties`: PostgreSQL config mặc định, lấy từ env `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DDL_AUTO`.
+- `application.properties`: PostgreSQL config máº·c Ä‘á»‹nh, láº¥y tá»« env `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DDL_AUTO`.
 - `application-local.properties`: H2 local demo, mode PostgreSQL.
-- `application-demo.properties`: tắt datasource/JPA auto-config để chạy demo in-memory service.
+- `application-demo.properties`: táº¯t datasource/JPA auto-config Ä‘á»ƒ cháº¡y demo in-memory service.
 
 ## 8. Rule cap nhat API
 
@@ -161,3 +161,5 @@ Status transition:
 Frontend screen using it:
 Database tables touched:
 ```
+
+

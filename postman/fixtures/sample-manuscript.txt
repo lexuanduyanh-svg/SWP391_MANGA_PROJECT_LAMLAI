@@ -1,1 +1,3 @@
-This is a sample manuscript used by the automated Newman flow test. It lets the backend generate a preview summary and attach upload metadata to a draft proposal.
+﻿This is a sample manuscript used by the automated Newman flow test. It lets the backend generate a preview summary and attach upload metadata to a draft proposal.
+
+

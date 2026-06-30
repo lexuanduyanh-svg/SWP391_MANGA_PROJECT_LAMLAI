@@ -371,3 +371,5 @@ C:\Users\AD\OneDrive\Máy tính\Giao trình FPT\KY5\SWP391_NEW
 ---
 
 **Golden rule:** Bám `CURRENT.md` + `form.txt` + `database.txt`. Code cũ chỉ để tham khảo. Sửa ít nhưng đúng. Verify rồi mới báo xong.
+
+

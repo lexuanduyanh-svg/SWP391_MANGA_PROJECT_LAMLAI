@@ -79,12 +79,10 @@ public class FullMangaWorkflowFlowTest {
 
     MangakaProductionTaskCreateRequest taskRequest = new MangakaProductionTaskCreateRequest();
     taskRequest.setAssistantEmail("assistant@manga.local");
-    taskRequest.setTaskType("Lettering");
     taskRequest.setInstructions("Letter the main dialogue.");
-    taskRequest.setReferenceFileName("dialogue-reference.txt");
     MangakaProductionTaskDto task =
         productionService.assignTask(
-            seriesId, chapter.getId(), page.getId(), "mangaka@manga.local", taskRequest);
+            seriesId, chapter.getId(), page.getId(), null, "mangaka@manga.local", taskRequest);
     Assertions.assertEquals("Pending", task.getStatus().name());
 
     AssistantTaskDto started =

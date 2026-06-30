@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS submissions CASCADE;
 DROP TABLE IF EXISTS tasks CASCADE;
 DROP TABLE IF EXISTS pages CASCADE;
 DROP TABLE IF EXISTS chapters CASCADE;
+DROP TABLE IF EXISTS series_decisions CASCADE;
 DROP TABLE IF EXISTS series CASCADE;
 DROP TABLE IF EXISTS proposals CASCADE;
 DROP TABLE IF EXISTS user_skills CASCADE;
@@ -155,9 +156,7 @@ CREATE TABLE tasks (
     task_id SERIAL PRIMARY KEY,
     page_id INTEGER REFERENCES pages(page_id) ON DELETE CASCADE,
     assistant_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
-    task_type INTEGER REFERENCES skills(skill_id),
-    region_coordinates JSONB,
-    payment DECIMAL(10, 2) DEFAULT 0.00 CHECK (payment >= 0),
+    deadline TIMESTAMP,
     status VARCHAR(50) DEFAULT 'ASSIGNED',
     feedback_notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -219,6 +218,21 @@ CREATE TABLE board_votes (
 );
 
 -- ====================================================================
--- 7. SEED DATA
+-- 7. SERIES DECISIONS (strategic decisions by board on active series)
+-- ====================================================================
+
+CREATE TABLE series_decisions (
+    series_decision_id SERIAL PRIMARY KEY,
+    series_id INTEGER REFERENCES series(series_id) ON DELETE CASCADE,
+    board_member_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+    decision_type VARCHAR(50) NOT NULL CHECK (decision_type IN ('MAINTAIN', 'RESCHEDULE', 'CANCEL', 'CHANGE_FORMAT')),
+    reason TEXT,
+    new_frequency VARCHAR(50),
+    new_format VARCHAR(50),
+    decided_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ====================================================================
+-- 8. SEED DATA
 -- ====================================================================
 INSERT INTO roles (role_name) VALUES ('Admin'), ('Mangaka'), ('Assistant'), ('Editor'), ('Board');

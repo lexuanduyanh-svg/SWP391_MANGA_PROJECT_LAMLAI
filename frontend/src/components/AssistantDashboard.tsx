@@ -109,27 +109,14 @@ function statusTone(status?: string | null): string {
 
 function taskContext(task: AssistantTask) {
   return {
-    proposal:
-      task.proposalTitle ??
-      task.proposal?.title ??
-      valueOrDash(task.proposalId),
-    chapter:
-      task.chapterTitle ??
-      (task.chapterNumber !== null && task.chapterNumber !== undefined
-        ? `Chapter ${task.chapterNumber}`
-        : (task.chapter?.title ?? valueOrDash(task.chapterId))),
+    series: task.seriesTitle ?? valueOrDash(task.seriesId),
+    chapter: task.chapterTitle ?? valueOrDash(task.chapterId),
     page:
       task.pageNumber !== null && task.pageNumber !== undefined
         ? `Page ${task.pageNumber}`
-        : task.page?.pageNumber !== null && task.page?.pageNumber !== undefined
-          ? `Page ${task.page.pageNumber}`
-          : (task.page?.fileName ?? valueOrDash(task.pageId)),
-    region:
-      task.regionType ?? task.region?.regionType ?? valueOrDash(task.regionId),
-    referenceFile: task.referenceFileName,
-    startedAt: formatDate(task.startedAt),
+        : valueOrDash(task.pageFileName ?? task.pageId),
+    deadline: formatDate(task.deadline),
     submittedAt: formatDate(task.submittedAt),
-    reviewedAt: formatDate(task.reviewedAt),
     updatedAt: formatDate(task.updatedAt),
   };
 }
@@ -215,9 +202,7 @@ export function AssistantDashboard({
 
     setSubmitForm((current) => ({
       submittedFileName:
-        current.submittedFileName ||
-        selectedTask.submittedFileName ||
-        selectedTask.referenceFileName,
+        current.submittedFileName || selectedTask.submittedFileName || "",
       submissionNote:
         current.submissionNote || selectedTask.submissionNote || "",
     }));
@@ -492,17 +477,16 @@ export function AssistantDashboard({
                                 <span className={statusTone(task.status)}>
                                   {statusLabel(task.status)}
                                 </span>
-                                <strong>{task.taskType}</strong>
+                                <strong>Task</strong>
                               </div>
                               <span className="assistant-task-card__id">
                                 {task.id.slice(0, 8)}
                               </span>
                             </div>
-                            <p>{context.proposal}</p>
+                            <p>{context.series}</p>
                             <div className="assistant-task-card__meta">
                               <span>{context.chapter}</span>
                               <span>{context.page}</span>
-                              <span>{context.region}</span>
                             </div>
                           </button>
                         );
@@ -521,7 +505,7 @@ export function AssistantDashboard({
                 <div>
                   <span className="eyebrow">Task detail</span>
                   <h3>
-                    {selectedTask ? selectedTask.taskType : "Select a task"}
+                    {selectedTask ? "Assignment" : "Select a task"}
                   </h3>
                   <p>
                     {selectedTask
@@ -540,8 +524,8 @@ export function AssistantDashboard({
                 <>
                   <div className="assistant-detail__grid">
                     <div className="assistant-detail__item">
-                      <span>Proposal</span>
-                      <strong>{taskInfo.proposal}</strong>
+                      <span>Series</span>
+                      <strong>{taskInfo.series}</strong>
                     </div>
                     <div className="assistant-detail__item">
                       <span>Chapter</span>
@@ -552,26 +536,56 @@ export function AssistantDashboard({
                       <strong>{taskInfo.page}</strong>
                     </div>
                     <div className="assistant-detail__item">
-                      <span>Region</span>
-                      <strong>{taskInfo.region}</strong>
-                    </div>
-                    <div className="assistant-detail__item">
-                      <span>Reference file</span>
-                      <strong>{taskInfo.referenceFile}</strong>
-                    </div>
-                    <div className="assistant-detail__item">
-                      <span>Task type</span>
-                      <strong>{selectedTask.taskType}</strong>
-                    </div>
-                    <div className="assistant-detail__item">
-                      <span>Started</span>
-                      <strong>{taskInfo.startedAt}</strong>
+                      <span>Deadline</span>
+                      <strong>{taskInfo.deadline}</strong>
                     </div>
                     <div className="assistant-detail__item">
                       <span>Submitted</span>
                       <strong>{taskInfo.submittedAt}</strong>
                     </div>
+                    
+                    {selectedTask.regionId && (
+                      <div className="assistant-detail__item">
+                        <span>Region</span>
+                        <strong>{selectedTask.regionId.slice(0, 8)}</strong>
+                      </div>
+                    )}
+                    {selectedTask.referenceFileName && (
+                      <div className="assistant-detail__item">
+                        <span>Reference File</span>
+                        <strong>{selectedTask.referenceFileName}</strong>
+                      </div>
+                    )}
                   </div>
+
+                  {selectedTask.pageId && (
+                    <div
+                      style={{
+                        border: '1px solid #ddd',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        background: '#fafafa',
+                        minHeight: '200px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '16px',
+                      }}
+                    >
+                      <img
+                        src={`/api/pages/${selectedTask.pageId}/image`}
+                        alt={`Page ${selectedTask.pageNumber}`}
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '400px',
+                          objectFit: 'contain',
+                        }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
 
                   <div className="assistant-instructions">
                     <span>Instructions</span>
@@ -581,7 +595,6 @@ export function AssistantDashboard({
                   <div className="assistant-detail__meta-row">
                     <span>Task ID: {selectedTask.id}</span>
                     <span>Updated: {taskInfo.updatedAt}</span>
-                    <span>Reviewed: {taskInfo.reviewedAt}</span>
                   </div>
 
                   <div className="assistant-actions">

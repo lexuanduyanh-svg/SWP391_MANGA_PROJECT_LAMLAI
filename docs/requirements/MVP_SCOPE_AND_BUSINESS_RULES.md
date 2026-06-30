@@ -88,66 +88,63 @@ For the revised V1, keep the scope smaller and make these additions explicit:
    - Restrict allowed file types.
    - Enforce a size limit.
    - Show clear validation errors before submission.
-2. ~~AI content summary preview before upload/submission.~~ **CUT in V2 (2026-06-27).**
+2. AI content summary preview before upload/submission.
    - ~~System extracts a short content summary from the selected file.~~
    - ~~Mangaka confirms the summary before the file is finalized.~~
 3. More teacher interaction checkpoints.
    - Add review checkpoints in demo/documentation.
    - Record teacher feedback and update scope before coding the next module.
-4. ~~Keep the AI summary lightweight for V1.~~ **CUT in V2 (2026-06-27).**
+4. Keep the AI summary lightweight for V1.
    - ~~Treat it as a small supported feature, not a heavy standalone AI service.~~
 
-## 4.5 V2 scope reduction (2026-06-27)
+## 4.5 Scope restoration (2026-06-30)
 
-**Reason:** Team reduced from 5 members to 3 members (2 dropped out). 3 weeks remaining.
-Flow 1 is complete. Flow 2 must be cut to fit 2 backend + 1 frontend developer.
+**Reason:** Temporary 3-person scope reduction is reverted. The source of truth is the original 5-member plan.
+Flow 2 returns to chapter/page/region/task production scope.
 
-### Features CUT entirely from MVP
+### Features restored to MVP
 
-| Feature | Original section | Reason |
-|---------|------------------|--------|
-| AI Summary preview | 4.4 V1 revised focus item 2, 4 | Requires Python service + AI model, not feasible in 3 weeks |
-| Region drawing (VisualCanvas, pixel-level selection) | 4.1 item 12, Flow 2 step 4 | Canvas UI too complex, task assigned at page level instead |
-| Annotations (Editor page markup pins) | 4.1 item 7 (partial), permission "Add editor annotation" | Not in demo script, replaced by `series.editor_notes` text |
-| Rankings screen + composite score logic | 4.1 items 17, 18; Flow 3 steps 2-3 | Stretch goal, not core workflow |
-| Active-series decision (`maintain`/`reschedule`/`cancel`/`change_format`) | 4.1 item 19; Flow 3 steps 5-6 | Out of 3-week scope, kept in schema only |
-| Reader poll data entry UI | 4.1 item 17; Flow 3 step 1 | No UI implemented, schema kept |
-| Notifications system | 4.1 item 20 | Schema kept, no UI/API in V2 |
-| Audit logging | 4.1 item 21 | Out of V2 scope |
-| Editor production/deadline dashboard | 4.2 should-have item 1 | Out of V2 scope |
+| Feature | Original section | Restored expectation |
+|---------|------------------|----------------------|
+| AI Summary preview | 4.4 V1 revised focus item 2, 4 | Kept as the lightweight AI-facing feature before upload/submission |
+| Region drawing (VisualCanvas, pixel-level selection) | 4.1 item 12, Flow 2 step 4 | Mangaka creates/selects regions on page images |
+| Annotations (Editor page markup pins) | 4.1 item 7, FE-16/FE-17 | Tantou Editor can attach markup/feedback to reviewed assets |
+| Rankings screen + composite score logic | 4.1 items 17, 18; Flow 3 steps 2-3 | Board can enter reader metrics and view generated rankings |
+| Active-series decision (`maintain`/`reschedule`/`cancel`/`change_format`) | 4.1 item 19; Flow 3 steps 5-6 | Board records strategic series decisions |
+| Reader poll data entry UI | 4.1 item 17; Flow 3 step 1 | Board enters poll/reader metrics manually |
+| Notifications system | 4.1 item 20 | Important workflow transitions create notification records/list items |
+| Audit logging | 4.1 item 21 | Sensitive workflow transitions are auditable |
+| Editor production/deadline dashboard | 4.2 should-have item 1 | Should-have after core Flow 2 is stable |
 
-### Features SIMPLIFIED
+### 3-person simplifications no longer apply
 
-| Feature | Original behavior | V2 simplified behavior |
-|---------|-------------------|----------------------|
-| Page region | Pixel-level region with JSONB coordinates | Task assigned at page level, `region_coordinates = null` or `{"fullPage": true}` |
-| Earnings calculation | Dynamic computation from approved tasks | Display static seed value from `assistant_profiles.monthly_earnings` |
-| Submission upload | File + annotations + version control | File upload + text note only |
-| File validation | AI preview + content extraction | JS frontend validation (type/size) only |
+| Old reduced behavior | Restored behavior |
+|----------------------|-------------------|
+| Task assigned at page level only | Task assigned to a page region |
+| `region_coordinates = null` or `{"fullPage": true}` | `region_coordinates` stores the selected region geometry |
+| Static seed earnings only | Estimated earnings derive from approved tasks and earning rates |
+| File upload + text note only | Submission can include file, note, and version/annotation context |
+| JS frontend validation only | JS validation plus AI summary preview where applicable |
 
-### Features KEPT in V2
+### Features in restored scope
 
-- Authentication and role-based access (Flow 1 done ✅)
-- Admin user/account management (Flow 1 done ✅)
-- Admin skill/category management (Flow 1 done ✅)
-- Mangaka series proposal creation (Flow 1 done ✅)
-- Mangaka manuscript upload (Flow 1 done ✅)
-- Tantou Editor proposal review (Flow 1 done ✅)
-- Tantou Editor request revision / forward to board (Flow 1 done ✅)
-- Editorial Board voting (3-vote auto-decision) (Flow 1 done ✅)
+- Authentication and role-based access (Flow 1 done)
+- Admin user/account management (Flow 1 done)
+- Admin skill/category management (Flow 1 done)
+- Mangaka series proposal creation (Flow 1 done)
+- Mangaka manuscript upload (Flow 1 done)
+- Tantou Editor proposal review (Flow 1 done)
+- Tantou Editor request revision / forward to board (Flow 1 done)
+- Editorial Board voting (3-vote auto-decision) (Flow 1 done)
 - Mangaka chapter creation (Flow 2 - IN PROGRESS)
 - Mangaka page creation (Flow 2 - IN PROGRESS)
-- Mangaka task assignment to Assistant (page-level, no region) (Flow 2 - IN PROGRESS)
+- Mangaka region creation / VisualCanvas selection (Flow 2 - IN PROGRESS)
+- Mangaka task assignment to Assistant (region-based task assignment) (Flow 2 - IN PROGRESS)
 - Assistant task workspace + submission (file + note) (Flow 2 - IN PROGRESS)
 - Mangaka task review: approve or redo (Flow 2 - IN PROGRESS)
-
-### Database tables: kept in schema but NOT implemented in V2
-
-- `annotations` (editor markup)
-- `reader_metrics` (poll/ranking data)
-- `tasks.region_coordinates` JSONB column (set null or `{"fullPage": true}`)
-
-These remain in `database/schema.sql` so future versions can implement without migration.
+- Editor annotations (Flow 2/Review - IN PROGRESS)
+- Reader metrics and rankings (Flow 3 - IN PROGRESS)
+- Active-series decisions (Flow 3 - IN PROGRESS)
 
 ## 5. Business flows
 
@@ -410,16 +407,15 @@ The system may notify stakeholders but should not auto-cancel a series.
 1. Earnings dashboard is display-only.
 2. No payment transaction, bank transfer, payroll, or royalty distribution is handled.
 3. Earnings are estimated from approved task submissions.
-4. Each task has a `task_type` and optional `unit_count`; default `unit_count=1`.
-5. `earning_rates` define rate per unit for each task type and effective date range.
-6. Estimated earning for a task:
+4. `earning_rates` define rate per unit and effective date range.
+5. Estimated earning for a task:
 
 ```text
-approved_task_earning = task.unit_count * applicable_rate.rate_per_page
+approved_task_earning = applicable_rate.rate_per_page
 ```
 
-7. Monthly earnings aggregate approved tasks by `reviewed_at` month.
-8. If multiple rates match, choose the rate whose effective period contains `reviewed_at`; overlapping active rates for the same task type should be prevented.
+6. Monthly earnings aggregate approved tasks by `reviewed_at` month.
+7. If multiple rates match, choose the rate whose effective period contains `reviewed_at`.
 
 ## 11. File and version rules
 

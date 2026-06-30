@@ -1,0 +1,13 @@
+import { Role, roleColors, roleLabels } from "../shared";
+
+const profiles: Record<Role, { name: string; title: string; email: string; since: string }> = {
+  mangaka: { name: "Tanaka Hiroshi", title: "Mangaka · Series Creator", email: "tanaka.hiroshi@mangaflow.jp", since: "2019" },
+  assistant: { name: "Yamada Kenji", title: "Artwork Assistant · Inking Specialist", email: "yamada.kenji@mangaflow.jp", since: "2021" },
+  editor: { name: "Yamamoto Koji", title: "Tantou Editor · Senior Review", email: "yamamoto.koji@mangaflow.jp", since: "2017" },
+  board: { name: "Kimura Takeshi", title: "Editorial Board · Chief Director", email: "kimura.takeshi@mangaflow.jp", since: "2015" },
+};
+
+export default function Profile({ role }: { role: Role }) {
+  const p = profiles[role];
+  return <div className="p-6 space-y-5 max-w-2xl"><h1 className="text-xl font-bold text-gray-900">User Profile</h1><div className="bg-white rounded-xl border border-purple-50 shadow-sm p-6 space-y-5"><div className="flex items-center gap-5"><div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${roleColors[role]} flex items-center justify-center text-white text-2xl font-bold shadow-md`}>{p.name[0]}</div><div><h2 className="text-xl font-bold text-gray-900">{p.name}</h2><p className="text-sm text-gray-500">{p.title}</p><p className="text-xs text-gray-400 mt-0.5">Member since {p.since}</p></div></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-xs font-medium text-gray-500 mb-1.5">Full Name</label><input className="w-full h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm" defaultValue={p.name} /></div><div><label className="block text-xs font-medium text-gray-500 mb-1.5">Email</label><input className="w-full h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm" defaultValue={p.email} /></div><div><label className="block text-xs font-medium text-gray-500 mb-1.5">Role</label><input className="w-full h-9 px-3 bg-gray-50 border border-gray-100 rounded-lg text-sm text-gray-400" defaultValue={roleLabels[role]} disabled /></div><div><label className="block text-xs font-medium text-gray-500 mb-1.5">Language</label><select className="w-full h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm"><option>日本語</option><option>English</option></select></div></div><div><label className="block text-xs font-medium text-gray-500 mb-1.5">Bio</label><textarea className="w-full h-20 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm resize-none" placeholder="Write a short bio…" /></div><button className="px-5 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-shadow">Save Changes</button></div></div>;
+}
