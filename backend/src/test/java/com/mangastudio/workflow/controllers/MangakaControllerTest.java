@@ -72,8 +72,9 @@ public class MangakaControllerTest {
 
   @Test
   public void production_happyPath_onApprovedSeed() throws Exception {
+    // Seed creates series "801" for approved proposal "4"
     mockMvc
-        .perform(get("/api/mangaka/proposals/4/chapters").param("authorEmail", "mangaka@manga.local"))
+        .perform(get("/api/mangaka/series/801/chapters").param("authorEmail", "mangaka@manga.local"))
         .andExpect(status().isOk());
   }
 

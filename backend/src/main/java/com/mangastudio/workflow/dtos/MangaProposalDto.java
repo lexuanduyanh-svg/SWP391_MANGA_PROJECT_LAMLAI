@@ -26,6 +26,7 @@ public class MangaProposalDto {
   private Integer boardPendingVotes;
   private Integer boardTotalVotes;
   private String currentMemberVote;
+  private String seriesId;
 
   public MangaProposalDto() {}
 
@@ -54,7 +55,8 @@ public class MangaProposalDto {
       Integer boardRejectVotes,
       Integer boardPendingVotes,
       Integer boardTotalVotes,
-      String currentMemberVote) {
+      String currentMemberVote,
+      String seriesId) {
     this.id = id;
     this.title = title;
     this.genre = genre;
@@ -80,6 +82,7 @@ public class MangaProposalDto {
     this.boardPendingVotes = boardPendingVotes;
     this.boardTotalVotes = boardTotalVotes;
     this.currentMemberVote = currentMemberVote;
+    this.seriesId = seriesId;
   }
 
   public String getId() {
@@ -280,5 +283,13 @@ public class MangaProposalDto {
 
   public void setCurrentMemberVote(String currentMemberVote) {
     this.currentMemberVote = currentMemberVote;
+  }
+
+  public String getSeriesId() {
+    return seriesId;
+  }
+
+  public void setSeriesId(String seriesId) {
+    this.seriesId = seriesId;
   }
 }

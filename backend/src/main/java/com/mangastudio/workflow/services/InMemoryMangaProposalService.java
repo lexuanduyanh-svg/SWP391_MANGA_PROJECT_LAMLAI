@@ -2,9 +2,11 @@ package com.mangastudio.workflow.services;
 
 import com.mangastudio.workflow.dtos.*;
 import com.mangastudio.workflow.entities.BoardVoteEntity;
+import com.mangastudio.workflow.entities.ProposalEntity;
 import com.mangastudio.workflow.entities.SeriesEntity;
 import com.mangastudio.workflow.entities.UserEntity;
 import com.mangastudio.workflow.repositories.BoardVoteRepository;
+import com.mangastudio.workflow.repositories.ProposalRepository;
 import com.mangastudio.workflow.repositories.SeriesRepository;
 import com.mangastudio.workflow.repositories.UserRepository;
 import java.time.LocalDateTime;
@@ -23,18 +25,21 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class InMemoryMangaProposalService {
+  private final ProposalRepository proposalRepository;
   private final SeriesRepository seriesRepository;
   private final BoardVoteRepository boardVoteRepository;
   private final UserRepository userRepository;
   private final Map<String, ProposalRecord> proposals = new LinkedHashMap<String, ProposalRecord>();
-  private final Map<Long, ProposalMetadata> seriesMetadata = new LinkedHashMap<Long, ProposalMetadata>();
+  private final Map<String, SeriesRecord> seriesRecords = new LinkedHashMap<String, SeriesRecord>();
   private final AtomicLong sequence = new AtomicLong(200);
+  private final AtomicLong seriesSeq = new AtomicLong(800);
   private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
   private static final String[] BOARD_MEMBERS = {
     "board@manga.local", "board2@manga.local", "board3@manga.local"
   };
 
   public InMemoryMangaProposalService() {
+    this.proposalRepository = null;
     this.seriesRepository = null;
     this.boardVoteRepository = null;
     this.userRepository = null;
@@ -44,9 +49,11 @@ public class InMemoryMangaProposalService {
 
   @Autowired
   public InMemoryMangaProposalService(
+      @Nullable ProposalRepository proposalRepository,
       @Nullable SeriesRepository seriesRepository,
       @Nullable BoardVoteRepository boardVoteRepository,
       @Nullable UserRepository userRepository) {
+    this.proposalRepository = proposalRepository;
     this.seriesRepository = seriesRepository;
     this.boardVoteRepository = boardVoteRepository;
     this.userRepository = userRepository;
@@ -148,48 +155,125 @@ public class InMemoryMangaProposalService {
         : voteByBoardMemory(id, memberEmail, false);
   }
 
+  // ------------------------------------------------------------------
+  // Helpers: schema detection & series resolution
+  // ------------------------------------------------------------------
+
   private boolean schemaMode() {
-    return seriesRepository != null
+    return proposalRepository != null
+        && seriesRepository != null
         && boardVoteRepository != null
         && userRepository != null;
   }
+
+  /** After a proposal is approved, create a Series entity from it. Returns series ID string. */
+  public String getOrCreateSeriesForProposal(String proposalId) {
+    if (schemaMode()) {
+      ProposalEntity p =
+          proposalRepository
+              .findById(Long.valueOf(proposalId))
+              .orElseThrow(() -> new IllegalArgumentException("Proposal not found"));
+      if (!"APPROVED".equals(p.getStatus()))
+        throw new IllegalArgumentException("Proposal is not approved yet");
+      // Check if series already exists for this proposal
+      // We rely on SeriesRepository having the right query; for now, find by proposal_id
+      List<SeriesEntity> existing = seriesRepository.findByMangaka_EmailIgnoreCaseOrderByUpdatedAtDesc(
+          p.getMangaka() != null ? p.getMangaka().getEmail() : "");
+      for (SeriesEntity s : existing) {
+        if (s.getProposal() != null && s.getProposal().getId().equals(p.getId())) {
+          return String.valueOf(s.getId());
+        }
+      }
+      // Create the series
+      SeriesEntity e = new SeriesEntity();
+      LocalDateTime now = LocalDateTime.now();
+      e.setProposal(p);
+      e.setMangaka(p.getMangaka());
+      e.setTantouEditor(p.getTantouEditor());
+      e.setTitle(p.getTitle());
+      e.setGenre(p.getGenre());
+      e.setSynopsis(p.getSynopsis());
+      e.setPublishingFrequency("WEEKLY");
+      e.setStatus("ACTIVE");
+      e.setCreatedAt(now);
+      e.setUpdatedAt(now);
+      return String.valueOf(seriesRepository.save(e).getId());
+    }
+    // Memory mode: look up from seriesRecords
+    for (SeriesRecord sr : seriesRecords.values()) {
+      if (proposalId.equals(sr.proposalId)) return sr.id;
+    }
+    throw new IllegalArgumentException("No series found for this proposal (proposal may not be approved)");
+  }
+
+  // ------------------------------------------------------------------
+  // SEED
+  // ------------------------------------------------------------------
 
   private void seedMemory() {
     seed("1", "Seed Draft", MangaProposalStatus.Draft);
     seed("2", "Seed Revision", MangaProposalStatus.NeedsRevision);
     seed("3", "Seed Submitted", MangaProposalStatus.SubmittedToEditor);
     seed("4", "Seed Approved", MangaProposalStatus.Approved);
+    // Create series for the approved seed proposal (id=4)
+    String sid = String.valueOf(seriesSeq.incrementAndGet());
+    seriesRecords.put(
+        sid,
+        new SeriesRecord(sid, "4", "Seed Approved", "ACTIVE", "mangaka@manga.local"));
   }
 
   private void seedDbIfEmpty() {
     if (schemaMode()) {
-      seedSeriesIfEmpty();
+      seedProposalsIfEmpty();
     }
   }
 
-  private void seedSeriesIfEmpty() {
-    if (seriesRepository == null || seriesRepository.count() > 0) return;
-    UserEntity mangaka = userRepository.findByEmailIgnoreCase(normalize("mangaka@manga.local")).orElse(null);
+  private void seedProposalsIfEmpty() {
+    if (proposalRepository == null || proposalRepository.count() > 0) return;
+    UserEntity mangaka =
+        userRepository.findByEmailIgnoreCase(normalize("mangaka@manga.local")).orElse(null);
     if (mangaka == null) return;
-    saveSeriesSeed(mangaka, "Seed Draft", "DRAFT");
-    saveSeriesSeed(mangaka, "Seed Revision", "REVISION_REQUESTED");
-    saveSeriesSeed(mangaka, "Seed Submitted", "SUBMITTED_TO_EDITOR");
-    saveSeriesSeed(mangaka, "Seed Approved", "APPROVED");
+    saveProposalSeed(mangaka, "Seed Draft", "DRAFT");
+    saveProposalSeed(mangaka, "Seed Revision", "REVISION_REQUESTED");
+    saveProposalSeed(mangaka, "Seed Submitted", "SUBMITTED_TO_EDITOR");
+    // For the approved one, also create a series
+    ProposalEntity approved = saveProposalSeed(mangaka, "Seed Approved", "APPROVED");
+    SeriesEntity series = new SeriesEntity();
+    LocalDateTime now = LocalDateTime.now();
+    series.setProposal(approved);
+    series.setMangaka(mangaka);
+    series.setTitle("Seed Approved");
+    series.setGenre("Action");
+    series.setSynopsis("Seed synopsis");
+    series.setPublishingFrequency("WEEKLY");
+    series.setStatus("ACTIVE");
+    series.setCreatedAt(now);
+    series.setUpdatedAt(now);
+    seriesRepository.save(series);
   }
 
-  private void saveSeriesSeed(UserEntity mangaka, String title, String status) {
-    SeriesEntity e = new SeriesEntity();
+  private ProposalEntity saveProposalSeed(UserEntity mangaka, String title, String status) {
+    ProposalEntity e = new ProposalEntity();
     LocalDateTime now = LocalDateTime.now();
     e.setMangaka(mangaka);
     e.setTitle(title);
     e.setGenre("Action");
+    e.setTargetAudience("Teen");
     e.setSynopsis("Seed synopsis");
+    e.setManuscriptTitle(title + " Manuscript");
+    e.setManuscriptSummary("Seed summary");
+    e.setManuscriptFileName("seed-manuscript-" + title.toLowerCase().replace(' ', '-') + ".pdf");
+    e.setManuscriptVersion(1);
+    e.setManuscriptUploadedAt(now);
     e.setStatus(status);
-    e.setPublishingFrequency("WEEKLY");
     e.setCreatedAt(now);
     e.setUpdatedAt(now);
-    seriesRepository.save(e);
+    return proposalRepository.save(e);
   }
+
+  // ------------------------------------------------------------------
+  // MEMORY MODE IMPLEMENTATIONS
+  // ------------------------------------------------------------------
 
   private List<MangaProposalDto> listByAuthorEmailMemory(String authorEmail) {
     List<MangaProposalDto> result = new ArrayList<MangaProposalDto>();
@@ -199,21 +283,9 @@ public class InMemoryMangaProposalService {
     return Collections.unmodifiableList(result);
   }
 
-  private List<MangaProposalDto> listByAuthorEmailDb(String authorEmail) {
-    List<MangaProposalDto> result = new ArrayList<MangaProposalDto>();
-    for (SeriesEntity e : seriesRepository.findByMangaka_EmailIgnoreCaseOrderByUpdatedAtDesc(normalize(authorEmail)))
-      result.add(toDto(e));
-    sortNewest(result);
-    return Collections.unmodifiableList(result);
-  }
-
   private MangaProposalDto getByIdMemory(String id) {
     ProposalRecord record = proposals.get(id);
     return record == null ? null : record.toDto();
-  }
-
-  private MangaProposalDto getByIdDb(String id) {
-    return seriesRepository.findById(Long.valueOf(id)).map(this::toDto).orElse(null);
   }
 
   private MangaProposalDto createMemory(MangaProposalCreateRequest request) {
@@ -240,30 +312,6 @@ public class InMemoryMangaProposalService {
     return record.toDto();
   }
 
-  private MangaProposalDto createDb(MangaProposalCreateRequest request) {
-    validateCreate(request);
-    UserEntity mangaka = resolveMangaka(request.getAuthorEmail());
-    SeriesEntity e = new SeriesEntity();
-    LocalDateTime now = LocalDateTime.now();
-    e.setMangaka(mangaka);
-    e.setTitle(request.getTitle().trim());
-    e.setGenre(request.getGenre().trim());
-    e.setSynopsis(request.getSynopsis().trim());
-    e.setStatus("DRAFT");
-    e.setPublishingFrequency("WEEKLY");
-    e.setCreatedAt(now);
-    e.setUpdatedAt(now);
-    SeriesEntity saved = seriesRepository.save(e);
-    saveMetadata(
-        saved.getId(),
-        request.getTargetAudience(),
-        request.getManuscriptTitle(),
-        request.getManuscriptSummary(),
-        request.getManuscriptFileName(),
-        emptyToNull(request.getManuscriptFileName()) == null ? null : format(now));
-    return toDto(saved);
-  }
-
   private MangaProposalDto updateMemory(
       String id, String authorEmail, MangaProposalUpdateRequest request) {
     validateUpdate(request);
@@ -287,26 +335,6 @@ public class InMemoryMangaProposalService {
     return record.toDto();
   }
 
-  private MangaProposalDto updateDb(
-      String id, String authorEmail, MangaProposalUpdateRequest request) {
-    validateUpdate(request);
-    SeriesEntity e = getRequiredSeriesForAuthor(id, authorEmail);
-    if (!("DRAFT".equals(e.getStatus()) || "REVISION_REQUESTED".equals(e.getStatus())))
-      throw new IllegalArgumentException("Proposal cannot be updated in current status");
-    e.setTitle(request.getTitle().trim());
-    e.setGenre(request.getGenre().trim());
-    e.setSynopsis(request.getSynopsis().trim());
-    e.setUpdatedAt(LocalDateTime.now());
-    saveMetadata(
-        e.getId(),
-        request.getTargetAudience(),
-        request.getManuscriptTitle(),
-        request.getManuscriptSummary(),
-        request.getManuscriptFileName(),
-        !blank(request.getManuscriptFileName()) ? format(e.getUpdatedAt()) : null);
-    return toDto(seriesRepository.save(e));
-  }
-
   private MangaProposalDto submitMemory(String id, String authorEmail) {
     ProposalRecord record = getRequired(id);
     ensureOwner(record, authorEmail);
@@ -319,32 +347,12 @@ public class InMemoryMangaProposalService {
     return record.toDto();
   }
 
-  private MangaProposalDto submitDb(String id, String authorEmail) {
-    SeriesEntity e = getRequiredSeriesForAuthor(id, authorEmail);
-    if (!("DRAFT".equals(e.getStatus()) || "REVISION_REQUESTED".equals(e.getStatus())))
-      throw new IllegalArgumentException("Proposal cannot be submitted in current status");
-    ProposalMetadata metadata = metadataFor(e.getId());
-    if (metadata.manuscriptFileName == null || metadata.manuscriptFileName.trim().isEmpty())
-      throw new IllegalArgumentException("Manuscript file is required before submission");
-    e.setStatus("SUBMITTED_TO_EDITOR");
-    e.setUpdatedAt(LocalDateTime.now());
-    return toDto(seriesRepository.save(e));
-  }
-
   private void deleteMemory(String id, String authorEmail) {
     ProposalRecord record = getRequired(id);
     ensureOwner(record, authorEmail);
     if (record.status != MangaProposalStatus.Draft)
       throw new IllegalArgumentException("Only Draft proposals can be deleted");
     proposals.remove(id);
-  }
-
-  private void deleteDb(String id, String authorEmail) {
-    SeriesEntity e = getRequiredSeriesForAuthor(id, authorEmail);
-    if (!("DRAFT".equals(e.getStatus())))
-      throw new IllegalArgumentException("Only Draft proposals can be deleted");
-    seriesRepository.delete(e);
-    seriesMetadata.remove(e.getId());
   }
 
   private MangaProposalDto attachManuscriptMetadataMemory(
@@ -364,24 +372,6 @@ public class InMemoryMangaProposalService {
     record.manuscriptUploadedAt = now();
     record.updatedAt = record.manuscriptUploadedAt;
     return record.toDto();
-  }
-
-  private MangaProposalDto attachManuscriptMetadataDb(
-      String id, String authorEmail, String fileName, String summary) {
-    SeriesEntity e = getRequiredSeriesForAuthor(id, authorEmail);
-    if (!("DRAFT".equals(e.getStatus()) || "REVISION_REQUESTED".equals(e.getStatus())))
-      throw new IllegalArgumentException("Proposal cannot be updated in current status");
-    String cleanFileName = fileName.trim();
-    ProposalMetadata metadata = metadataFor(e.getId());
-    metadata.manuscriptVersion =
-        metadata.manuscriptFileName == null || !metadata.manuscriptFileName.equals(cleanFileName)
-            ? Integer.valueOf(metadata.manuscriptVersion == null ? 1 : metadata.manuscriptVersion + 1)
-            : metadata.manuscriptVersion;
-    metadata.manuscriptFileName = cleanFileName;
-    metadata.manuscriptSummary = summary.trim();
-    metadata.manuscriptUploadedAt = now();
-    e.setUpdatedAt(LocalDateTime.now());
-    return toDto(seriesRepository.save(e));
   }
 
   private List<MangaProposalDto> listByStatusesMemory(MangaProposalStatus... statuses) {
@@ -407,28 +397,6 @@ public class InMemoryMangaProposalService {
     return Collections.unmodifiableList(result);
   }
 
-  private List<MangaProposalDto> listForBoardDb(String memberEmail) {
-    String viewer = normalize(memberEmail);
-    List<String> statuses = new ArrayList<String>();
-    statuses.add("UNDER_BOARD_REVIEW");
-    statuses.add("APPROVED");
-    statuses.add("REJECTED");
-    List<MangaProposalDto> result = new ArrayList<MangaProposalDto>();
-    for (SeriesEntity e : seriesRepository.findByStatusInOrderByUpdatedAtDesc(statuses))
-      result.add(toDto(e, viewer));
-    sortNewest(result);
-    return Collections.unmodifiableList(result);
-  }
-
-  private List<MangaProposalDto> listByStatusesDb(MangaProposalStatus... statuses) {
-    List<String> ss = new ArrayList<String>();
-    for (MangaProposalStatus s : statuses) ss.add(toSeriesStatus(s));
-    List<MangaProposalDto> result = new ArrayList<MangaProposalDto>();
-    for (SeriesEntity e : seriesRepository.findByStatusInOrderByUpdatedAtDesc(ss)) result.add(toDto(e));
-    sortNewest(result);
-    return Collections.unmodifiableList(result);
-  }
-
   private MangaProposalDto forwardToBoardMemory(String id, String editorEmail, String note) {
     validateEmail(editorEmail, "editorEmail");
     ProposalRecord record = getRequired(id);
@@ -440,18 +408,6 @@ public class InMemoryMangaProposalService {
     record.editorReviewedAt = now();
     record.updatedAt = record.editorReviewedAt;
     return record.toDto();
-  }
-
-  private MangaProposalDto forwardToBoardDb(String id, String editorEmail, String note) {
-    validateEmail(editorEmail, "editorEmail");
-    SeriesEntity e = getRequiredSeries(id);
-    if (!"SUBMITTED_TO_EDITOR".equals(e.getStatus()))
-      throw new IllegalArgumentException("Proposal cannot be forwarded in current status");
-    e.setStatus("UNDER_BOARD_REVIEW");
-    e.setTantouEditor(resolveEditor(editorEmail));
-    e.setEditorNotes(emptyToNull(note));
-    e.setUpdatedAt(LocalDateTime.now());
-    return toDto(seriesRepository.save(e));
   }
 
   private MangaProposalDto requestRevisionByEditorMemory(
@@ -468,18 +424,6 @@ public class InMemoryMangaProposalService {
     return record.toDto();
   }
 
-  private MangaProposalDto requestRevisionByEditorDb(String id, String editorEmail, String note) {
-    validateEmail(editorEmail, "editorEmail");
-    SeriesEntity e = getRequiredSeries(id);
-    if (!"SUBMITTED_TO_EDITOR".equals(e.getStatus()))
-      throw new IllegalArgumentException("Proposal cannot be revised in current status");
-    e.setStatus("REVISION_REQUESTED");
-    e.setTantouEditor(resolveEditor(editorEmail));
-    e.setEditorNotes(emptyToNull(note));
-    e.setUpdatedAt(LocalDateTime.now());
-    return toDto(seriesRepository.save(e));
-  }
-
   private MangaProposalDto rejectByEditorMemory(String id, String editorEmail, String note) {
     validateEmail(editorEmail, "editorEmail");
     ProposalRecord record = getRequired(id);
@@ -491,18 +435,6 @@ public class InMemoryMangaProposalService {
     record.editorReviewedAt = now();
     record.updatedAt = record.editorReviewedAt;
     return record.toDto();
-  }
-
-  private MangaProposalDto rejectByEditorDb(String id, String editorEmail, String note) {
-    validateEmail(editorEmail, "editorEmail");
-    SeriesEntity e = getRequiredSeries(id);
-    if (!"SUBMITTED_TO_EDITOR".equals(e.getStatus()))
-      throw new IllegalArgumentException("Proposal cannot be rejected in current status");
-    e.setStatus("REJECTED");
-    e.setTantouEditor(resolveEditor(editorEmail));
-    e.setEditorNotes(emptyToNull(note));
-    e.setUpdatedAt(LocalDateTime.now());
-    return toDto(seriesRepository.save(e));
   }
 
   private MangaProposalDto voteByBoardMemory(String id, String memberEmail, boolean approve) {
@@ -527,46 +459,353 @@ public class InMemoryMangaProposalService {
           record.status == MangaProposalStatus.Approved
               ? "Board vote result: approved by majority."
               : "Board vote result: rejected by majority.";
+      // Auto-create series in memory mode when approved
+      if (record.status == MangaProposalStatus.Approved) {
+        String sid = String.valueOf(seriesSeq.incrementAndGet());
+        seriesRecords.put(
+            sid,
+            new SeriesRecord(
+                sid, record.id, record.title, "ACTIVE", record.authorEmail));
+      }
     }
     record.updatedAt = now();
     return record.toDtoFor(voter);
   }
 
+  // ------------------------------------------------------------------
+  // DB MODE IMPLEMENTATIONS — now using ProposalEntity
+  // ------------------------------------------------------------------
+
+  private List<MangaProposalDto> listByAuthorEmailDb(String authorEmail) {
+    List<MangaProposalDto> result = new ArrayList<MangaProposalDto>();
+    for (ProposalEntity e :
+        proposalRepository.findByMangaka_EmailIgnoreCaseOrderByUpdatedAtDesc(normalize(authorEmail)))
+      result.add(toDto(e));
+    sortNewest(result);
+    return Collections.unmodifiableList(result);
+  }
+
+  private MangaProposalDto getByIdDb(String id) {
+    return proposalRepository
+        .findById(Long.valueOf(id))
+        .map(this::toDto)
+        .orElse(null);
+  }
+
+  private MangaProposalDto createDb(MangaProposalCreateRequest request) {
+    validateCreate(request);
+    UserEntity mangaka = resolveMangaka(request.getAuthorEmail());
+    LocalDateTime now = LocalDateTime.now();
+    ProposalEntity e = new ProposalEntity();
+    e.setMangaka(mangaka);
+    e.setTitle(request.getTitle().trim());
+    e.setGenre(request.getGenre().trim());
+    e.setTargetAudience(request.getTargetAudience().trim());
+    e.setSynopsis(request.getSynopsis().trim());
+    e.setManuscriptTitle(request.getManuscriptTitle().trim());
+    e.setManuscriptSummary(request.getManuscriptSummary().trim());
+    e.setManuscriptFileName(emptyToNull(request.getManuscriptFileName()));
+    e.setManuscriptVersion(blank(request.getManuscriptFileName()) ? null : 1);
+    e.setManuscriptUploadedAt(blank(request.getManuscriptFileName()) ? null : now);
+    e.setStatus("DRAFT");
+    e.setCreatedAt(now);
+    e.setUpdatedAt(now);
+    return toDto(proposalRepository.save(e));
+  }
+
+  private MangaProposalDto updateDb(
+      String id, String authorEmail, MangaProposalUpdateRequest request) {
+    validateUpdate(request);
+    ProposalEntity e = getRequiredProposalForAuthor(id, authorEmail);
+    if (!("DRAFT".equals(e.getStatus()) || "REVISION_REQUESTED".equals(e.getStatus())))
+      throw new IllegalArgumentException("Proposal cannot be updated in current status");
+    e.setTitle(request.getTitle().trim());
+    e.setGenre(request.getGenre().trim());
+    e.setTargetAudience(request.getTargetAudience().trim());
+    e.setSynopsis(request.getSynopsis().trim());
+    e.setManuscriptTitle(request.getManuscriptTitle().trim());
+    e.setManuscriptSummary(request.getManuscriptSummary().trim());
+    if (!blank(request.getManuscriptFileName())) {
+      String clean = request.getManuscriptFileName().trim();
+      if (e.getManuscriptFileName() == null || !e.getManuscriptFileName().equals(clean)) {
+        e.setManuscriptVersion(
+            Integer.valueOf(e.getManuscriptVersion() == null ? 1 : e.getManuscriptVersion() + 1));
+      }
+      e.setManuscriptFileName(clean);
+      e.setManuscriptUploadedAt(LocalDateTime.now());
+    }
+    e.setUpdatedAt(LocalDateTime.now());
+    return toDto(proposalRepository.save(e));
+  }
+
+  private MangaProposalDto submitDb(String id, String authorEmail) {
+    ProposalEntity e = getRequiredProposalForAuthor(id, authorEmail);
+    if (!("DRAFT".equals(e.getStatus()) || "REVISION_REQUESTED".equals(e.getStatus())))
+      throw new IllegalArgumentException("Proposal cannot be submitted in current status");
+    if (blank(e.getManuscriptFileName()))
+      throw new IllegalArgumentException("Manuscript file is required before submission");
+    e.setStatus("SUBMITTED_TO_EDITOR");
+    e.setUpdatedAt(LocalDateTime.now());
+    return toDto(proposalRepository.save(e));
+  }
+
+  private void deleteDb(String id, String authorEmail) {
+    ProposalEntity e = getRequiredProposalForAuthor(id, authorEmail);
+    if (!"DRAFT".equals(e.getStatus()))
+      throw new IllegalArgumentException("Only Draft proposals can be deleted");
+    proposalRepository.delete(e);
+  }
+
+  private MangaProposalDto attachManuscriptMetadataDb(
+      String id, String authorEmail, String fileName, String summary) {
+    ProposalEntity e = getRequiredProposalForAuthor(id, authorEmail);
+    if (!("DRAFT".equals(e.getStatus()) || "REVISION_REQUESTED".equals(e.getStatus())))
+      throw new IllegalArgumentException("Proposal cannot be updated in current status");
+    String cleanFileName = fileName.trim();
+    if (e.getManuscriptFileName() == null || !e.getManuscriptFileName().equals(cleanFileName)) {
+      e.setManuscriptVersion(
+          Integer.valueOf(e.getManuscriptVersion() == null ? 1 : e.getManuscriptVersion() + 1));
+    }
+    e.setManuscriptFileName(cleanFileName);
+    e.setManuscriptSummary(summary.trim());
+    e.setManuscriptUploadedAt(LocalDateTime.now());
+    e.setUpdatedAt(LocalDateTime.now());
+    return toDto(proposalRepository.save(e));
+  }
+
+  private List<MangaProposalDto> listByStatusesDb(MangaProposalStatus... statuses) {
+    List<String> ss = new ArrayList<String>();
+    for (MangaProposalStatus s : statuses) ss.add(toProposalDbStatus(s));
+    List<MangaProposalDto> result = new ArrayList<MangaProposalDto>();
+    for (ProposalEntity e : proposalRepository.findByStatusInOrderByUpdatedAtDesc(ss))
+      result.add(toDto(e));
+    sortNewest(result);
+    return Collections.unmodifiableList(result);
+  }
+
+  private MangaProposalDto forwardToBoardDb(String id, String editorEmail, String note) {
+    validateEmail(editorEmail, "editorEmail");
+    ProposalEntity e = getRequiredProposal(id);
+    if (!"SUBMITTED_TO_EDITOR".equals(e.getStatus()))
+      throw new IllegalArgumentException("Proposal cannot be forwarded in current status");
+    e.setStatus("UNDER_BOARD_REVIEW");
+    e.setTantouEditor(resolveEditor(editorEmail));
+    e.setEditorNotes(emptyToNull(note));
+    e.setUpdatedAt(LocalDateTime.now());
+    return toDto(proposalRepository.save(e));
+  }
+
+  private MangaProposalDto requestRevisionByEditorDb(String id, String editorEmail, String note) {
+    validateEmail(editorEmail, "editorEmail");
+    ProposalEntity e = getRequiredProposal(id);
+    if (!"SUBMITTED_TO_EDITOR".equals(e.getStatus()))
+      throw new IllegalArgumentException("Proposal cannot be revised in current status");
+    e.setStatus("REVISION_REQUESTED");
+    e.setTantouEditor(resolveEditor(editorEmail));
+    e.setEditorNotes(emptyToNull(note));
+    e.setUpdatedAt(LocalDateTime.now());
+    return toDto(proposalRepository.save(e));
+  }
+
+  private MangaProposalDto rejectByEditorDb(String id, String editorEmail, String note) {
+    validateEmail(editorEmail, "editorEmail");
+    ProposalEntity e = getRequiredProposal(id);
+    if (!"SUBMITTED_TO_EDITOR".equals(e.getStatus()))
+      throw new IllegalArgumentException("Proposal cannot be rejected in current status");
+    e.setStatus("REJECTED");
+    e.setTantouEditor(resolveEditor(editorEmail));
+    e.setEditorNotes(emptyToNull(note));
+    e.setUpdatedAt(LocalDateTime.now());
+    return toDto(proposalRepository.save(e));
+  }
+
+  private List<MangaProposalDto> listForBoardDb(String memberEmail) {
+    String viewer = normalize(memberEmail);
+    List<String> statuses = new ArrayList<String>();
+    statuses.add("UNDER_BOARD_REVIEW");
+    statuses.add("APPROVED");
+    statuses.add("REJECTED");
+    List<MangaProposalDto> result = new ArrayList<MangaProposalDto>();
+    for (ProposalEntity e : proposalRepository.findByStatusInOrderByUpdatedAtDesc(statuses))
+      result.add(toDto(e, viewer));
+    sortNewest(result);
+    return Collections.unmodifiableList(result);
+  }
+
   private MangaProposalDto voteByBoardDb(String id, String memberEmail, boolean approve) {
     validateEmail(memberEmail, "memberEmail");
-    SeriesEntity e = getRequiredSeries(id);
+    ProposalEntity e = getRequiredProposal(id);
     if (!"UNDER_BOARD_REVIEW".equals(e.getStatus()))
       throw new IllegalArgumentException("Proposal is no longer open for board voting");
     String voter = normalize(memberEmail);
     UserEntity boardMember = resolveBoardMember(voter);
-    if (boardVoteRepository.existsBySeries_IdAndBoardMember_EmailIgnoreCase(e.getId(), voter))
+    if (boardVoteRepository.existsByProposal_IdAndBoardMember_EmailIgnoreCase(e.getId(), voter))
       throw new IllegalArgumentException("This board member already voted");
 
     BoardVoteEntity vote = new BoardVoteEntity();
-    vote.setSeries(e);
+    vote.setProposal(e);
     vote.setBoardMember(boardMember);
     vote.setDecision(approve ? "APPROVE" : "REJECT");
     boardVoteRepository.save(vote);
 
-    List<BoardVoteEntity> votes = boardVoteRepository.findBySeries_Id(e.getId());
+    List<BoardVoteEntity> votes = boardVoteRepository.findByProposal_Id(e.getId());
     int approveVotes = countVotes(votes, "APPROVE");
     int rejectVotes = countVotes(votes, "REJECT");
     if (votes.size() >= BOARD_MEMBERS.length) {
-      e.setStatus(approveVotes > rejectVotes ? "APPROVED" : "REJECTED");
+      if (approveVotes > rejectVotes) {
+        e.setStatus("APPROVED");
+        // Auto-create SeriesEntity when proposal is approved
+        proposalRepository.save(e);
+        createSeriesFromProposal(e);
+      } else {
+        e.setStatus("REJECTED");
+        proposalRepository.save(e);
+      }
+    } else {
+      e.setUpdatedAt(LocalDateTime.now());
+      proposalRepository.save(e);
     }
-    e.setUpdatedAt(LocalDateTime.now());
-    return toDto(seriesRepository.save(e), voter);
+    return toDto(proposalRepository.findById(e.getId()).orElse(e), voter);
+  }
+
+  private SeriesEntity createSeriesFromProposal(ProposalEntity proposal) {
+    LocalDateTime now = LocalDateTime.now();
+    SeriesEntity series = new SeriesEntity();
+    series.setProposal(proposal);
+    series.setMangaka(proposal.getMangaka());
+    series.setTantouEditor(proposal.getTantouEditor());
+    series.setTitle(proposal.getTitle());
+    series.setGenre(proposal.getGenre());
+    series.setSynopsis(proposal.getSynopsis());
+    series.setPublishingFrequency("WEEKLY");
+    series.setStatus("ACTIVE");
+    series.setCreatedAt(now);
+    series.setUpdatedAt(now);
+    return seriesRepository.save(series);
+  }
+
+  // ------------------------------------------------------------------
+  // DTO mapping
+  // ------------------------------------------------------------------
+
+  private MangaProposalDto toDto(ProposalEntity e) {
+    String updatedAt = format(e.getUpdatedAt());
+    MangaProposalStatus status = mapProposalStatus(e.getStatus());
+    String seriesId = findSeriesIdForProposal(e.getId());
+    return new MangaProposalDto(
+        String.valueOf(e.getId()),
+        e.getTitle(),
+        e.getGenre(),
+        e.getTargetAudience(),
+        e.getSynopsis(),
+        e.getManuscriptTitle() != null ? e.getManuscriptTitle() : e.getTitle(),
+        e.getManuscriptSummary() != null ? e.getManuscriptSummary() : e.getSynopsis(),
+        e.getManuscriptFileName(),
+        e.getManuscriptVersion(),
+        format(e.getManuscriptUploadedAt()),
+        e.getMangaka() == null ? null : e.getMangaka().getEmail(),
+        status,
+        status == MangaProposalStatus.Draft ? null : updatedAt,
+        updatedAt,
+        e.getTantouEditor() == null ? null : e.getTantouEditor().getEmail(),
+        e.getEditorNotes(),
+        null,
+        null,
+        null,
+        null,
+        Integer.valueOf(0),
+        Integer.valueOf(0),
+        Integer.valueOf(BOARD_MEMBERS.length),
+        Integer.valueOf(BOARD_MEMBERS.length),
+        null,
+        seriesId);
+  }
+
+  private String findSeriesIdForProposal(Long proposalId) {
+    if (seriesRepository == null) return null;
+    // Scan through series to find one linked to this proposal
+    for (SeriesEntity s : seriesRepository.findAll()) {
+      if (s.getProposal() != null && proposalId.equals(s.getProposal().getId())) {
+        return String.valueOf(s.getId());
+      }
+    }
+    return null;
+  }
+
+  private MangaProposalDto toDto(ProposalEntity e, String viewerEmail) {
+    List<BoardVoteEntity> votes = boardVoteRepository.findByProposal_Id(e.getId());
+    int approveVotes = countVotes(votes, "APPROVE");
+    int rejectVotes = countVotes(votes, "REJECT");
+    int pendingVotes = Math.max(0, BOARD_MEMBERS.length - votes.size());
+    String currentVote = null;
+    if (viewerEmail != null) {
+      for (BoardVoteEntity vote : votes) {
+        if (vote.getBoardMember() != null
+            && vote.getBoardMember().getEmail() != null
+            && normalize(viewerEmail).equals(normalize(vote.getBoardMember().getEmail()))) {
+          currentVote = vote.getDecision();
+          break;
+        }
+      }
+    }
+    MangaProposalDto dto = toDto(e);
+    dto.setBoardApproveVotes(Integer.valueOf(approveVotes));
+    dto.setBoardRejectVotes(Integer.valueOf(rejectVotes));
+    dto.setBoardPendingVotes(Integer.valueOf(pendingVotes));
+    dto.setBoardTotalVotes(Integer.valueOf(BOARD_MEMBERS.length));
+    dto.setCurrentMemberVote(currentVote);
+    return dto;
+  }
+
+  private MangaProposalStatus mapProposalStatus(String status) {
+    if ("SUBMITTED_TO_EDITOR".equalsIgnoreCase(status)) return MangaProposalStatus.SubmittedToEditor;
+    if ("REVISION_REQUESTED".equalsIgnoreCase(status)) return MangaProposalStatus.NeedsRevision;
+    if ("UNDER_BOARD_REVIEW".equalsIgnoreCase(status)) return MangaProposalStatus.UnderBoardReview;
+    if ("APPROVED".equalsIgnoreCase(status)) return MangaProposalStatus.Approved;
+    if ("REJECTED".equalsIgnoreCase(status)) return MangaProposalStatus.Rejected;
+    return MangaProposalStatus.Draft;
+  }
+
+  private String toProposalDbStatus(MangaProposalStatus status) {
+    if (status == MangaProposalStatus.SubmittedToEditor) return "SUBMITTED_TO_EDITOR";
+    if (status == MangaProposalStatus.NeedsRevision) return "REVISION_REQUESTED";
+    if (status == MangaProposalStatus.UnderBoardReview) return "UNDER_BOARD_REVIEW";
+    if (status == MangaProposalStatus.Approved) return "APPROVED";
+    if (status == MangaProposalStatus.Rejected) return "REJECTED";
+    return "DRAFT";
+  }
+
+  /** Get a memory-mode series record by ID (for ProductionService). */
+  public SeriesRecord getSeriesRecord(String seriesId) {
+    return seriesRecords.get(seriesId);
+  }
+
+  // ------------------------------------------------------------------
+  // Validation & helpers
+  // ------------------------------------------------------------------
+
+  private ProposalRecord getRequired(String id) {
+    ProposalRecord record = proposals.get(id);
+    if (record == null) throw new IllegalArgumentException("Proposal not found");
+    return record;
+  }
+
+  private ProposalEntity getRequiredProposal(String id) {
+    return proposalRepository
+        .findById(Long.valueOf(id))
+        .orElseThrow(() -> new IllegalArgumentException("Proposal not found"));
+  }
+
+  private ProposalEntity getRequiredProposalForAuthor(String id, String authorEmail) {
+    validateEmail(authorEmail, "authorEmail");
+    return proposalRepository
+        .findByIdAndMangaka_EmailIgnoreCase(Long.valueOf(id), normalize(authorEmail))
+        .orElseThrow(() -> new IllegalArgumentException("Proposal not found"));
   }
 
   private boolean isBoardMember(String email) {
     for (String member : BOARD_MEMBERS) if (member.equals(email)) return true;
     return false;
-  }
-
-  private int countVotes(ProposalRecord record, String vote) {
-    int count = 0;
-    for (String value : record.boardVotes.values()) if (vote.equals(value)) count++;
-    return count;
   }
 
   private void sortNewest(List<MangaProposalDto> items) {
@@ -587,23 +826,17 @@ public class InMemoryMangaProposalService {
     return String.format("%020d", Long.valueOf(proposal.getId()).longValue());
   }
 
-  private ProposalRecord getRequired(String id) {
-    ProposalRecord record = proposals.get(id);
-    if (record == null) throw new IllegalArgumentException("Proposal not found");
-    return record;
+  private int countVotes(ProposalRecord record, String vote) {
+    int count = 0;
+    for (String value : record.boardVotes.values()) if (vote.equals(value)) count++;
+    return count;
   }
 
-  private SeriesEntity getRequiredSeries(String id) {
-    return seriesRepository
-        .findById(Long.valueOf(id))
-        .orElseThrow(() -> new IllegalArgumentException("Proposal not found"));
-  }
-
-  private SeriesEntity getRequiredSeriesForAuthor(String id, String authorEmail) {
-    validateEmail(authorEmail, "authorEmail");
-    return seriesRepository
-        .findByIdAndMangaka_EmailIgnoreCase(Long.valueOf(id), normalize(authorEmail))
-        .orElseThrow(() -> new IllegalArgumentException("Proposal not found"));
+  private int countVotes(List<BoardVoteEntity> votes, String decision) {
+    int count = 0;
+    for (BoardVoteEntity vote : votes)
+      if (decision.equalsIgnoreCase(vote.getDecision())) count++;
+    return count;
   }
 
   private UserEntity resolveMangaka(String authorEmail) {
@@ -717,125 +950,6 @@ public class InMemoryMangaProposalService {
     return blank(value) ? null : value.trim();
   }
 
-  private int countVotes(Map<String, String> votes, String vote) {
-    int count = 0;
-    for (String value : votes.values()) if (vote.equals(value)) count++;
-    return count;
-  }
-
-  private int countVotes(List<BoardVoteEntity> votes, String decision) {
-    int count = 0;
-    for (BoardVoteEntity vote : votes)
-      if (decision.equalsIgnoreCase(vote.getDecision())) count++;
-    return count;
-  }
-
-  private ProposalMetadata metadataFor(Long seriesId) {
-    ProposalMetadata metadata = seriesMetadata.get(seriesId);
-    if (metadata == null) {
-      metadata = new ProposalMetadata();
-      seriesMetadata.put(seriesId, metadata);
-    }
-    return metadata;
-  }
-
-  private void saveMetadata(
-      Long seriesId,
-      String targetAudience,
-      String manuscriptTitle,
-      String manuscriptSummary,
-      String manuscriptFileName,
-      String manuscriptUploadedAt) {
-    ProposalMetadata metadata = metadataFor(seriesId);
-    if (!blank(targetAudience)) metadata.targetAudience = targetAudience.trim();
-    if (!blank(manuscriptTitle)) metadata.manuscriptTitle = manuscriptTitle.trim();
-    if (!blank(manuscriptSummary)) metadata.manuscriptSummary = manuscriptSummary.trim();
-    if (!blank(manuscriptFileName)) {
-      String cleanFileName = manuscriptFileName.trim();
-      if (metadata.manuscriptFileName == null || !metadata.manuscriptFileName.equals(cleanFileName)) {
-        metadata.manuscriptVersion =
-            Integer.valueOf(metadata.manuscriptVersion == null ? 1 : metadata.manuscriptVersion + 1);
-      }
-      metadata.manuscriptFileName = cleanFileName;
-      metadata.manuscriptUploadedAt = manuscriptUploadedAt;
-    }
-  }
-
-  private MangaProposalDto toDto(SeriesEntity e) {
-    ProposalMetadata metadata = metadataFor(e.getId());
-    String updatedAt = format(e.getUpdatedAt());
-    MangaProposalStatus status = mapSeriesStatus(e.getStatus());
-    return new MangaProposalDto(
-        String.valueOf(e.getId()),
-        e.getTitle(),
-        e.getGenre(),
-        metadata.targetAudience,
-        e.getSynopsis(),
-        metadata.manuscriptTitle != null ? metadata.manuscriptTitle : e.getTitle(),
-        metadata.manuscriptSummary != null ? metadata.manuscriptSummary : e.getSynopsis(),
-        metadata.manuscriptFileName,
-        metadata.manuscriptVersion,
-        metadata.manuscriptUploadedAt,
-        e.getMangaka() == null ? null : e.getMangaka().getEmail(),
-        status,
-        status == MangaProposalStatus.Draft ? null : updatedAt,
-        updatedAt,
-        e.getTantouEditor() == null ? null : e.getTantouEditor().getEmail(),
-        e.getEditorNotes(),
-        null,
-        null,
-        null,
-        null,
-        Integer.valueOf(0),
-        Integer.valueOf(0),
-        Integer.valueOf(BOARD_MEMBERS.length),
-        Integer.valueOf(BOARD_MEMBERS.length),
-        null);
-  }
-
-  private MangaProposalStatus mapSeriesStatus(String status) {
-    if ("SUBMITTED_TO_EDITOR".equalsIgnoreCase(status)) return MangaProposalStatus.SubmittedToEditor;
-    if ("REVISION_REQUESTED".equalsIgnoreCase(status)) return MangaProposalStatus.NeedsRevision;
-    if ("UNDER_BOARD_REVIEW".equalsIgnoreCase(status)) return MangaProposalStatus.UnderBoardReview;
-    if ("APPROVED".equalsIgnoreCase(status)) return MangaProposalStatus.Approved;
-    if ("REJECTED".equalsIgnoreCase(status)) return MangaProposalStatus.Rejected;
-    return MangaProposalStatus.Draft;
-  }
-
-  private String toSeriesStatus(MangaProposalStatus status) {
-    if (status == MangaProposalStatus.SubmittedToEditor) return "SUBMITTED_TO_EDITOR";
-    if (status == MangaProposalStatus.NeedsRevision) return "REVISION_REQUESTED";
-    if (status == MangaProposalStatus.UnderBoardReview) return "UNDER_BOARD_REVIEW";
-    if (status == MangaProposalStatus.Approved) return "APPROVED";
-    if (status == MangaProposalStatus.Rejected) return "REJECTED";
-    return "DRAFT";
-  }
-
-  private MangaProposalDto toDto(SeriesEntity e, String viewerEmail) {
-    List<BoardVoteEntity> votes = boardVoteRepository.findBySeries_Id(e.getId());
-    int approveVotes = countVotes(votes, "APPROVE");
-    int rejectVotes = countVotes(votes, "REJECT");
-    int pendingVotes = Math.max(0, BOARD_MEMBERS.length - votes.size());
-    String currentVote = null;
-    if (viewerEmail != null) {
-      for (BoardVoteEntity vote : votes) {
-        if (vote.getBoardMember() != null
-            && vote.getBoardMember().getEmail() != null
-            && normalize(viewerEmail).equals(normalize(vote.getBoardMember().getEmail()))) {
-          currentVote = vote.getDecision();
-          break;
-        }
-      }
-    }
-    MangaProposalDto dto = toDto(e);
-    dto.setBoardApproveVotes(Integer.valueOf(approveVotes));
-    dto.setBoardRejectVotes(Integer.valueOf(rejectVotes));
-    dto.setBoardPendingVotes(Integer.valueOf(pendingVotes));
-    dto.setBoardTotalVotes(Integer.valueOf(BOARD_MEMBERS.length));
-    dto.setCurrentMemberVote(currentVote);
-    return dto;
-  }
-
   private void seed(String id, String title, MangaProposalStatus status) {
     ProposalRecord record =
         new ProposalRecord(
@@ -854,6 +968,27 @@ public class InMemoryMangaProposalService {
             status == MangaProposalStatus.Draft ? null : now(),
             now());
     proposals.put(id, record);
+  }
+
+  // ------------------------------------------------------------------
+  // Inner classes
+  // ------------------------------------------------------------------
+
+  /** Lightweight series record for memory mode. */
+  public static class SeriesRecord {
+    public final String id;
+    public final String proposalId;
+    public final String title;
+    public final String status;
+    public final String mangakaEmail;
+
+    public SeriesRecord(String id, String proposalId, String title, String status, String mangakaEmail) {
+      this.id = id;
+      this.proposalId = proposalId;
+      this.title = title;
+      this.status = status;
+      this.mangakaEmail = mangakaEmail;
+    }
   }
 
   private class ProposalRecord {
@@ -919,6 +1054,14 @@ public class InMemoryMangaProposalService {
       int rejectVotes = countVotes(this, "REJECT");
       int pendingVotes = Math.max(0, BOARD_MEMBERS.length - boardVotes.size());
       String currentVote = viewerEmail == null ? null : boardVotes.get(normalize(viewerEmail));
+      // Resolve series ID for this proposal in memory mode
+      String seriesId = null;
+      for (SeriesRecord sr : seriesRecords.values()) {
+        if (id.equals(sr.proposalId)) {
+          seriesId = sr.id;
+          break;
+        }
+      }
       return new MangaProposalDto(
           id,
           title,
@@ -944,16 +1087,8 @@ public class InMemoryMangaProposalService {
           Integer.valueOf(rejectVotes),
           Integer.valueOf(pendingVotes),
           Integer.valueOf(BOARD_MEMBERS.length),
-          currentVote);
+          currentVote,
+          seriesId);
     }
-  }
-
-  private static class ProposalMetadata {
-    private String targetAudience;
-    private String manuscriptTitle;
-    private String manuscriptSummary;
-    private String manuscriptFileName;
-    private Integer manuscriptVersion;
-    private String manuscriptUploadedAt;
   }
 }

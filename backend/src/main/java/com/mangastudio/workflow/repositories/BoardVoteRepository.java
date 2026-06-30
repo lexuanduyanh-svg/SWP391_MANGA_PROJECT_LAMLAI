@@ -6,9 +6,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BoardVoteRepository extends JpaRepository<BoardVoteEntity, Long> {
-  boolean existsBySeries_IdAndBoardMember_EmailIgnoreCase(Long seriesId, String email);
+  boolean existsByProposal_IdAndBoardMember_EmailIgnoreCase(Long proposalId, String email);
 
-  List<BoardVoteEntity> findBySeries_Id(Long seriesId);
+  List<BoardVoteEntity> findByProposal_Id(Long proposalId);
 
-  Optional<BoardVoteEntity> findBySeries_IdAndBoardMember_EmailIgnoreCase(Long seriesId, String email);
+  Optional<BoardVoteEntity> findByProposal_IdAndBoardMember_EmailIgnoreCase(Long proposalId, String email);
 }

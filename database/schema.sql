@@ -1,5 +1,5 @@
 -- ====================================================================
--- CLEANUP (Allows you to safely re-run this script if you make a mistake)
+-- CLEANUP (Allows you to safely re-run this script)
 -- ====================================================================
 DROP TABLE IF EXISTS board_votes CASCADE;
 DROP TABLE IF EXISTS reader_metrics CASCADE;
@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS tasks CASCADE;
 DROP TABLE IF EXISTS pages CASCADE;
 DROP TABLE IF EXISTS chapters CASCADE;
 DROP TABLE IF EXISTS series CASCADE;
+DROP TABLE IF EXISTS proposals CASCADE;
 DROP TABLE IF EXISTS user_skills CASCADE;
 DROP TABLE IF EXISTS skills CASCADE;
 DROP TABLE IF EXISTS assistant_profiles CASCADE;
@@ -68,33 +69,61 @@ CREATE TABLE user_skills (
 );
 
 -- ====================================================================
--- 2. CONTENT & SERIALIZATION (Unified Series & Proposal Lifecycle)
+-- 2. PROPOSALS (Flow 1: Pitch & Review)
+-- ====================================================================
+
+CREATE TABLE proposals (
+    proposal_id SERIAL PRIMARY KEY,
+    mangaka_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+    tantou_editor_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    genre VARCHAR(100),
+    target_audience VARCHAR(100),
+    synopsis TEXT,
+    manuscript_title VARCHAR(255),
+    manuscript_summary TEXT,
+    manuscript_file_name VARCHAR(512),
+    manuscript_version INTEGER,
+    manuscript_uploaded_at TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'DRAFT',
+    editor_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_proposal_status CHECK (status IN (
+        'DRAFT',
+        'SUBMITTED_TO_EDITOR',
+        'REVISION_REQUESTED',
+        'UNDER_BOARD_REVIEW',
+        'APPROVED',
+        'REJECTED'
+    ))
+);
+
+-- ====================================================================
+-- 3. SERIES (Flow 2: Production — created AFTER proposal approval)
 -- ====================================================================
 
 CREATE TABLE series (
     series_id SERIAL PRIMARY KEY,
+    proposal_id INTEGER REFERENCES proposals(proposal_id) ON DELETE SET NULL,
     mangaka_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
     tantou_editor_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
     title VARCHAR(255) NOT NULL,
-    synopsis TEXT,
     genre VARCHAR(100),
-    status VARCHAR(50) DEFAULT 'DRAFT',
+    synopsis TEXT,
     publishing_frequency VARCHAR(50) DEFAULT 'WEEKLY',
-    editor_notes TEXT,
+    status VARCHAR(50) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- [ADDED 'REVISION_REQUESTED' HERE]
     CONSTRAINT chk_series_status CHECK (status IN (
-        'DRAFT',
-        'SUBMITTED_TO_EDITOR',
-        'REVISION_REQUESTED', -- Sent back by Editor to Mangaka
-        'UNDER_BOARD_REVIEW',
-        'APPROVED',
-        'REJECTED'
+        'ACTIVE', 'HIATUS', 'COMPLETED', 'CANCELLED'
     )),
     CONSTRAINT chk_publishing_frequency CHECK (publishing_frequency IN ('WEEKLY', 'MONTHLY'))
 );
+
+-- ====================================================================
+-- 4. PRODUCTION WORKFLOW (Chapters / Pages / Tasks)
+-- ====================================================================
 
 CREATE TABLE chapters (
     chapter_id SERIAL PRIMARY KEY,
@@ -122,10 +151,6 @@ CREATE TABLE pages (
     CONSTRAINT unique_chapter_page UNIQUE (chapter_id, page_number)
 );
 
--- ====================================================================
--- 3. PRODUCTION WORKFLOW
--- ====================================================================
-
 CREATE TABLE tasks (
     task_id SERIAL PRIMARY KEY,
     page_id INTEGER REFERENCES pages(page_id) ON DELETE CASCADE,
@@ -134,13 +159,9 @@ CREATE TABLE tasks (
     region_coordinates JSONB,
     payment DECIMAL(10, 2) DEFAULT 0.00 CHECK (payment >= 0),
     status VARCHAR(50) DEFAULT 'ASSIGNED',
-
-    -- [NEW COLUMN]: Holds Mangaka's revision feedback for the Assistant
     feedback_notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- [UPDATED STATUS STATES]
     CONSTRAINT chk_task_status CHECK (status IN (
         'ASSIGNED',
         'IN_PROGRESS',
@@ -161,45 +182,43 @@ CREATE TABLE annotations (
     markup_id SERIAL PRIMARY KEY,
     page_id INTEGER REFERENCES pages(page_id) ON DELETE CASCADE,
     editor_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
-    spatial_coordinates JSONB, -- For pinning comments on a specific location
+    spatial_coordinates JSONB,
     content TEXT NOT NULL,
     resolved BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ====================================================================
--- 4. STRATEGY & METRICS (Enforcing Business Rules)
+-- 5. STRATEGY & METRICS
 -- ====================================================================
 
 CREATE TABLE reader_metrics (
     metric_id SERIAL PRIMARY KEY,
     series_id INTEGER REFERENCES series(series_id) ON DELETE CASCADE,
     publication_cycle DATE NOT NULL,
-
-    -- [UPDATED]: Added missing columns from Report 1 (LI-3) to feed the ranking service
     sales_figures INTEGER DEFAULT 0 CHECK (sales_figures >= 0),
     likes_count INTEGER DEFAULT 0 CHECK (likes_count >= 0),
     shares_count INTEGER DEFAULT 0 CHECK (shares_count >= 0),
     votes_count INTEGER DEFAULT 0 CHECK (votes_count >= 0),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- [BR-56 Guard]: Prevents negative inputs right at the database layer
     CONSTRAINT unique_series_cycle UNIQUE (series_id, publication_cycle)
 );
 
+-- ====================================================================
+-- 6. BOARD VOTES (on proposals, not on series)
+-- ====================================================================
+
 CREATE TABLE board_votes (
     vote_id SERIAL PRIMARY KEY,
-    series_id INTEGER REFERENCES series(series_id) ON DELETE CASCADE,
+    proposal_id INTEGER REFERENCES proposals(proposal_id) ON DELETE CASCADE,
     board_member_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
     decision VARCHAR(50) NOT NULL,
-
-    -- [BR-53 Guard]: Strictly ensures a board member can only vote ONCE per series
-    CONSTRAINT unique_board_member_vote UNIQUE (series_id, board_member_id),
+    CONSTRAINT unique_board_member_vote UNIQUE (proposal_id, board_member_id),
     CONSTRAINT chk_vote_decision CHECK (decision IN ('APPROVE', 'REJECT'))
 );
 
 -- ====================================================================
--- 5. SEED DATA (Initial structural defaults)
+-- 7. SEED DATA
 -- ====================================================================
 INSERT INTO roles (role_name) VALUES ('Admin'), ('Mangaka'), ('Assistant'), ('Editor'), ('Board');

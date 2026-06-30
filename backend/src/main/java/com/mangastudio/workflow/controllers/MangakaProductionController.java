@@ -19,11 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Mangaka production endpoints (V2 scope — no region drawing).
  *
- * <p>Tasks are assigned at the page level. The {@code region_coordinates} column is kept in the
- * schema but is no longer exposed through the API path.
+ * <p>Tasks are assigned at the page level. Uses seriesId (not proposalId)
+ * because a Series is created after proposal approval.
  */
 @RestController
-@RequestMapping("/api/mangaka/proposals/{proposalId}")
+@RequestMapping("/api/mangaka/series/{seriesId}")
 public class MangakaProductionController {
   private final InMemoryMangakaProductionService service;
 
@@ -33,18 +33,18 @@ public class MangakaProductionController {
 
   @GetMapping("/chapters")
   public List<MangakaChapterDto> list(
-      @PathVariable String proposalId, @RequestParam("authorEmail") String authorEmail) {
-    return service.listChapters(proposalId, authorEmail);
+      @PathVariable String seriesId, @RequestParam("authorEmail") String authorEmail) {
+    return service.listChapters(seriesId, authorEmail);
   }
 
   @PostMapping("/chapters")
   public ResponseEntity<?> create(
-      @PathVariable String proposalId,
+      @PathVariable String seriesId,
       @RequestParam("authorEmail") String authorEmail,
       @Valid @RequestBody MangakaChapterCreateRequest request) {
     try {
       return ResponseEntity.status(HttpStatus.CREATED)
-          .body(service.createChapter(proposalId, authorEmail, request));
+          .body(service.createChapter(seriesId, authorEmail, request));
     } catch (IllegalArgumentException e) {
       return error(e);
     }
@@ -52,13 +52,13 @@ public class MangakaProductionController {
 
   @PostMapping("/chapters/{chapterId}/pages")
   public ResponseEntity<?> addPage(
-      @PathVariable String proposalId,
+      @PathVariable String seriesId,
       @PathVariable String chapterId,
       @RequestParam("authorEmail") String authorEmail,
       @Valid @RequestBody MangakaPageCreateRequest request) {
     try {
       return ResponseEntity.status(HttpStatus.CREATED)
-          .body(service.addPage(proposalId, chapterId, authorEmail, request));
+          .body(service.addPage(seriesId, chapterId, authorEmail, request));
     } catch (IllegalArgumentException e) {
       return error(e);
     }
@@ -66,14 +66,14 @@ public class MangakaProductionController {
 
   @PostMapping("/chapters/{chapterId}/pages/{pageId}/tasks")
   public ResponseEntity<?> addTask(
-      @PathVariable String proposalId,
+      @PathVariable String seriesId,
       @PathVariable String chapterId,
       @PathVariable String pageId,
       @RequestParam("authorEmail") String authorEmail,
       @Valid @RequestBody MangakaProductionTaskCreateRequest request) {
     try {
       return ResponseEntity.status(HttpStatus.CREATED)
-          .body(service.assignTask(proposalId, chapterId, pageId, authorEmail, request));
+          .body(service.assignTask(seriesId, chapterId, pageId, authorEmail, request));
     } catch (IllegalArgumentException e) {
       return error(e);
     }
@@ -81,14 +81,14 @@ public class MangakaProductionController {
 
   @PutMapping("/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/approve")
   public ResponseEntity<?> approve(
-      @PathVariable String proposalId,
+      @PathVariable String seriesId,
       @PathVariable String chapterId,
       @PathVariable String pageId,
       @PathVariable String taskId,
       @RequestParam("authorEmail") String authorEmail) {
     try {
       return ResponseEntity.ok(
-          service.approveTask(proposalId, chapterId, pageId, taskId, authorEmail));
+          service.approveTask(seriesId, chapterId, pageId, taskId, authorEmail));
     } catch (IllegalArgumentException e) {
       return error(e);
     }
@@ -96,14 +96,14 @@ public class MangakaProductionController {
 
   @PutMapping("/chapters/{chapterId}/pages/{pageId}/tasks/{taskId}/redo")
   public ResponseEntity<?> redo(
-      @PathVariable String proposalId,
+      @PathVariable String seriesId,
       @PathVariable String chapterId,
       @PathVariable String pageId,
       @PathVariable String taskId,
       @RequestParam("authorEmail") String authorEmail) {
     try {
       return ResponseEntity.ok(
-          service.requestRedoTask(proposalId, chapterId, pageId, taskId, authorEmail));
+          service.requestRedoTask(seriesId, chapterId, pageId, taskId, authorEmail));
     } catch (IllegalArgumentException e) {
       return error(e);
     }

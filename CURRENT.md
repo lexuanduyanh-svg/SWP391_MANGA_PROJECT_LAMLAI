@@ -1,6 +1,6 @@
 ﻿# CURRENT - SWP391 Manga Project Lam Lai
 
-Last updated: 2026-06-23
+Last updated: 2026-06-30
 
 ## 1. Active project
 
@@ -237,6 +237,81 @@ Keep this split as team context unless the user changes it.
 - `Build as requested/` reviewed and confirmed as current frontend, not legacy demo.
 - `Series 1/` kept as screenshot/reference assets.
 - `backend/storage-server/` kept as runtime storage folder.
+
+## 23. Session update - 2026-06-30 (Proposal & Series Separation)
+
+### Completed work
+
+**Proposal và Series đã được tách hoàn toàn thành 2 entity riêng:**
+
+1. **Database (`database/schema.sql`)**:
+   - Bảng mới `proposals`: lưu proposal lifecycle (DRAFT → ... → APPROVED/REJECTED), gồm manuscript metadata (target_audience, manuscript_title, manuscript_file_name, manuscript_version, manuscript_uploaded_at) — **fix bug mất manuscript metadata ở DB mode**
+   - `series` được đơn giản hóa: thêm `proposal_id` FK, status chỉ còn `ACTIVE`/`HIATUS`/`COMPLETED`/`CANCELLED`, bỏ `editor_notes`
+   - `board_votes` chuyển FK từ `series_id` → `proposal_id`
+
+2. **Entity + Repository**:
+   - `ProposalEntity.java` (mới): JPA entity cho proposals table
+   - `ProposalRepository.java` (mới): Spring Data repository
+   - `SeriesEntity.java`: thêm `proposal` FK, bỏ `editorNotes`
+   - `BoardVoteEntity.java`: tham chiếu `ProposalEntity` thay vì `SeriesEntity`
+   - `BoardVoteRepository.java`: methods dùng `Proposal_Id` thay vì `Series_Id`
+   - `SeriesRepository.java`: chỉ giữ series queries, bỏ proposal queries
+
+3. **Service logic**:
+   - `InMemoryMangaProposalService`:
+     - DB mode tạo `ProposalEntity` thay vì `SeriesEntity`
+     - Manuscript fields lưu thẳng vào DB columns (không còn in-memory `ProposalMetadata` map)
+     - Khi board approved: tự động tạo `SeriesEntity` từ proposal data (title, genre, synopsis)
+     - `MangaProposalDto` trả về thêm trường `seriesId`
+   - `InMemoryMangakaProductionService`:
+     - Nhận `seriesId` (không phải `proposalId`) cho tất cả methods
+     - `ensureAllowed` kiểm tra series entity (không phải proposal status)
+     - Thêm `SeriesRecord` map trong memory mode để mapping series ↔ proposal
+
+4. **API path thay đổi**:
+   ```text
+   Cũ: /api/mangaka/proposals/{proposalId}/chapters
+   Mới: /api/mangaka/series/{seriesId}/chapters
+   ```
+   - Proposal endpoints (`/api/mangaka/proposals`) không đổi
+   - Board/Editor endpoints không đổi
+
+5. **Flow mới**:
+   ```text
+   Tạo Draft → Proposal (status DRAFT)
+     → Submit → Proposal (SUBMITTED_TO_EDITOR)
+       → Editor forward → Proposal (UNDER_BOARD_REVIEW)
+         → Board approve → Proposal (APPROVED)
+           → Hệ thống auto tạo Series (ACTIVE) từ proposal data
+             → Mangaka lấy seriesId từ proposal response
+               → createChapter(seriesId) → addPage → assignTask → ...
+   ```
+
+6. **Tests**: 29/29 pass ✅ BUILD SUCCESS
+
+### Files changed
+- `database/schema.sql`
+- `backend/src/main/java/com/mangastudio/workflow/entities/ProposalEntity.java` (NEW)
+- `backend/src/main/java/com/mangastudio/workflow/repositories/ProposalRepository.java` (NEW)
+- `backend/src/main/java/com/mangastudio/workflow/entities/SeriesEntity.java`
+- `backend/src/main/java/com/mangastudio/workflow/entities/BoardVoteEntity.java`
+- `backend/src/main/java/com/mangastudio/workflow/repositories/BoardVoteRepository.java`
+- `backend/src/main/java/com/mangastudio/workflow/repositories/SeriesRepository.java`
+- `backend/src/main/java/com/mangastudio/workflow/services/InMemoryMangaProposalService.java`
+- `backend/src/main/java/com/mangastudio/workflow/services/InMemoryMangakaProductionService.java`
+- `backend/src/main/java/com/mangastudio/workflow/controllers/MangakaProductionController.java`
+- `backend/src/main/java/com/mangastudio/workflow/dtos/MangaProposalDto.java`
+- `backend/src/test/java/com/mangastudio/workflow/flow/FullMangaWorkflowFlowTest.java`
+- `backend/src/test/java/com/mangastudio/workflow/controllers/MangakaControllerTest.java`
+- `backend/src/test/java/com/mangastudio/workflow/controllers/AssistantTaskControllerTest.java`
+- `CURRENT.md`
+- `.slim/deepwork/proposal-series-separation.md`
+
+### Next steps
+- Deploy schema mới lên Supabase (chạy `database/schema.sql`)
+- Redeploy backend lên Render (schema thay đổi cần migrate DB)
+- Frontend cập nhật API path từ `proposalId` → `seriesId` cho production endpoints
+- Smoke test Flow 1 + Flow 2 trên cloud
 
 ## 16. Session update - 2026-06-29 (Cleanup Constraints & DB Schema for V2)
 

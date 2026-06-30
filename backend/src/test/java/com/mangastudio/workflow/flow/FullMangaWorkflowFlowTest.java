@@ -37,7 +37,8 @@ public class FullMangaWorkflowFlowTest {
 
     MangaProposalDto withManuscript =
         proposalService.attachManuscriptMetadata(
-            draft.getId(), "mangaka@manga.local", "workflow-manuscript-v1.pdf", "Uploaded manuscript metadata");
+            draft.getId(), "mangaka@manga.local", "workflow-manuscript-v1.pdf",
+            "Uploaded manuscript metadata");
     Assertions.assertEquals("workflow-manuscript-v1.pdf", withManuscript.getManuscriptFileName());
     Assertions.assertEquals(Integer.valueOf(1), withManuscript.getManuscriptVersion());
 
@@ -46,29 +47,36 @@ public class FullMangaWorkflowFlowTest {
     MangaProposalDto submitted = proposalService.submit(draft.getId(), submit.getAuthorEmail());
     Assertions.assertEquals(MangaProposalStatus.SubmittedToEditor, submitted.getStatus());
 
-    MangaProposalDto forwarded = proposalService.forwardToBoard(draft.getId(), "editor@example.com", "Please review");
+    MangaProposalDto forwarded =
+        proposalService.forwardToBoard(draft.getId(), "editor@example.com", "Please review");
     Assertions.assertEquals(MangaProposalStatus.UnderBoardReview, forwarded.getStatus());
 
     proposalService.approveByBoard(draft.getId(), "board@manga.local", "OK");
     proposalService.approveByBoard(draft.getId(), "board2@manga.local", "OK");
-    MangaProposalDto approved = proposalService.approveByBoard(draft.getId(), "board3@manga.local", "OK");
+    MangaProposalDto approved =
+        proposalService.approveByBoard(draft.getId(), "board3@manga.local", "OK");
     Assertions.assertEquals(MangaProposalStatus.Approved, approved.getStatus());
 
-    // --- Flow 2: Production workflow (V2 — no region drawing) ---
+    // After approval, the proposal should have a seriesId
+    String seriesId = approved.getSeriesId();
+    Assertions.assertNotNull(seriesId, "Approved proposal should have a seriesId");
+
+    // --- Flow 2: Production workflow using seriesId ---
 
     MangakaChapterCreateRequest chapterRequest = new MangakaChapterCreateRequest();
     chapterRequest.setTitle("Chapter 1");
     chapterRequest.setChapterNumber(1);
-    MangakaChapterDto chapter = productionService.createChapter(draft.getId(), "mangaka@manga.local", chapterRequest);
+    MangakaChapterDto chapter =
+        productionService.createChapter(seriesId, "mangaka@manga.local", chapterRequest);
     Assertions.assertEquals("Draft", chapter.getStatus().name());
 
     MangakaPageCreateRequest pageRequest = new MangakaPageCreateRequest();
     pageRequest.setPageNumber(1);
     pageRequest.setFileName("page-1.psd");
-    MangakaPageDto page = productionService.addPage(draft.getId(), chapter.getId(), "mangaka@manga.local", pageRequest);
+    MangakaPageDto page =
+        productionService.addPage(seriesId, chapter.getId(), "mangaka@manga.local", pageRequest);
     Assertions.assertEquals("Uploaded", page.getStatus().name());
 
-    // V2: task assigned directly to page (no region drawing)
     MangakaProductionTaskCreateRequest taskRequest = new MangakaProductionTaskCreateRequest();
     taskRequest.setAssistantEmail("assistant@manga.local");
     taskRequest.setTaskType("Lettering");
@@ -76,10 +84,11 @@ public class FullMangaWorkflowFlowTest {
     taskRequest.setReferenceFileName("dialogue-reference.txt");
     MangakaProductionTaskDto task =
         productionService.assignTask(
-            draft.getId(), chapter.getId(), page.getId(), "mangaka@manga.local", taskRequest);
+            seriesId, chapter.getId(), page.getId(), "mangaka@manga.local", taskRequest);
     Assertions.assertEquals("Pending", task.getStatus().name());
 
-    AssistantTaskDto started = productionService.startAssistantTask(task.getId(), "assistant@manga.local");
+    AssistantTaskDto started =
+        productionService.startAssistantTask(task.getId(), "assistant@manga.local");
     Assertions.assertEquals("InProgress", started.getStatus().name());
 
     AssistantTaskDto submittedTask =
@@ -87,15 +96,14 @@ public class FullMangaWorkflowFlowTest {
             task.getId(), "assistant@manga.local", "lettered-page-1.psd", "Ready for review");
     Assertions.assertEquals("Submitted", submittedTask.getStatus().name());
 
-    // V2: approve at page level (no regionId)
     MangakaProductionTaskDto approvedTask =
         productionService.approveTask(
-            draft.getId(), chapter.getId(), page.getId(), task.getId(), "mangaka@manga.local");
+            seriesId, chapter.getId(), page.getId(), task.getId(), "mangaka@manga.local");
     Assertions.assertEquals("Approved", approvedTask.getStatus().name());
   }
 
   @Test
-  public void productionCreation_rejectsBeforeApprovedProposal() {
+  public void productionCreation_rejectsNonExistentSeries() {
     InMemoryMangaProposalService proposalService = new InMemoryMangaProposalService();
     InMemoryMangakaProductionService productionService =
         new InMemoryMangakaProductionService(proposalService);
@@ -107,8 +115,7 @@ public class FullMangaWorkflowFlowTest {
     IllegalArgumentException ex =
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> productionService.createChapter("3", "mangaka@manga.local", chapterRequest));
-    Assertions.assertTrue(ex.getMessage().contains("Proposal not allowed"));
+            () -> productionService.createChapter("999", "mangaka@manga.local", chapterRequest));
+    Assertions.assertTrue(ex.getMessage().contains("Series not found"));
   }
 }
-
