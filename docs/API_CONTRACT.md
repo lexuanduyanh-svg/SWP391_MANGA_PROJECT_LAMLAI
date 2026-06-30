@@ -87,6 +87,16 @@ Do not use old `Completed` as task status.
 
 DB default is `DRAFT`. Status auto-advances: DRAFT → IN_PROGRESS (when first page uploaded). Mangaka calls `completeChapter` to advance IN_PROGRESS → COMPLETED (backend validates all tasks Approved first).
 
+### Page status
+
+| DB `pages.status` | UI/code wording |
+|---|---|
+| `DRAFT` | `DRAFT` |
+| `IN_TASK` | `IN_TASK` |
+| `DONE` | `DONE` |
+
+`DRAFT` when page is first uploaded. `IN_TASK` after at least one task is assigned. `DONE` when all tasks on the page are Approved.
+
 ### Board votes
 
 `board_votes.decision`: `APPROVE`, `REJECT`. DB enforces one vote per board member per proposal.

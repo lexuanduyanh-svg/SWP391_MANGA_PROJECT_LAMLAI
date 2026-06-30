@@ -277,15 +277,12 @@ Allowed values: `DRAFT`, `IN_PROGRESS`, `COMPLETED`
 
 ### 7.5 Page.status
 
-Allowed values: `uploaded`, `segmented`, `tasks_assigned`, `tasks_in_progress`, `all_tasks_approved`, `finalized`
+Allowed values: `DRAFT`, `IN_TASK`, `DONE`
 
 | Current | Action | Actor | Guard | Next |
 |---|---|---|---|---|
-| `uploaded` | create region | Mangaka | valid coordinates | `segmented` |
-| `segmented` | assign task | Mangaka | active assistant | `tasks_assigned` |
-| `tasks_assigned` | assistant starts/submits work | Assistant/System | task exists | `tasks_in_progress` |
-| `tasks_in_progress` | approve all tasks | Mangaka/System | all tasks approved | `all_tasks_approved` |
-| `all_tasks_approved` | finalize page | Mangaka | final file/version accepted | `finalized` |
+| `DRAFT` | assign task | Mangaka | page has regions/tasks | `IN_TASK` |
+| `IN_TASK` | all tasks approved | System | no pending/rejected tasks | `DONE` |
 
 ### 7.6 Task.status
 

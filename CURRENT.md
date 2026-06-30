@@ -34,9 +34,7 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 - **Cleaned dead tables**: Removed `permissions`, `role_permissions`, `assistant_profiles` tables + their 7 Java entity/repo files (no service code used them).
 - **Cleaned series status**: Schema: `HIATUS` removed, kept `ACTIVE`/`COMPLETED`/`CANCELLED`.
 - **Fixed chapters default**: `DEFAULT 'Draft'` → `'DRAFT'` to match enum.
-
-### In Progress
-- (none)
+- **Simplified page status**: MangakaPageStatus 6→3: DRAFT, IN_TASK, DONE. Updated enum, service, schema (CHECK constraint), frontend types, tests. Removed no-op status transitions in service.
 
 ### Blocked
 - Render build failing — needs build logs from user to diagnose

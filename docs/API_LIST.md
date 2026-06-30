@@ -142,6 +142,9 @@ board@manga.local     / Board@123
 ### Chapter status (simplified)
 `DRAFT` â†’ `IN_PROGRESS` â†’ `COMPLETED`
 
+### Page status (simplified)
+`DRAFT` â†’ `IN_TASK` â†’ `DONE`
+
 ### User status
 `ACTIVE`, `INACTIVE`
 
