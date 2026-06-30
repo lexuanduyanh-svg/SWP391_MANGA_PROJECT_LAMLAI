@@ -230,22 +230,13 @@ Service-layer validation is required for ownership and board membership checks. 
 
 ### 7.1 Series.status
 
-Allowed values:
-
-`draft`, `submitted_to_editor`, `under_editor_review`, `needs_revision`, `escalated_to_board`, `approved`, `serializing`, `on_hold`, `cancelled`, `archived`
+Allowed value: `ACTIVE`
 
 | Current | Action | Actor | Guard condition | Next | Side effects |
 |---|---|---|---|---|---|
-| `draft` | submit proposal | Mangaka | has at least one manuscript draft | `submitted_to_editor` | notify assigned/editor pool, audit |
-| `submitted_to_editor` | start review | Tantou Editor | editor assigned | `under_editor_review` | audit |
-| `under_editor_review` | request revision | Tantou Editor | annotation/report provided | `needs_revision` | unlock manuscript, notify Mangaka |
-| `needs_revision` | resubmit | Mangaka | new manuscript version uploaded | `submitted_to_editor` | notify editor |
-| `under_editor_review` | escalate to board | Tantou Editor | editor report present, board assigned | `escalated_to_board` | create board submission, notify board |
-| `escalated_to_board` | approve vote result | Editorial Board | voting rule satisfied | `approved` | set schedule, notify Mangaka/editor |
-| `approved` | start serialization | Mangaka or Editor | first chapter workspace opened | `serializing` | audit |
-| `serializing` | put on hold | Editorial Board | decision recorded | `on_hold` | notify stakeholders |
-| `serializing` | cancel | Editorial Board | decision recorded | `cancelled` | set cancelled_at, notify stakeholders |
-| any non-final | archive | Admin or authorized workflow | no active workflow conflict | `archived` | audit |
+| — (proposal approved) | system creates series | System | proposal is APPROVED | `ACTIVE` | Series entity created with proposal metadata |
+
+> Series status is simplified. After proposal approval (`APPROVED`), a Series is auto-created with status `ACTIVE`. In MVP the series stays `ACTIVE` during production. Future: board decision `CANCEL` can set `CANCELLED`, all chapters COMPLETED can set `COMPLETED`.
 
 ### 7.2 Manuscript.status
 

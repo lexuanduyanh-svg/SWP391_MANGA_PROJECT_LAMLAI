@@ -27,12 +27,19 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 - **Backend tests**: 29/29 tests pass.
 - **Frontend build**: `npm run build` passes.
 - **Fixed taskType misconception**: Removed task type dropdown (skill FK), payment, referenceFileName, regionCoordinates from TaskEntity/DTOs/services. Task assignment is now: select region → write free-text instructions → set deadline → assign assistant. Updated all docs (CURRENT.md, MVP_SCOPE_AND_BUSINESS_RULES.md, database.txt, schema.sql, postman, TEAM_TASK_ASSIGNMENT.md).
+- **Simplified chapter status**: MangakaChapterStatus 7→3: DRAFT, IN_PROGRESS, COMPLETED. Updated backend enum, service, tests (29/29 pass).
+- **completeChapter endpoint**: `PUT /chapters/{chapterId}/complete`. Validates all tasks Approved, sets COMPLETED, notifies Editor. Frontend Publish button + status badge on chapter cards.
+- **Fixed Flow 1 API URL mismatches**: TantouEditor frontend was calling `/api/tantou-editor/` (wrong) → corrected to `/api/editor/`. EditorialBoard frontend was calling `/api/editorial-board/` → corrected to `/api/board/`.
+- **Added editor Reject button**: TantouEditorDashboard: added Reject button (was missing despite backend having rejectByEditor).
+- **Cleaned dead tables**: Removed `permissions`, `role_permissions`, `assistant_profiles` tables + their 7 Java entity/repo files (no service code used them).
+- **Cleaned series status**: Schema: `HIATUS` removed, kept `ACTIVE`/`COMPLETED`/`CANCELLED`.
+- **Fixed chapters default**: `DEFAULT 'Draft'` → `'DRAFT'` to match enum.
 
 ### In Progress
 - (none)
 
 ### Blocked
-- Render build failing after commit ce5f0ea — needs build logs from user to diagnose
+- Render build failing — needs build logs from user to diagnose
 
 ## Key Decisions
 - Page Annotations: spatial coordinates stored as JSONB `{x, y}` percentage strings, rendered as positioned circle pins.

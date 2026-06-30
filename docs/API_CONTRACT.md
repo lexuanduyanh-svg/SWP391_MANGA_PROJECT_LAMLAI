@@ -43,9 +43,9 @@ proposals, series, board_votes, chapters, pages, tasks, submissions, annotations
 
 `users.status` trong DB: `ACTIVE`, `INACTIVE`.
 
-### Series/proposal status
+### Proposal status
 
-| DB `series.status` | UI/code wording |
+| DB `proposals.status` | UI/code wording |
 |---|---|
 | `DRAFT` | `Draft` |
 | `SUBMITTED_TO_EDITOR` | `SubmittedToEditor` / Submitted to Tantou Editor |
@@ -54,7 +54,17 @@ proposals, series, board_votes, chapters, pages, tasks, submissions, annotations
 | `APPROVED` | `Approved` |
 | `REJECTED` | `Rejected` |
 
-Do not use `PENDING` as proposal/series status.
+Do not use `PENDING` as proposal status.
+
+### Series status
+
+| DB `series.status` | UI/code wording |
+|---|---|
+| `ACTIVE` | `Active` |
+| `COMPLETED` | `Completed` |
+| `CANCELLED` | `Cancelled` |
+
+`ACTIVE` (default, set when series created after proposal approval). `COMPLETED` once all chapters are done. `CANCELLED` when board records a CANCEL decision.
 
 ### Task status
 
