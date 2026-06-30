@@ -67,6 +67,16 @@ Do not use `PENDING` as proposal/series status.
 
 Do not use old `Completed` as task status.
 
+### Chapter status
+
+| DB `chapters.status` | UI/code wording |
+|---|---|
+| `DRAFT` | `DRAFT` |
+| `IN_PROGRESS` | `IN_PROGRESS` |
+| `COMPLETED` | `COMPLETED` |
+
+DB default is `DRAFT`. Status auto-advances: DRAFT → IN_PROGRESS (when first page uploaded). Mangaka calls `completeChapter` to advance IN_PROGRESS → COMPLETED (backend validates all tasks Approved first).
+
 ### Board votes
 
 `board_votes.decision`: `APPROVE`, `REJECT`. DB enforces one vote per board member per proposal.
@@ -139,6 +149,7 @@ PUT /api/assistant/tasks/{taskId}/submit
 
 PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/approve?authorEmail={email}
 PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/redo?authorEmail={email}
+PUT /api/mangaka/proposals/{proposalId}/chapters/{chapterId}/complete?authorEmail={email}
 ```
 
 ## 7. Backend runtime profiles

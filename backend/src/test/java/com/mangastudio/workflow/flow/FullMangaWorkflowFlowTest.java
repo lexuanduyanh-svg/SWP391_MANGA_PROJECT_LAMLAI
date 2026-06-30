@@ -68,7 +68,7 @@ public class FullMangaWorkflowFlowTest {
     chapterRequest.setChapterNumber(1);
     MangakaChapterDto chapter =
         productionService.createChapter(seriesId, "mangaka@manga.local", chapterRequest);
-    Assertions.assertEquals("Draft", chapter.getStatus().name());
+    Assertions.assertEquals("DRAFT", chapter.getStatus().name());
 
     MangakaPageCreateRequest pageRequest = new MangakaPageCreateRequest();
     pageRequest.setPageNumber(1);

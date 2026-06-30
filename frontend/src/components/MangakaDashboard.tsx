@@ -9,6 +9,7 @@ import {
   uploadMangakaManuscript,
 } from "../services/mangakaProposalService";
 import {
+  completeMangakaChapter,
   createMangakaChapter,
   createMangakaPage,
   createMangakaTask,
@@ -192,7 +193,7 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
   );
   const [isProductionLoading, setIsProductionLoading] = useState(false);
   const [productionAction, setProductionAction] = useState<
-    "chapter" | "page" | "task" | null
+    "chapter" | "page" | "task" | "publish" | null
   >(null);
   const [activeView, setActiveView] = useState<ActiveView>("overall");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -650,6 +651,29 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
       setSelectedChapterId(created.id);
       setChapterForm(EMPTY_CHAPTER_FORM);
       notifySuccess("Chapter created successfully.");
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error));
+    } finally {
+      setProductionAction(null);
+    }
+  }
+
+  async function handlePublishChapter(chapterId: string) {
+    const seriesId = activeProductionProposal?.seriesId || activeProductionProposal?.id;
+    if (!seriesId || !session?.user?.email) return;
+    setProductionAction("publish");
+    setErrorMessage(null);
+    try {
+      const updated = await completeMangakaChapter(
+        seriesId,
+        chapterId,
+        session.user.email,
+      );
+      setProductionByProposal((current) => ({
+        ...current,
+        [seriesId]: upsertChapter(current[seriesId] ?? [], updated),
+      }));
+      notifySuccess("Chapter published! Editor has been notified.");
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -2407,6 +2431,25 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
                           >
                             Select
                           </button>
+                        </div>
+
+                        <div className="production-meta-row">
+                          <span className={`chapter-status-badge ${chapter.status?.toLowerCase() || ""}`}>
+                            {chapter.status || "—"}
+                          </span>
+                          {chapter.status === "IN_PROGRESS" && (
+                            <button
+                              type="button"
+                              className="button button-primary production-mini-button"
+                              disabled={productionAction === "publish"}
+                              onClick={() => handlePublishChapter(chapter.id)}
+                            >
+                              {productionAction === "publish" ? "Publishing..." : "Publish"}
+                            </button>
+                          )}
+                          {chapter.status === "COMPLETED" && (
+                            <span className="chapter-completed-label">✓ Ready for Editor</span>
+                          )}
                         </div>
 
                         {chapter.summary && (

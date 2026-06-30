@@ -274,15 +274,15 @@ Allowed values: `pending`, `voting_open`, `approved`, `rejected`, `closed`
 
 ### 7.4 Chapter.status
 
-Allowed values: `draft`, `in_progress`, `pages_uploaded`, `tasks_in_progress`, `ready_for_editor`, `published`, `cancelled`
+Allowed values: `DRAFT`, `IN_PROGRESS`, `COMPLETED`
 
-| Current | Action | Actor | Guard | Next |
-|---|---|---|---|---|
-| `draft` | start production | Mangaka | series approved/serializing | `in_progress` |
-| `in_progress` | upload pages | Mangaka | at least one page | `pages_uploaded` |
-| `pages_uploaded` | assign tasks | Mangaka | regions/tasks exist | `tasks_in_progress` |
-| `tasks_in_progress` | all tasks approved | System | no pending/rejected tasks | `ready_for_editor` |
-| `ready_for_editor` | publish/mark done | Editor or Mangaka | production accepted | `published` |
+| Current | Action | Actor | Guard condition | Next | Side effects |
+|---|---|---|---|---|---|
+| `DRAFT` | upload pages | Mangaka | series approved/serializing | `IN_PROGRESS` | page created, status auto-advances |
+| `IN_PROGRESS` | all tasks approved | System | all page tasks and region tasks on all pages are Approved | `COMPLETED` | status advance is implicit; Mangaka must explicitly publish |
+| `IN_PROGRESS` | publish/mark done | Mangaka | all tasks Approved (validated by backend) | `COMPLETED` | notifies Editor that chapter is ready for publication |
+
+> Simplified from 7-value statuses. The IN_PROGRESS status covers all intermediate states (pages uploaded, tasks assigned, tasks in progress). The COMPLETED status replaces ReadyForEditor/Published. Cancelled is removed from MVP.
 
 ### 7.5 Page.status
 

@@ -32,7 +32,7 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 - (none)
 
 ### Blocked
-- (none)
+- Render build failing after commit ce5f0ea — needs build logs from user to diagnose
 
 ## Key Decisions
 - Page Annotations: spatial coordinates stored as JSONB `{x, y}` percentage strings, rendered as positioned circle pins.
@@ -40,13 +40,17 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 - Series Decisions: dedicated entity + table (not modifying series status directly), for audit trail.
 - All new services follow existing memory-mode pattern (Map + inner record + toDto() + seed data).
 - New controllers follow the existing try/catch → ResponseEntity CONFLICT pattern.
+- Task assignment = select region + write free-text instructions (NOT a skill-type dropdown)
+- Chapter statuses simplified to 3: DRAFT → IN_PROGRESS → COMPLETED
+- COMPLETED = all tasks on all pages are Approved, then mangaka clicks "Publish" button → notifies Editor
 
 ## Next Steps
-1. Integrate PageAnnotations into TantouEditorDashboard for editors to annotate pages.
-2. Integrate RankingsDashboard into EditorialBoardDashboard.
-3. Integrate SeriesDecisionsPanel/Dashboard into EditorialBoardDashboard.
-4. Frontend routing: wire new components into the app's login→dashboard flow.
-5. Demo end-to-end flows.
+1. Get Render build logs to debug Docker build failure
+2. Integrate PageAnnotations into TantouEditorDashboard for editors to annotate pages.
+3. Integrate RankingsDashboard into EditorialBoardDashboard.
+4. Integrate SeriesDecisionsPanel/Dashboard into EditorialBoardDashboard.
+5. Frontend routing: wire new components into the app's login→dashboard flow.
+6. Demo end-to-end flows.
 
 ## Critical Context
 - `MangakaDashboard.tsx` is ~3067 lines — contains Flow 1 (proposal CRUD) + Flow 2 (chapter/page/task/region) in one file.

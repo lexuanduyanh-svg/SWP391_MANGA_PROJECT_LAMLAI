@@ -171,6 +171,20 @@ public class MangakaProductionController {
     }
   }
 
+  // --- Chapter completion ---
+
+  @PutMapping("/chapters/{chapterId}/complete")
+  public ResponseEntity<?> completeChapter(
+      @PathVariable String seriesId,
+      @PathVariable String chapterId,
+      @RequestParam("authorEmail") String authorEmail) {
+    try {
+      return ResponseEntity.ok(service.completeChapter(seriesId, chapterId, authorEmail));
+    } catch (IllegalArgumentException e) {
+      return error(e);
+    }
+  }
+
   private ResponseEntity<?> error(IllegalArgumentException e) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
         .body(Collections.singletonMap("message", e.getMessage()));

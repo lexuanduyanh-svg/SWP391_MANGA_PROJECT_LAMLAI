@@ -162,6 +162,19 @@ export async function approveMangakaTask(
   return (await response.json()) as MangaProductionTask;
 }
 
+export async function completeMangakaChapter(
+  seriesId: string,
+  chapterId: string,
+  authorEmail: string,
+): Promise<MangaProductionChapter> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/mangaka/series/${seriesId}/chapters/${chapterId}/complete?authorEmail=${encodeURIComponent(authorEmail)}`,
+    { method: "PUT" },
+  );
+  if (!response.ok) throw new Error(await parseError(response));
+  return (await response.json()) as MangaProductionChapter;
+}
+
 export async function redoMangakaTask(
   seriesId: string,
   chapterId: string,

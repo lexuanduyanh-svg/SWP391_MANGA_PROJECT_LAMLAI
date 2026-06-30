@@ -96,6 +96,7 @@ board@manga.local     / Board@123
 | POST | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks` | Giao task cho region |
 | PUT | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/approve` | Duyá»‡t task |
 | PUT | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/pages/{pageId}/regions/{regionId}/tasks/{taskId}/redo` | YÃªu cáº§u lÃ m láº¡i task |
+| PUT | `/api/mangaka/proposals/{proposalId}/chapters/{chapterId}/complete` | HoÃ n thÃ nh chapter (chá»‰ khi táº¥t cáº£ task Approved) |
 
 ---
 
@@ -137,6 +138,9 @@ board@manga.local     / Board@123
 
 ### Task status
 `ASSIGNED` â†’ `PENDING_REVIEW` â†’ `APPROVED` / `REVISION_REQUESTED`
+
+### Chapter status (simplified)
+`DRAFT` â†’ `IN_PROGRESS` â†’ `COMPLETED`
 
 ### User status
 `ACTIVE`, `INACTIVE`

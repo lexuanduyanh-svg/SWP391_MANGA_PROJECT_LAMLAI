@@ -137,7 +137,7 @@ CREATE TABLE chapters (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_series_chapter UNIQUE (series_id, chapter_number),
     CONSTRAINT chk_chapter_status CHECK (status IN (
-        'Draft', 'InProgress', 'PagesUploaded', 'TasksInProgress', 'ReadyForEditor', 'Published', 'Cancelled'
+        'DRAFT', 'IN_PROGRESS', 'COMPLETED'
     ))
 );
 
