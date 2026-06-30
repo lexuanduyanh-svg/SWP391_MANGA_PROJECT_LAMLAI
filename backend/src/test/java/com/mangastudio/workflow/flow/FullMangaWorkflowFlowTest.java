@@ -75,7 +75,7 @@ public class FullMangaWorkflowFlowTest {
     pageRequest.setFileName("page-1.psd");
     MangakaPageDto page =
         productionService.addPage(seriesId, chapter.getId(), "mangaka@manga.local", pageRequest);
-    Assertions.assertEquals("Uploaded", page.getStatus().name());
+    Assertions.assertEquals("DRAFT", page.getStatus().name());
 
     MangakaProductionTaskCreateRequest taskRequest = new MangakaProductionTaskCreateRequest();
     taskRequest.setAssistantEmail("assistant@manga.local");

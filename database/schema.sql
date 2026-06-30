@@ -127,10 +127,11 @@ CREATE TABLE pages (
     chapter_id INTEGER REFERENCES chapters(chapter_id) ON DELETE CASCADE,
     page_number INTEGER NOT NULL,
     manuscript_file_path VARCHAR(512),
-    status VARCHAR(50) DEFAULT 'Uploaded',
+    status VARCHAR(50) DEFAULT 'DRAFT',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT unique_chapter_page UNIQUE (chapter_id, page_number)
+    CONSTRAINT unique_chapter_page UNIQUE (chapter_id, page_number),
+    CONSTRAINT chk_page_status CHECK (status IN ('DRAFT', 'IN_TASK', 'DONE'))
 );
 
 CREATE TABLE tasks (

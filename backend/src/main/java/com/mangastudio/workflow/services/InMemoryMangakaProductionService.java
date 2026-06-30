@@ -183,7 +183,7 @@ public class InMemoryMangakaProductionService {
     ChapterRecord legacyChapter =
         new ChapterRecord("600", seriesId, "Seed Production Chapter", 1, MangakaChapterStatus.IN_PROGRESS);
     PageRecord legacyPage =
-        new PageRecord("601", "600", 1, "seed-page.png", MangakaPageStatus.Segmented);
+        new PageRecord("601", "600", 1, "seed-page.png", MangakaPageStatus.DRAFT);
     RegionRecord legacyRegion =
         new RegionRecord("701", "601", "panel", 10.0, 10.0, 80.0, 80.0, "Main panel");
     legacyRegion.task =
@@ -201,7 +201,7 @@ public class InMemoryMangakaProductionService {
     String cid = id();
     String pageId = id();
     ChapterRecord c = new ChapterRecord(cid, pid, "Seed Chapter", 1, MangakaChapterStatus.IN_PROGRESS);
-    PageRecord p = new PageRecord(pageId, cid, 1, "seed-page.png", MangakaPageStatus.Uploaded);
+    PageRecord p = new PageRecord(pageId, cid, 1, "seed-page.png", MangakaPageStatus.DRAFT);
     c.pages.put(pageId, p);
     chapters.put(cid, c);
   }
@@ -253,7 +253,7 @@ public class InMemoryMangakaProductionService {
     ChapterRecord c = chapterRequiredMemory(seriesId, chapterId, authorEmail);
     if (r == null || r.getPageNumber() <= 0 || blank(r.getFileName()))
       throw new IllegalArgumentException("Page data is required");
-    PageRecord p = new PageRecord(id(), c.id, r.getPageNumber(), r.getFileName().trim(), MangakaPageStatus.Uploaded);
+    PageRecord p = new PageRecord(id(), c.id, r.getPageNumber(), r.getFileName().trim(), MangakaPageStatus.DRAFT);
     c.pages.put(p.id, p);
     c.status = MangakaChapterStatus.IN_PROGRESS;
     c.updatedAt = now();
@@ -277,7 +277,6 @@ public class InMemoryMangakaProductionService {
     PageRecord p = pageRequiredMemory(seriesId, chapterId, pageId, authorEmail);
     RegionRecord rr = new RegionRecord(id(), pageId, r.getRegionType(), r.getX(), r.getY(), r.getWidthPct(), r.getHeightPct(), r.getNote());
     p.regions.put(rr.id, rr);
-    if (p.status == MangakaPageStatus.Uploaded) p.status = MangakaPageStatus.Segmented;
     return rr.toDto();
   }
 
@@ -286,7 +285,7 @@ public class InMemoryMangakaProductionService {
     PageRecord p = pageRequiredMemory(seriesId, chapterId, pageId, authorEmail);
     RegionRecord removed = p.regions.remove(regionId);
     if (removed == null) throw new IllegalArgumentException("Region not found");
-    if (p.regions.isEmpty() && p.status == MangakaPageStatus.Segmented) p.status = MangakaPageStatus.Uploaded;
+    // no status change needed (DRAFT stays DRAFT)
   }
 
   // ------------------------------------------------------------------
@@ -308,7 +307,7 @@ public class InMemoryMangakaProductionService {
           request.getInstructions(),
           request.getDeadline(),
           MangakaTaskStatus.Pending);
-      p.status = MangakaPageStatus.TasksAssigned;
+      p.status = MangakaPageStatus.IN_TASK;
       return rr.task.toDto(p.fileName);
     } else {
       // Page-level task (fallback for backward compat)
@@ -318,7 +317,7 @@ public class InMemoryMangakaProductionService {
           request.getInstructions(),
           request.getDeadline(),
           MangakaTaskStatus.Pending);
-      p.status = MangakaPageStatus.TasksAssigned;
+      p.status = MangakaPageStatus.IN_TASK;
       return p.task.toDto(p.fileName);
     }
   }
@@ -523,7 +522,7 @@ public class InMemoryMangakaProductionService {
     page.setChapter(chapter);
     page.setPageNumber(r.getPageNumber());
     page.setManuscriptFilePath(r.getFileName().trim());
-    page.setStatus(MangakaPageStatus.Uploaded.name());
+    page.setStatus(MangakaPageStatus.DRAFT.name());
     page.setCreatedAt(LocalDateTime.now());
     page.setUpdatedAt(LocalDateTime.now());
     PageEntity saved = pageRepository.save(page);
