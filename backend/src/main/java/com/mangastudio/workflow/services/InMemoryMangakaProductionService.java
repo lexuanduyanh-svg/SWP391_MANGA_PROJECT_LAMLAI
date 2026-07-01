@@ -395,17 +395,33 @@ public class InMemoryMangakaProductionService {
       throw new IllegalArgumentException("Task cannot be approved in current status");
     t.status = MangakaTaskStatus.Approved;
     t.updatedAt = now();
+
+    // If all tasks on this page are Approved, mark page as DONE
+    PageRecord p = pageRequiredMemory(seriesId, chapterId, pageId, authorEmail);
+    if (allPageTasksApproved(p)) {
+      p.status = MangakaPageStatus.DONE;
+    }
+
     return t.toDto(findTaskPageFileName(taskId));
   }
 
   private MangakaProductionTaskDto requestRedoTaskMemory(String seriesId, String chapterId, String pageId, String taskId, String authorEmail) {
     ensureAllowedMemory(seriesId, authorEmail);
     TaskRecord t = taskRequiredMemory(taskId, null);
-    if (t.status == MangakaTaskStatus.Approved)
-      throw new IllegalArgumentException("Approved task cannot be sent back for redo");
+    if (t.status != MangakaTaskStatus.Submitted)
+      throw new IllegalArgumentException("Only submitted tasks can be sent back for redo");
     t.status = MangakaTaskStatus.RedoRequested;
     t.updatedAt = now();
     return t.toDto(findTaskPageFileName(taskId));
+  }
+
+  /** Returns true when every task on the page (page-level + all region tasks) is Approved. */
+  private boolean allPageTasksApproved(PageRecord p) {
+    if (p.task != null && p.task.status != MangakaTaskStatus.Approved) return false;
+    for (RegionRecord rr : p.regions.values()) {
+      if (rr.task != null && rr.task.status != MangakaTaskStatus.Approved) return false;
+    }
+    return true;
   }
 
   private MangakaChapterDto completeChapterMemory(String seriesId, String chapterId, String authorEmail) {
@@ -612,6 +628,16 @@ public class InMemoryMangakaProductionService {
     task.setStatus(toTaskDbStatus(MangakaTaskStatus.Approved));
     task.setUpdatedAt(LocalDateTime.now());
     TaskEntity saved = taskRepository.save(task);
+    // Mark page as DONE if all its tasks are Approved (DB mode)
+    if (task.getPage() != null) {
+      boolean allApproved = true;
+      for (TaskEntity t : taskRepository.findByPage_IdOrderByUpdatedAtDesc(task.getPage().getId())) {
+        if (!"APPROVED".equals(t.getStatus())) { allApproved = false; break; }
+      }
+      if (allApproved) {
+        task.getPage().setStatus("DONE");
+      }
+    }
     String pageFileName = task.getPage() != null ? task.getPage().getManuscriptFilePath() : null;
     MangakaProductionTaskDto dto = new MangakaProductionTaskDto(
         String.valueOf(saved.getId()), pageId, saved.getAssistant().getEmail(),
@@ -626,8 +652,8 @@ public class InMemoryMangakaProductionService {
     ensureAllowedDb(seriesId, authorEmail);
     TaskEntity task = taskRepository.findById(Long.parseLong(taskId))
         .orElseThrow(() -> new IllegalArgumentException("Task not found"));
-    if ("APPROVED".equals(task.getStatus()))
-      throw new IllegalArgumentException("Approved task cannot be sent back for redo");
+    if (!"PENDING_REVIEW".equals(task.getStatus()))
+      throw new IllegalArgumentException("Only submitted tasks can be sent back for redo");
     task.setStatus(toTaskDbStatus(MangakaTaskStatus.RedoRequested));
     task.setUpdatedAt(LocalDateTime.now());
     TaskEntity saved = taskRepository.save(task);
