@@ -746,6 +746,7 @@ export function MangakaDashboard({ session, onLogout }: MangakaDashboardProps) {
           instructions: taskForm.instructions.trim(),
           deadline: taskForm.deadline.trim() || undefined,
         },
+        selectedRegionId ?? undefined,
       );
       setProductionByProposal((current) => ({
         ...current,
