@@ -40,6 +40,11 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 - **Integrated SeriesDecisionsDashboard** into EditorialBoardDashboard "Decisions" tab.
 - **Created FLOW_OVERVIEW.md**: detailed status machines for both Flow 1 (Proposal) and Flow 2 (Production) with full transition tables.
 - **Frontend routing**: All dashboards already wired via LoginPage role-based routing. No routing library needed.
+- **Fixed page.status auto-DONE**: approveTask now automatically sets page.status = DONE when all page-level + region-level tasks are Approved.
+- **Fixed requestRedoTask guard**: Only allows redo from Submitted status (previously allowed redo from Pending/InProgress — wrong logic).
+- **Fixed region-level task assignment**: handleCreateTask now passes selectedRegionId to createMangakaTask API (was always creating page-level tasks despite showing region selection indicator).
+- **Flow 1 + Flow 2 verified complete**: 29/29 backend tests pass, frontend build passes. All status transitions work per FLOW_OVERVIEW.md. All UI actions present in dashboards.
+- **Comprehensive docs updated**: Added FLOW_OVERVIEW.md with full status machines. Updated API_CONTRACT.md, API_LIST.md, MVP_SCOPE_AND_BUSINESS_RULES.md, CURRENT.md.
 
 ### Blocked
 - Render build failing — needs build logs from user to diagnose
@@ -55,9 +60,10 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 - COMPLETED = all tasks on all pages are Approved, then mangaka clicks "Publish" button → notifies Editor
 
 ## Next Steps
-1. Get Render build logs to debug Docker build failure
-2. Add `editorial-board` and `editor` seed accounts for easier demo login
-3. Demo end-to-end flows
+1. Get Render build logs to debug Docker build failure (blocked — needs user)
+2. Add seed accounts: `board@manga.local`, `editor@example.com`, `assistant@manga.local` for easier demo login
+3. Demo end-to-end flows with all roles
+4. Deploy latest code to Render
 
 ## Open Items
 - PageAnnotations currently hardcoded to pageId=601 — should show dynamic page selection from the editor's assigned series
@@ -94,3 +100,11 @@ Restore Flow 2 ve ban full truoc khi giam scope con 3 nguoi.
 - `frontend/src/components/SeriesDecisionsPanel.tsx`
 - `frontend/src/components/SeriesDecisionsDashboard.tsx`
 - `docs/requirements/FLOW_OVERVIEW.md`
+- `frontend/src/components/MangakaDashboard.tsx` (~3052 lines, Flow 1 + Flow 2)
+- `frontend/src/components/TantouEditorDashboard.tsx` (Proposals + Production Review tabs)
+- `frontend/src/components/EditorialBoardDashboard.tsx` (Proposals + Rankings + Decisions tabs)
+- `frontend/src/components/AssistantDashboard.tsx` (Task start/submit/review)
+- `frontend/src/services/mangakaProductionService.ts` (Flow 2 API bindings)
+- `backend/.../services/InMemoryMangakaProductionService.java` (Flow 2 core logic)
+- `backend/.../services/InMemoryMangaProposalService.java` (Flow 1 core logic)
+- `database/schema.sql` (DB schema with all status CHECK constraints)
